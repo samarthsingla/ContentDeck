@@ -9,7 +9,7 @@ A personal content intelligence dashboard — save articles, videos, tweets, and
 ### Core
 - **Multi-source bookmarking** — YouTube, Twitter/X, LinkedIn, Substack, Blogs, Books
 - **Auto source detection** — paste a URL and it's categorized automatically
-- **Auto title fetching** — YouTube (oEmbed), Twitter (oEmbed), generic (Microlink API)
+- **Auto metadata fetching** — titles + Open Graph thumbnails via YouTube oEmbed, Twitter oEmbed, Microlink API
 - **Status tracking** — cycle bookmarks through `unread → reading → done`
 - **Search** — filter by title, URL, notes, or tags
 
@@ -24,6 +24,10 @@ A personal content intelligence dashboard — save articles, videos, tweets, and
 - **Sort options** — newest, oldest, title A-Z/Z-A, source, status
 - **Reading stats** — track completions, streaks, average time to finish, per-tag breakdown
 - **Cookie persistence** — credentials survive localStorage clears
+
+### v3.5 — Visual Enhancement
+- **Open Graph thumbnails** — bookmark cards display article/video preview images
+- **Smart fallbacks** — source badge overlays thumbnail, graceful error handling
 
 ### Design
 - **Dark theme** — minimal, clean, mobile-first
@@ -119,6 +123,7 @@ icon.svg          App icon
 
 setup-v3.sql      Fresh database setup (new users)
 migrate-v3.sql    v2 → v3 migration (existing users)
+migrate-v3.5.sql  v3.4 → v3.5 migration (adds image column)
 
 setup.sql         Legacy v1 setup (deprecated)
 migrate-v2.sql    Legacy v1 → v2 migration (deprecated)
@@ -127,6 +132,7 @@ fix-sources.sql   Legacy source detection fix (deprecated)
 
 ## Version History
 
+- **v3.5.0** — Open Graph thumbnails on bookmark cards
 - **v3.4.0** — Production polish, auto-tag for iOS/PC bookmarks, re-tag summary modal
 - **v3.0.0** — Tag areas, AI integration, stats, edit/bulk/sort
 - **v2.0.0** — Tags support

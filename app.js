@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════
-// ContentDeck v3.4 — Personal Content Dashboard
+// ContentDeck v3.5 — Personal Content Dashboard
 // https://github.com/aditya30103/ContentDeck
 // ═══════════════════════════════════════════
 
@@ -255,7 +255,7 @@ async function loadBookmarks() {
   applyFilters();
   if (currentView === 'areas') renderAreasView();
 
-  autoFetchMissingTitles();
+  autoFetchMissingMetadata();
   autoTagUntaggedBookmarks(); // Tag iOS/PC bookmarks that bypassed dashboard
 }
 
@@ -268,19 +268,23 @@ async function loadTagAreas() {
   if (currentView === 'areas') renderAreasView();
 }
 
-// ── Auto Title Fetching ───────────────────
+// ── Auto Metadata Fetching (Title + Image) ──
 
-async function autoFetchMissingTitles() {
-  const untitled = allBookmarks.filter(b => !b.title);
-  if (!untitled.length) return;
+async function autoFetchMissingMetadata() {
+  const needsMetadata = allBookmarks.filter(b => !b.title || !b.image);
+  if (!needsMetadata.length) return;
 
   let updated = false;
 
-  for (const b of untitled) {
-    const title = await fetchTitle(b.url, b.source_type);
-    if (title) {
-      await db.from('bookmarks').update({ title }).eq('id', b.id);
-      b.title = title;
+  for (const b of needsMetadata) {
+    const meta = await fetchMetadata(b.url, b.source_type);
+    const updates = {};
+    if (!b.title && meta.title) updates.title = meta.title;
+    if (!b.image && meta.image) updates.image = meta.image;
+
+    if (Object.keys(updates).length) {
+      await db.from('bookmarks').update(updates).eq('id', b.id);
+      Object.assign(b, updates);
       updated = true;
     }
   }
@@ -288,40 +292,49 @@ async function autoFetchMissingTitles() {
   if (updated) applyFilters();
 }
 
-async function fetchTitle(url, sourceType) {
+async function fetchMetadata(url, sourceType) {
+  const result = { title: null, image: null };
+
   try {
+    // YouTube: get thumbnail from oembed
     if (sourceType === 'youtube' || /youtube\.com|youtu\.be/i.test(url)) {
       const resp = await fetch(
         `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`
       );
       if (resp.ok) {
         const data = await resp.json();
-        return data.title || null;
+        result.title = data.title || null;
+        result.image = data.thumbnail_url || null;
+        return result;
       }
     }
 
+    // Twitter: get author name (no image from oembed)
     if (sourceType === 'twitter' || /twitter\.com|x\.com/i.test(url)) {
       const resp = await fetch(
         `https://publish.twitter.com/oembed?url=${encodeURIComponent(url)}`
       );
       if (resp.ok) {
         const data = await resp.json();
-        return data.author_name ? `Post by ${data.author_name}` : null;
+        result.title = data.author_name ? `Post by ${data.author_name}` : null;
+        // Twitter oembed doesn't provide image, fall through to Microlink
       }
     }
 
+    // Generic: use Microlink for title + OG image
     const resp = await fetch(
       `https://api.microlink.io/?url=${encodeURIComponent(url)}`
     );
     if (resp.ok) {
       const data = await resp.json();
-      if (data.status === 'success' && data.data && data.data.title) {
-        return data.data.title;
+      if (data.status === 'success' && data.data) {
+        if (!result.title && data.data.title) result.title = data.data.title;
+        if (data.data.image && data.data.image.url) result.image = data.data.image.url;
       }
     }
   } catch (e) { /* silent */ }
 
-  return null;
+  return result;
 }
 
 // ── Auto-Tag Untagged Bookmarks (iOS/PC) ──
@@ -513,12 +526,18 @@ function renderBookmarks(bookmarks) {
       ? `https://www.google.com/s2/favicons?domain=${encodeURIComponent(host)}&sz=32`
       : '';
     const checked = selectedIds.has(b.id) ? 'checked' : '';
+    const hasImage = b.image && b.image.trim();
 
     return `
-      <div class="bookmark-card ${selectMode ? 'select-active' : ''}" style="animation-delay:${Math.min(i * 25, 300)}ms"
+      <div class="bookmark-card ${selectMode ? 'select-active' : ''}${hasImage ? ' has-thumb' : ''}" style="animation-delay:${Math.min(i * 25, 300)}ms"
            ${selectMode ? `onclick="toggleSelect('${b.id}')"` : ''}>
         ${selectMode ? `<input type="checkbox" class="bulk-check" ${checked} onclick="event.stopPropagation();toggleSelect('${b.id}')">` : ''}
-        <div class="source-icon ${esc(b.source_type)}">${src.icon}</div>
+        ${hasImage ? `
+          <div class="bookmark-thumb">
+            <img src="${esc(b.image)}" alt="" loading="lazy" onerror="this.parentElement.classList.add('thumb-error')">
+            <div class="source-badge ${esc(b.source_type)}">${src.icon}</div>
+          </div>` : `
+          <div class="source-icon ${esc(b.source_type)}">${src.icon}</div>`}
         <div class="bookmark-body">
           <div class="bookmark-title">
             <a href="${esc(b.url)}" target="_blank" rel="noopener" ${selectMode ? 'onclick="event.preventDefault()"' : ''}>${title}</a>

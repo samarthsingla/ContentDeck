@@ -10,6 +10,7 @@ create table bookmarks (
   id uuid default gen_random_uuid() primary key,
   url text not null,
   title text,
+  image text,
   source_type text not null default 'auto',
   status text not null default 'unread',
   notes text,
