@@ -1100,6 +1100,7 @@ async function retagAll() {
 
   let tagged = 0;
   let errors = 0;
+  const suggestedAreas = new Map(); // name -> { emoji, description, count }
 
   await AI.retagAll(allBookmarks, tagAreas, async (done, total, bm, result) => {
     const fill = $('retag-fill');
@@ -1121,16 +1122,97 @@ async function retagAll() {
       if (!error) tagged++;
       else console.error('Junction save error:', error);
     }
+
+    // Collect suggested new areas
+    if (result && result.suggest_new && result.suggest_new.name) {
+      const name = result.suggest_new.name.toLowerCase();
+      if (suggestedAreas.has(name)) {
+        suggestedAreas.get(name).count++;
+      } else {
+        suggestedAreas.set(name, {
+          emoji: result.suggest_new.emoji || '📁',
+          description: result.suggest_new.description || '',
+          count: 1
+        });
+      }
+    }
   });
 
   progressEl.remove();
   await loadBookmarks();
 
-  if (errors > 0) {
-    toast(`Done: ${tagged} tagged, ${errors} failed — check console for details`);
+  // Show summary modal if there are suggested areas
+  if (suggestedAreas.size > 0) {
+    showRetagSummary(tagged, errors, suggestedAreas);
+  } else if (errors > 0) {
+    toast(`Done: ${tagged} tagged, ${errors} failed — check console`);
   } else {
     toast(`Re-tag complete! ${tagged} bookmarks tagged.`);
   }
+}
+
+function showRetagSummary(tagged, errors, suggestedAreas) {
+  const suggestions = [...suggestedAreas.entries()]
+    .sort((a, b) => b[1].count - a[1].count) // Sort by count descending
+    .slice(0, 8); // Max 8 suggestions
+
+  const suggestionsHtml = suggestions.map(([name, data]) => `
+    <label class="suggest-area-item">
+      <input type="checkbox" value="${esc(name)}" data-emoji="${esc(data.emoji)}" checked>
+      <span class="suggest-emoji">${esc(data.emoji)}</span>
+      <span class="suggest-name">${esc(name)}</span>
+      <span class="suggest-count">${data.count} bookmark${data.count > 1 ? 's' : ''}</span>
+    </label>
+  `).join('');
+
+  const sheet = $('modal-sheet');
+  sheet.innerHTML = `
+    <div class="handle"></div>
+    <h2>Re-tag Complete</h2>
+    <div class="retag-summary">
+      <div class="summary-stat"><span class="summary-num">${tagged}</span> tagged</div>
+      ${errors ? `<div class="summary-stat summary-error"><span class="summary-num">${errors}</span> failed</div>` : ''}
+      <div class="summary-stat summary-new"><span class="summary-num">${suggestedAreas.size}</span> new areas suggested</div>
+    </div>
+
+    <div class="section-title" style="border-top:none;margin-top:12px">Create suggested areas?</div>
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px">Select which areas to add:</p>
+    <div class="suggest-areas-list">${suggestionsHtml}</div>
+
+    <div class="modal-btns">
+      <button class="btn btn-cancel" onclick="closeModal()">Skip</button>
+      <button class="btn btn-save" id="btn-create-suggested">Create Selected</button>
+    </div>`;
+
+  $('modal-overlay').classList.remove('hidden');
+
+  $('btn-create-suggested').addEventListener('click', async () => {
+    const checked = [...document.querySelectorAll('.suggest-area-item input:checked')];
+    if (!checked.length) {
+      closeModal();
+      return;
+    }
+
+    $('btn-create-suggested').textContent = 'Creating...';
+    $('btn-create-suggested').disabled = true;
+
+    let created = 0;
+    for (const cb of checked) {
+      const name = cb.value;
+      const emoji = cb.dataset.emoji || '📁';
+      const { error } = await db.from('tag_areas').insert({
+        name,
+        emoji,
+        color: '#6c63ff',
+        sort_order: tagAreas.length + created
+      });
+      if (!error) created++;
+    }
+
+    closeModal();
+    await loadTagAreas();
+    toast(`Created ${created} new area${created > 1 ? 's' : ''}`);
+  });
 }
 
 // ── Stats Modal ───────────────────────────
