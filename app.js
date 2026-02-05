@@ -318,7 +318,9 @@ function applyFilters() {
     );
   }
 
-  if (currentTag) {
+  if (currentTag === '__unsorted__') {
+    filtered = filtered.filter(b => !b.tags || !b.tags.length);
+  } else if (currentTag) {
     filtered = filtered.filter(b => (b.tags || []).includes(currentTag));
   }
 
@@ -396,7 +398,7 @@ function renderBookmarks(bookmarks) {
     const label = currentSource === 'all' ? '' : ` in ${(SOURCE[currentSource] || {}).label || currentSource}`;
     const status = currentStatus === 'all' ? '' : currentStatus + ' ';
     const search = searchQuery ? ` matching "${searchQuery}"` : '';
-    const tag = currentTag ? ` tagged #${currentTag}` : '';
+    const tag = currentTag === '__unsorted__' ? ' without tags' : currentTag ? ` tagged #${currentTag}` : '';
 
     list.innerHTML = `
       <div class="empty-state">
@@ -464,7 +466,8 @@ function filterByTag(tag) {
   }
   const el = $('active-tag');
   el.classList.remove('hidden');
-  el.innerHTML = `#${esc(tag)} <button class="remove-tag" onclick="clearTagFilter()">✕</button>`;
+  const label = tag === '__unsorted__' ? 'Unsorted' : `#${esc(tag)}`;
+  el.innerHTML = `${label} <button class="remove-tag" onclick="clearTagFilter()">✕</button>`;
   applyFilters();
 }
 
@@ -574,16 +577,20 @@ async function handleAdd() {
 
 async function autoTagBookmark(bookmark) {
   const result = await AI.suggestTags(bookmark, tagAreas);
-  if (!result) return;
+  if (!result || result.error) {
+    if (result && result.error) console.warn('AI auto-tag failed:', result.error, result.details);
+    return;
+  }
 
-  if (result.tags && result.tags.length) {
-    const matchedAreas = result.tags
-      .map(name => tagAreas.find(a => a.name.toLowerCase() === name.toLowerCase()))
-      .filter(Boolean);
+  // Use pre-matched areas from AI module
+  const matchedAreas = result._matchedAreas || [];
 
-    if (matchedAreas.length) {
-      const rows = matchedAreas.map(a => ({ bookmark_id: bookmark.id, tag_area_id: a.id }));
-      await db.from('bookmark_tags').upsert(rows, { onConflict: 'bookmark_id,tag_area_id' });
+  if (matchedAreas.length) {
+    const rows = matchedAreas.map(a => ({ bookmark_id: bookmark.id, tag_area_id: a.id }));
+    const { error } = await db.from('bookmark_tags').upsert(rows, { onConflict: 'bookmark_id,tag_area_id' });
+    if (error) {
+      console.error('AI tag save error:', error);
+    } else {
       toast(`AI tagged: ${matchedAreas.map(a => a.emoji + ' ' + a.name).join(', ')}`);
       loadBookmarks();
     }
@@ -864,7 +871,7 @@ function renderAreasView() {
 
   // Unsorted card
   html += `
-    <div class="area-card" onclick="filterByTag('');currentView='list';localStorage.setItem('view','list');applyView();applyFilters()">
+    <div class="area-card" onclick="filterByTag('__unsorted__')">
       <span class="area-emoji">📥</span>
       <span class="area-name">Unsorted</span>
       <span class="area-count">${unsortedCount}</span>
@@ -1063,26 +1070,39 @@ async function retagAll() {
   progressEl.innerHTML = `<div class="retag-bar"><div class="retag-fill" id="retag-fill"></div></div><span id="retag-text">0/${allBookmarks.length}</span>`;
   $('dashboard').insertBefore(progressEl, $('bookmarks-list'));
 
+  let tagged = 0;
+  let errors = 0;
+
   await AI.retagAll(allBookmarks, tagAreas, async (done, total, bm, result) => {
     const fill = $('retag-fill');
     const text = $('retag-text');
     if (fill) fill.style.width = `${(done / total) * 100}%`;
     if (text) text.textContent = `${done}/${total}`;
 
-    if (result && result.tags && result.tags.length) {
-      const matchedAreas = result.tags
-        .map(name => tagAreas.find(a => a.name.toLowerCase() === name.toLowerCase()))
-        .filter(Boolean);
-      if (matchedAreas.length) {
-        const rows = matchedAreas.map(a => ({ bookmark_id: bm.id, tag_area_id: a.id }));
-        await db.from('bookmark_tags').upsert(rows, { onConflict: 'bookmark_id,tag_area_id' });
-      }
+    if (result && result.error) {
+      errors++;
+      console.warn(`AI retag failed for "${bm.title || bm.url}":`, result.error);
+      return;
+    }
+
+    // Use pre-matched areas from AI module
+    const matchedAreas = (result && result._matchedAreas) || [];
+    if (matchedAreas.length) {
+      const rows = matchedAreas.map(a => ({ bookmark_id: bm.id, tag_area_id: a.id }));
+      const { error } = await db.from('bookmark_tags').upsert(rows, { onConflict: 'bookmark_id,tag_area_id' });
+      if (!error) tagged++;
+      else console.error('Junction save error:', error);
     }
   });
 
   progressEl.remove();
   await loadBookmarks();
-  toast('Re-tag complete!');
+
+  if (errors > 0) {
+    toast(`Done: ${tagged} tagged, ${errors} failed — check console for details`);
+  } else {
+    toast(`Re-tag complete! ${tagged} bookmarks tagged.`);
+  }
 }
 
 // ── Stats Modal ───────────────────────────
@@ -1136,10 +1156,10 @@ function showSettingsModal() {
     <div class="setting-group">
       <label>Model</label>
       <select id="set-ai-model">
-        <option value="z-ai/glm-4.5-air:free" ${aiModel === 'z-ai/glm-4.5-air:free' ? 'selected' : ''}>GLM-4.5 Air (Free)</option>
-        <option value="google/gemini-2.0-flash-exp:free" ${aiModel === 'google/gemini-2.0-flash-exp:free' ? 'selected' : ''}>Gemini 2.0 Flash (Free)</option>
-        <option value="meta-llama/llama-3.1-8b-instruct:free" ${aiModel === 'meta-llama/llama-3.1-8b-instruct:free' ? 'selected' : ''}>Llama 3.1 8B (Free)</option>
-        <option value="openai/gpt-4o-mini" ${aiModel === 'openai/gpt-4o-mini' ? 'selected' : ''}>GPT-4o Mini</option>
+        <option value="google/gemini-2.5-flash:free" ${aiModel === 'google/gemini-2.5-flash:free' ? 'selected' : ''}>Gemini 2.5 Flash (Free)</option>
+        <option value="meta-llama/llama-4-scout:free" ${aiModel === 'meta-llama/llama-4-scout:free' ? 'selected' : ''}>Llama 4 Scout (Free)</option>
+        <option value="deepseek/deepseek-chat-v3-0324:free" ${aiModel === 'deepseek/deepseek-chat-v3-0324:free' ? 'selected' : ''}>DeepSeek V3 (Free)</option>
+        <option value="openai/gpt-4o-mini" ${aiModel === 'openai/gpt-4o-mini' ? 'selected' : ''}>GPT-4o Mini (Paid)</option>
       </select>
     </div>
     <button class="btn btn-save" id="btn-save-ai" style="width:100%;margin-top:4px">Save AI Settings</button>
