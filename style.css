@@ -1262,6 +1262,28 @@ main {
   color: var(--text-tertiary);
 }
 
+/* ── Auto-Tag Indicator ──────────────── */
+
+.auto-tag-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  font-size: 12px;
+  color: var(--primary);
+  background: var(--primary-dim);
+  animation: fadeIn 0.2s ease;
+}
+
+.auto-tag-spinner {
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--primary-glow);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
 /* ── Stats Modal ──────────────────────── */
 
 .stat-cards {

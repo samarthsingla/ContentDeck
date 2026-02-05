@@ -255,6 +255,7 @@ async function loadBookmarks() {
   if (currentView === 'areas') renderAreasView();
 
   autoFetchMissingTitles();
+  autoTagUntaggedBookmarks(); // Tag iOS/PC bookmarks that bypassed dashboard
 }
 
 async function loadTagAreas() {
@@ -320,6 +321,70 @@ async function fetchTitle(url, sourceType) {
   } catch (e) { /* silent */ }
 
   return null;
+}
+
+// ── Auto-Tag Untagged Bookmarks (iOS/PC) ──
+
+let autoTagInProgress = false;
+
+async function autoTagUntaggedBookmarks() {
+  // Skip if AI not configured, no tag areas, or already running
+  if (!window.AI || !AI.isConfigured() || !tagAreas.length || autoTagInProgress) return;
+
+  // Find recent untagged bookmarks (created in last 7 days, no tags)
+  const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString();
+  const untagged = allBookmarks.filter(b =>
+    (!b.tags || !b.tags.length) &&
+    b.created_at > weekAgo
+  );
+
+  if (!untagged.length) return;
+
+  autoTagInProgress = true;
+  showAutoTagIndicator(untagged.length);
+
+  let tagged = 0;
+  for (const bm of untagged) {
+    const result = await AI.suggestTags(bm, tagAreas);
+    if (result && !result.error) {
+      const matchedAreas = result._matchedAreas || [];
+      if (matchedAreas.length) {
+        const rows = matchedAreas.map(a => ({ bookmark_id: bm.id, tag_area_id: a.id }));
+        const { error } = await db.from('bookmark_tags').upsert(rows, { onConflict: 'bookmark_id,tag_area_id' });
+        if (!error) tagged++;
+      }
+    }
+    updateAutoTagIndicator(tagged, untagged.length);
+    // Rate limit
+    await new Promise(r => setTimeout(r, 400));
+  }
+
+  hideAutoTagIndicator();
+  autoTagInProgress = false;
+
+  if (tagged > 0) {
+    toast(`Auto-tagged ${tagged} new bookmark${tagged > 1 ? 's' : ''}`);
+    await loadBookmarks();
+  }
+}
+
+function showAutoTagIndicator(count) {
+  // Remove existing
+  document.querySelectorAll('.auto-tag-indicator').forEach(el => el.remove());
+
+  const indicator = document.createElement('div');
+  indicator.className = 'auto-tag-indicator';
+  indicator.innerHTML = `<span class="auto-tag-spinner"></span><span id="auto-tag-text">AI tagging ${count} new...</span>`;
+  $('stats-bar').after(indicator);
+}
+
+function updateAutoTagIndicator(done, total) {
+  const text = $('auto-tag-text');
+  if (text) text.textContent = `AI tagging... ${done}/${total}`;
+}
+
+function hideAutoTagIndicator() {
+  document.querySelectorAll('.auto-tag-indicator').forEach(el => el.remove());
 }
 
 // ── Client-side Filtering ─────────────────
@@ -593,11 +658,13 @@ async function handleAdd() {
 
   closeModal();
   await loadBookmarks();
-  toast('Saved!');
 
-  // Non-blocking AI tag suggestion
-  if (data && data[0] && window.AI && AI.isConfigured() && tagAreas.length) {
-    autoTagBookmark(data[0]);
+  // AI tag suggestion with indicator
+  if (data && data[0] && window.AI && AI.isConfigured() && tagAreas.length && !checkedAreas.length) {
+    toast('Saved! AI tagging...');
+    await autoTagBookmark(data[0]);
+  } else {
+    toast('Saved!');
   }
 }
 
