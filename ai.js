@@ -3,22 +3,36 @@
 // ═══════════════════════════════════════════
 
 window.AI = {
+  // Use app.js credential helpers if available, else localStorage fallback
+  _save(k, v) {
+    if (window.saveCredential) saveCredential(k, v);
+    else localStorage.setItem(k, v);
+  },
+  _load(k) {
+    if (window.loadCredential) return loadCredential(k);
+    return localStorage.getItem(k);
+  },
+  _remove(k) {
+    if (window.removeCredential) removeCredential(k);
+    else localStorage.removeItem(k);
+  },
+
   isConfigured() {
-    return !!localStorage.getItem('ai_key');
+    return !!this._load('ai_key');
   },
 
   getKey() {
-    return localStorage.getItem('ai_key') || '';
+    return this._load('ai_key') || '';
   },
 
   getModel() {
-    return localStorage.getItem('ai_model') || 'google/gemini-2.5-flash:free';
+    return this._load('ai_model') || 'meta-llama/llama-3.3-70b-instruct:free';
   },
 
   saveSettings(key, model) {
-    if (key) localStorage.setItem('ai_key', key);
-    else localStorage.removeItem('ai_key');
-    if (model) localStorage.setItem('ai_model', model);
+    if (key) this._save('ai_key', key);
+    else this._remove('ai_key');
+    if (model) this._save('ai_model', model);
   },
 
   // Parse JSON from AI response, handling markdown fences

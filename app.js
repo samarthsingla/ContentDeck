@@ -29,11 +29,39 @@ let currentView = localStorage.getItem('view') || 'list'; // 'areas' or 'list'
 let selectMode = false;
 let selectedIds = new Set();
 
+// ── Persistent Storage (localStorage + cookie fallback) ──
+
+function saveCredential(key, value) {
+  localStorage.setItem(key, value);
+  // Cookie: 400-day expiry, SameSite=Strict, Secure on HTTPS
+  const expires = new Date(Date.now() + 400 * 86400000).toUTCString();
+  const secure = location.protocol === 'https:' ? ';Secure' : '';
+  document.cookie = `${key}=${encodeURIComponent(value)};expires=${expires};path=/${secure};SameSite=Strict`;
+}
+
+function loadCredential(key) {
+  const ls = localStorage.getItem(key);
+  if (ls) return ls;
+  // Fallback: read from cookie
+  const match = document.cookie.match(new RegExp(`(?:^|; )${key}=([^;]*)`));
+  if (match) {
+    const val = decodeURIComponent(match[1]);
+    localStorage.setItem(key, val); // Restore to localStorage
+    return val;
+  }
+  return null;
+}
+
+function removeCredential(key) {
+  localStorage.removeItem(key);
+  document.cookie = `${key}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+}
+
 // ── Bootstrap ─────────────────────────────
 
 document.addEventListener('DOMContentLoaded', () => {
-  const url = localStorage.getItem('sb_url');
-  const key = localStorage.getItem('sb_key');
+  const url = loadCredential('sb_url');
+  const key = loadCredential('sb_key');
 
   if (url && key) {
     db = supabase.createClient(url, key);
@@ -187,8 +215,8 @@ async function handleSetup() {
       return;
     }
 
-    localStorage.setItem('sb_url', url);
-    localStorage.setItem('sb_key', key);
+    saveCredential('sb_url', url);
+    saveCredential('sb_key', key);
     db = supabase.createClient(url, key);
     showDashboard();
     loadBookmarks();
@@ -1121,8 +1149,8 @@ async function showStatsModal() {
 // ── Settings Modal ────────────────────────
 
 function showSettingsModal() {
-  const sbUrl = localStorage.getItem('sb_url') || '';
-  const sbKey = localStorage.getItem('sb_key') || '';
+  const sbUrl = loadCredential('sb_url') || '';
+  const sbKey = loadCredential('sb_key') || '';
   const bookmarkletCode = generateBookmarklet(sbUrl, sbKey);
 
   const aiKey = window.AI ? AI.getKey() : '';
@@ -1156,10 +1184,10 @@ function showSettingsModal() {
     <div class="setting-group">
       <label>Model</label>
       <select id="set-ai-model">
-        <option value="google/gemini-2.5-flash:free" ${aiModel === 'google/gemini-2.5-flash:free' ? 'selected' : ''}>Gemini 2.5 Flash (Free)</option>
-        <option value="meta-llama/llama-4-scout:free" ${aiModel === 'meta-llama/llama-4-scout:free' ? 'selected' : ''}>Llama 4 Scout (Free)</option>
-        <option value="deepseek/deepseek-chat-v3-0324:free" ${aiModel === 'deepseek/deepseek-chat-v3-0324:free' ? 'selected' : ''}>DeepSeek V3 (Free)</option>
-        <option value="openai/gpt-4o-mini" ${aiModel === 'openai/gpt-4o-mini' ? 'selected' : ''}>GPT-4o Mini (Paid)</option>
+        <option value="meta-llama/llama-3.3-70b-instruct:free" ${aiModel === 'meta-llama/llama-3.3-70b-instruct:free' ? 'selected' : ''}>Llama 3.3 70B (Free)</option>
+        <option value="google/gemma-3-27b-it:free" ${aiModel === 'google/gemma-3-27b-it:free' ? 'selected' : ''}>Gemma 3 27B (Free)</option>
+        <option value="mistralai/mistral-small-3.1-24b-instruct:free" ${aiModel === 'mistralai/mistral-small-3.1-24b-instruct:free' ? 'selected' : ''}>Mistral Small 3.1 (Free)</option>
+        <option value="qwen/qwen3-coder:free" ${aiModel === 'qwen/qwen3-coder:free' ? 'selected' : ''}>Qwen3 Coder (Free)</option>
       </select>
     </div>
     <button class="btn btn-save" id="btn-save-ai" style="width:100%;margin-top:4px">Save AI Settings</button>
@@ -1209,8 +1237,8 @@ function showSettingsModal() {
     const url = $('set-url').value.trim();
     const key = $('set-key').value.trim();
     if (!url || !key) { toast('Both fields required'); return; }
-    localStorage.setItem('sb_url', url);
-    localStorage.setItem('sb_key', key);
+    saveCredential('sb_url', url);
+    saveCredential('sb_key', key);
     db = supabase.createClient(url, key);
     closeModal();
     loadBookmarks();
@@ -1231,6 +1259,10 @@ function showSettingsModal() {
 
   $('btn-reset').addEventListener('click', () => {
     if (confirm('Disconnect and reset the app?')) {
+      removeCredential('sb_url');
+      removeCredential('sb_key');
+      removeCredential('ai_key');
+      removeCredential('ai_model');
       localStorage.clear();
       location.reload();
     }
