@@ -16,7 +16,9 @@ A personal content intelligence dashboard — save articles, videos, tweets, and
 ### v3 — Content Intelligence
 - **Tag Areas** — organize bookmarks into visual category cards (home screen grid view)
 - **AI-powered tagging** — OpenRouter integration auto-classifies new bookmarks
+- **Auto-tag on load** — iOS Shortcut and PC bookmarklet saves get AI-tagged when you open the dashboard
 - **Re-tag all** — batch process existing bookmarks with AI suggestions
+- **Suggested areas** — after re-tagging, AI suggests new tag areas to create
 - **Edit bookmarks** — modify URL, title, source, status, tags, notes
 - **Bulk actions** — select multiple bookmarks to change status or delete
 - **Sort options** — newest, oldest, title A-Z/Z-A, source, status
@@ -28,7 +30,7 @@ A personal content intelligence dashboard — save articles, videos, tweets, and
 - **Desktop grid** — responsive 2-4 column layout
 - **PWA** — installable with offline support
 
-## Save from anywhere
+## Save from Anywhere
 
 | Platform | Method |
 |----------|--------|
@@ -40,7 +42,7 @@ A personal content intelligence dashboard — save articles, videos, tweets, and
 
 - **Frontend:** Vanilla HTML/CSS/JS — no framework, no build step
 - **Backend:** [Supabase](https://supabase.com) (PostgreSQL + REST API)
-- **AI:** [OpenRouter](https://openrouter.ai) (free models: Llama 3.3, Gemma 3, Mistral, Qwen)
+- **AI:** [OpenRouter](https://openrouter.ai) (free models: Llama 3.3 70B, Gemma 3, Mistral, Qwen)
 - **Hosting:** [Vercel](https://vercel.com)
 
 ## Setup
@@ -87,20 +89,57 @@ Open the deployed URL, paste your Supabase credentials, done.
 
 Dashboard → Settings → drag **+ ContentDeck** to bookmarks bar.
 
-## Files
+## Local Development
+
+No build step required:
+
+```bash
+# Option 1: Python
+python -m http.server 8000
+
+# Option 2: Node
+npx serve .
+
+# Option 3: VS Code Live Server extension
+```
+
+Then open http://localhost:8000
+
+## File Structure
 
 ```
 index.html        Dashboard UI
 style.css         Styles (dark theme, responsive)
-app.js            Main app logic
+app.js            Main application logic
 ai.js             OpenRouter AI integration
 stats.js          Reading statistics
 sw.js             Service worker (offline caching)
 manifest.json     PWA manifest
 icon.svg          App icon
+
 setup-v3.sql      Fresh database setup (new users)
 migrate-v3.sql    v2 → v3 migration (existing users)
+
+setup.sql         Legacy v1 setup (deprecated)
+migrate-v2.sql    Legacy v1 → v2 migration (deprecated)
+fix-sources.sql   Legacy source detection fix (deprecated)
 ```
+
+## Version History
+
+- **v3.4.0** — Production polish, auto-tag for iOS/PC bookmarks, re-tag summary modal
+- **v3.0.0** — Tag areas, AI integration, stats, edit/bulk/sort
+- **v2.0.0** — Tags support
+- **v1.0.0** — Initial release
+
+## Known Issues
+
+- OpenRouter free models have rate limits — if AI tagging fails, wait a few minutes
+- Service worker may cache old JS — hard refresh (`Ctrl+Shift+R`) or clear site data if updates don't appear
+
+## Contributing
+
+Issues and PRs welcome at [github.com/aditya30103/ContentDeck](https://github.com/aditya30103/ContentDeck)
 
 ## License
 
