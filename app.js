@@ -1,5 +1,6 @@
 // ═══════════════════════════════════════════
-// ContentDeck v3 — Personal Content Dashboard
+// ContentDeck v3.4 — Personal Content Dashboard
+// https://github.com/aditya30103/ContentDeck
 // ═══════════════════════════════════════════
 
 const SOURCE = {
@@ -329,18 +330,7 @@ let autoTagInProgress = false;
 
 async function autoTagUntaggedBookmarks() {
   // Skip if AI not configured, no tag areas, or already running
-  if (!window.AI || !AI.isConfigured()) {
-    console.log('Auto-tag skipped: AI not configured');
-    return;
-  }
-  if (!tagAreas.length) {
-    console.log('Auto-tag skipped: no tag areas');
-    return;
-  }
-  if (autoTagInProgress) {
-    console.log('Auto-tag skipped: already in progress');
-    return;
-  }
+  if (!window.AI || !AI.isConfigured() || !tagAreas.length || autoTagInProgress) return;
 
   // Find recent untagged bookmarks (created in last 7 days, no tags)
   const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString();
@@ -349,7 +339,6 @@ async function autoTagUntaggedBookmarks() {
     b.created_at > weekAgo
   );
 
-  console.log(`Auto-tag: found ${untagged.length} untagged bookmarks from last 7 days`);
   if (!untagged.length) return;
 
   autoTagInProgress = true;

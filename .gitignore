@@ -1,7 +1,19 @@
+# Dependencies
 node_modules/
+
+# OS files
 .DS_Store
 Thumbs.db
-*.log
 nul
 
+# Logs
+*.log
+
+# Vercel
 .vercel
+
+# Claude Code
+.claude/
+
+# Local dev files
+INTEGRATIONS.md
