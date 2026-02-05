@@ -46,6 +46,12 @@
     <header>
       <h1>ContentDeck</h1>
       <div class="header-actions">
+        <button id="view-toggle-btn" class="icon-btn" aria-label="Toggle view" title="Areas View">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        </button>
+        <button id="select-btn" class="icon-btn" aria-label="Select mode">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        </button>
         <button id="settings-btn" class="icon-btn" aria-label="Settings">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.32 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         </button>
@@ -55,32 +61,56 @@
     <!-- Stats Bar -->
     <div id="stats-bar" class="stats-bar"></div>
 
-    <!-- Search -->
-    <div class="search-wrap">
-      <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-      <input type="search" id="search-input" placeholder="Search bookmarks..." autocomplete="off">
+    <!-- Areas View (tag-first home screen) -->
+    <div id="areas-view" class="areas-view hidden"></div>
+
+    <!-- Bulk Action Bar -->
+    <div id="bulk-bar" class="bulk-bar hidden">
+      <span id="bulk-count">0 selected</span>
+      <div class="bulk-actions">
+        <button class="btn-bulk" onclick="bulkStatusPrompt()">Status</button>
+        <button class="btn-bulk btn-bulk-danger" onclick="bulkDelete()">Delete</button>
+        <button class="btn-bulk" onclick="exitSelectMode()">Cancel</button>
+      </div>
     </div>
 
-    <!-- Source Tabs -->
-    <nav class="tabs" id="source-tabs">
-      <button class="tab active" data-source="all">All <span class="count"></span></button>
-      <button class="tab" data-source="youtube">YouTube <span class="count"></span></button>
-      <button class="tab" data-source="twitter">Twitter <span class="count"></span></button>
-      <button class="tab" data-source="linkedin">LinkedIn <span class="count"></span></button>
-      <button class="tab" data-source="substack">Substack <span class="count"></span></button>
-      <button class="tab" data-source="blog">Blogs <span class="count"></span></button>
-      <button class="tab" data-source="book">Books <span class="count"></span></button>
-    </nav>
-
-    <!-- Status Filters -->
-    <div class="filter-row">
-      <div class="status-filters" id="status-filters">
-        <button class="status-filter active" data-status="unread">Unread</button>
-        <button class="status-filter" data-status="reading">Reading</button>
-        <button class="status-filter" data-status="done">Done</button>
-        <button class="status-filter" data-status="all">All</button>
+    <!-- List Controls (hidden when areas view is active) -->
+    <div id="list-controls">
+      <!-- Search -->
+      <div class="search-wrap">
+        <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="search" id="search-input" placeholder="Search bookmarks..." autocomplete="off">
       </div>
-      <div id="active-tag" class="active-tag hidden"></div>
+
+      <!-- Source Tabs -->
+      <nav class="tabs" id="source-tabs">
+        <button class="tab active" data-source="all">All <span class="count"></span></button>
+        <button class="tab" data-source="youtube">YouTube <span class="count"></span></button>
+        <button class="tab" data-source="twitter">Twitter <span class="count"></span></button>
+        <button class="tab" data-source="linkedin">LinkedIn <span class="count"></span></button>
+        <button class="tab" data-source="substack">Substack <span class="count"></span></button>
+        <button class="tab" data-source="blog">Blogs <span class="count"></span></button>
+        <button class="tab" data-source="book">Books <span class="count"></span></button>
+      </nav>
+
+      <!-- Status Filters + Sort -->
+      <div class="filter-row">
+        <div class="status-filters" id="status-filters">
+          <button class="status-filter active" data-status="unread">Unread</button>
+          <button class="status-filter" data-status="reading">Reading</button>
+          <button class="status-filter" data-status="done">Done</button>
+          <button class="status-filter" data-status="all">All</button>
+        </div>
+        <select id="sort-select" class="sort-select">
+          <option value="newest">Newest</option>
+          <option value="oldest">Oldest</option>
+          <option value="title-az">Title A-Z</option>
+          <option value="title-za">Title Z-A</option>
+          <option value="source">Source</option>
+          <option value="status">Status</option>
+        </select>
+        <div id="active-tag" class="active-tag hidden"></div>
+      </div>
     </div>
 
     <!-- Bookmarks -->
@@ -96,6 +126,8 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="ai.js"></script>
+  <script src="stats.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

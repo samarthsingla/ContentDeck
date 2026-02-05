@@ -1,9 +1,11 @@
-const CACHE_NAME = 'contentdeck-v1';
+const CACHE_NAME = 'contentdeck-v3';
 const ASSETS = [
   './',
   './index.html',
   './style.css',
   './app.js',
+  './ai.js',
+  './stats.js',
   './icon.svg',
   './manifest.json'
 ];
@@ -25,8 +27,8 @@ self.addEventListener('activate', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
-  // Always go to network for Supabase API calls
-  if (e.request.url.includes('supabase')) {
+  // Always go to network for Supabase API calls and OpenRouter
+  if (e.request.url.includes('supabase') || e.request.url.includes('openrouter.ai')) {
     e.respondWith(fetch(e.request));
     return;
   }

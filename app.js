@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════
-// ContentDeck v2 — Personal Content Dashboard
+// ContentDeck v3 — Personal Content Dashboard
 // ═══════════════════════════════════════════
 
 const SOURCE = {
@@ -19,6 +19,15 @@ let currentSource = 'all';
 let currentStatus = 'unread';
 let searchQuery = '';
 let currentTag = '';
+let currentSort = 'newest';
+
+// Tag areas
+let tagAreas = [];
+let currentView = localStorage.getItem('view') || 'list'; // 'areas' or 'list'
+
+// Bulk mode
+let selectMode = false;
+let selectedIds = new Set();
 
 // ── Bootstrap ─────────────────────────────
 
@@ -30,6 +39,8 @@ document.addEventListener('DOMContentLoaded', () => {
     db = supabase.createClient(url, key);
     showDashboard();
     loadBookmarks();
+    loadTagAreas();
+    if (window.Stats) Stats.loadHistory(db);
   } else {
     showSetup();
   }
@@ -48,6 +59,35 @@ function showSetup() {
 function showDashboard() {
   $('setup-screen').classList.add('hidden');
   $('dashboard').classList.remove('hidden');
+  applyView();
+}
+
+// ── View Toggle ───────────────────────────
+
+function applyView() {
+  const areasView = $('areas-view');
+  const listControls = $('list-controls');
+  const bookmarksList = $('bookmarks-list');
+  const viewBtn = $('view-toggle-btn');
+
+  if (currentView === 'areas') {
+    areasView.classList.remove('hidden');
+    listControls.classList.add('hidden');
+    bookmarksList.classList.add('hidden');
+    if (viewBtn) viewBtn.title = 'List View';
+  } else {
+    areasView.classList.add('hidden');
+    listControls.classList.remove('hidden');
+    bookmarksList.classList.remove('hidden');
+    if (viewBtn) viewBtn.title = 'Areas View';
+  }
+}
+
+function toggleView() {
+  currentView = currentView === 'areas' ? 'list' : 'areas';
+  localStorage.setItem('view', currentView);
+  applyView();
+  if (currentView === 'areas') renderAreasView();
 }
 
 // ── Events ────────────────────────────────
@@ -78,6 +118,12 @@ function bindEvents() {
     applyFilters();
   });
 
+  // Sort
+  $('sort-select').addEventListener('change', e => {
+    currentSort = e.target.value;
+    applyFilters();
+  });
+
   // Search (debounced)
   let searchTimer;
   $('search-input').addEventListener('input', e => {
@@ -94,6 +140,15 @@ function bindEvents() {
   // Settings
   $('settings-btn').addEventListener('click', showSettingsModal);
 
+  // View toggle
+  $('view-toggle-btn').addEventListener('click', toggleView);
+
+  // Select mode
+  $('select-btn').addEventListener('click', toggleSelectMode);
+
+  // Stats bar click
+  $('stats-bar').addEventListener('click', showStatsModal);
+
   // Modal backdrop
   $('modal-overlay').addEventListener('click', e => {
     if (e.target === e.currentTarget) closeModal();
@@ -101,7 +156,10 @@ function bindEvents() {
 
   // Keyboard: Escape closes modal
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') closeModal();
+    if (e.key === 'Escape') {
+      if (selectMode) exitSelectMode();
+      else closeModal();
+    }
   });
 }
 
@@ -134,6 +192,8 @@ async function handleSetup() {
     db = supabase.createClient(url, key);
     showDashboard();
     loadBookmarks();
+    loadTagAreas();
+    if (window.Stats) Stats.loadHistory(db);
     toast('Connected!');
   } catch (err) {
     toast('Connection failed');
@@ -164,9 +224,18 @@ async function loadBookmarks() {
   updateStats();
   updateCounts();
   applyFilters();
+  if (currentView === 'areas') renderAreasView();
 
-  // Auto-fetch missing titles in the background
   autoFetchMissingTitles();
+}
+
+async function loadTagAreas() {
+  const { data } = await db
+    .from('tag_areas')
+    .select('*')
+    .order('sort_order', { ascending: true });
+  tagAreas = data || [];
+  if (currentView === 'areas') renderAreasView();
 }
 
 // ── Auto Title Fetching ───────────────────
@@ -186,12 +255,11 @@ async function autoFetchMissingTitles() {
     }
   }
 
-  if (updated) applyFilters(); // re-render with new titles
+  if (updated) applyFilters();
 }
 
 async function fetchTitle(url, sourceType) {
   try {
-    // YouTube — free oEmbed API
     if (sourceType === 'youtube' || /youtube\.com|youtu\.be/i.test(url)) {
       const resp = await fetch(
         `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`
@@ -202,7 +270,6 @@ async function fetchTitle(url, sourceType) {
       }
     }
 
-    // Twitter/X — publish.twitter.com oEmbed
     if (sourceType === 'twitter' || /twitter\.com|x\.com/i.test(url)) {
       const resp = await fetch(
         `https://publish.twitter.com/oembed?url=${encodeURIComponent(url)}`
@@ -213,8 +280,6 @@ async function fetchTitle(url, sourceType) {
       }
     }
 
-    // All other sources (Substack, blogs, LinkedIn, etc.) — use Microlink API
-    // Free tier: 50 req/day, returns page title/description
     const resp = await fetch(
       `https://api.microlink.io/?url=${encodeURIComponent(url)}`
     );
@@ -224,7 +289,7 @@ async function fetchTitle(url, sourceType) {
         return data.data.title;
       }
     }
-  } catch (e) { /* silent — CORS or network errors are expected */ }
+  } catch (e) { /* silent */ }
 
   return null;
 }
@@ -232,22 +297,18 @@ async function fetchTitle(url, sourceType) {
 // ── Client-side Filtering ─────────────────
 
 function applyFilters() {
-  // Update tab counts to reflect current status filter
   updateCounts();
 
   let filtered = allBookmarks;
 
-  // Source
   if (currentSource !== 'all') {
     filtered = filtered.filter(b => b.source_type === currentSource);
   }
 
-  // Status
   if (currentStatus !== 'all') {
     filtered = filtered.filter(b => b.status === currentStatus);
   }
 
-  // Search
   if (searchQuery) {
     filtered = filtered.filter(b =>
       (b.title || '').toLowerCase().includes(searchQuery) ||
@@ -257,12 +318,40 @@ function applyFilters() {
     );
   }
 
-  // Tag
   if (currentTag) {
     filtered = filtered.filter(b => (b.tags || []).includes(currentTag));
   }
 
+  filtered = sortBookmarks(filtered);
   renderBookmarks(filtered);
+}
+
+// ── Sort ──────────────────────────────────
+
+function sortBookmarks(list) {
+  const sorted = [...list];
+  switch (currentSort) {
+    case 'newest':
+      sorted.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      break;
+    case 'oldest':
+      sorted.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+      break;
+    case 'title-az':
+      sorted.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+      break;
+    case 'title-za':
+      sorted.sort((a, b) => (b.title || '').localeCompare(a.title || ''));
+      break;
+    case 'source':
+      sorted.sort((a, b) => (a.source_type || '').localeCompare(b.source_type || ''));
+      break;
+    case 'status':
+      const order = { unread: 0, reading: 1, done: 2 };
+      sorted.sort((a, b) => (order[a.status] || 0) - (order[b.status] || 0));
+      break;
+  }
+  return sorted;
 }
 
 // ── Stats ─────────────────────────────────
@@ -284,7 +373,6 @@ function updateStats() {
 // ── Tab Counts ────────────────────────────
 
 function updateCounts() {
-  // Counts reflect current status filter so numbers match what you see
   const pool = currentStatus === 'all'
     ? allBookmarks
     : allBookmarks.filter(b => b.status === currentStatus);
@@ -328,29 +416,33 @@ function renderBookmarks(bookmarks) {
     const faviconUrl = host
       ? `https://www.google.com/s2/favicons?domain=${encodeURIComponent(host)}&sz=32`
       : '';
+    const checked = selectedIds.has(b.id) ? 'checked' : '';
 
     return `
-      <div class="bookmark-card" style="animation-delay:${Math.min(i * 25, 300)}ms">
+      <div class="bookmark-card ${selectMode ? 'select-active' : ''}" style="animation-delay:${Math.min(i * 25, 300)}ms"
+           ${selectMode ? `onclick="toggleSelect('${b.id}')"` : ''}>
+        ${selectMode ? `<input type="checkbox" class="bulk-check" ${checked} onclick="event.stopPropagation();toggleSelect('${b.id}')">` : ''}
         <div class="source-icon ${esc(b.source_type)}">${src.icon}</div>
         <div class="bookmark-body">
           <div class="bookmark-title">
-            <a href="${esc(b.url)}" target="_blank" rel="noopener">${title}</a>
+            <a href="${esc(b.url)}" target="_blank" rel="noopener" ${selectMode ? 'onclick="event.preventDefault()"' : ''}>${title}</a>
           </div>
           <div class="bookmark-meta">
-            ${faviconUrl ? `<img class="favicon" src="${faviconUrl}" alt="" loading="lazy" onerror="this.style.display='none'">` : ''}
+            ${faviconUrl ? `<img class="favicon" src="${faviconUrl}" alt="${esc(host)}" loading="lazy" onerror="this.style.display='none'">` : ''}
             <span>${esc(host)}</span>
             <span class="dot">&middot;</span>
             <span>${time}</span>
           </div>
           ${notes ? `<div class="bookmark-notes">${esc(notes)}</div>` : ''}
           ${tags.length ? `<div class="bookmark-tags">${tags.map(t =>
-            `<button class="tag-pill" onclick="filterByTag('${esc(t)}')">${esc(t)}</button>`
+            `<button class="tag-pill" onclick="event.stopPropagation();filterByTag('${esc(t)}')">${esc(t)}</button>`
           ).join('')}</div>` : ''}
         </div>
         <div class="bookmark-actions">
+          <button class="edit-btn" onclick="event.stopPropagation();showEditModal('${b.id}')" title="Edit">✎</button>
           <button class="status-badge ${esc(b.status)}"
-                  onclick="cycleStatus('${b.id}','${b.status}')">${b.status}</button>
-          <button class="delete-btn" onclick="deleteBookmark('${b.id}')">✕</button>
+                  onclick="event.stopPropagation();cycleStatus('${b.id}','${b.status}')">${b.status}</button>
+          <button class="delete-btn" onclick="event.stopPropagation();deleteBookmark('${b.id}')">✕</button>
         </div>
       </div>`;
   }).join('');
@@ -364,6 +456,12 @@ function filterByTag(tag) {
     return;
   }
   currentTag = tag;
+  // Switch to list view if in areas view
+  if (currentView === 'areas') {
+    currentView = 'list';
+    localStorage.setItem('view', 'list');
+    applyView();
+  }
   const el = $('active-tag');
   el.classList.remove('hidden');
   el.innerHTML = `#${esc(tag)} <button class="remove-tag" onclick="clearTagFilter()">✕</button>`;
@@ -379,6 +477,10 @@ function clearTagFilter() {
 // ── Add Bookmark ──────────────────────────
 
 function showAddModal() {
+  const tagsOptions = tagAreas.map(a =>
+    `<label class="tag-check-label"><input type="checkbox" value="${esc(a.name)}" class="tag-area-check"> ${a.emoji} ${esc(a.name)}</label>`
+  ).join('');
+
   const sheet = $('modal-sheet');
   sheet.innerHTML = `
     <div class="handle"></div>
@@ -394,6 +496,11 @@ function showAddModal() {
       <option value="blog">Blog</option>
       <option value="book">Book</option>
     </select>
+    ${tagAreas.length ? `
+      <div class="setting-group">
+        <label>Tag Areas</label>
+        <div class="tag-checks">${tagsOptions}</div>
+      </div>` : ''}
     <input type="text" id="inp-tags" placeholder="Tags (comma separated, e.g. must-read, weekend)">
     <textarea id="inp-notes" placeholder="Notes (optional)"></textarea>
     <div class="modal-btns">
@@ -418,16 +525,21 @@ async function handleAdd() {
   const title = $('inp-title').value.trim() || null;
   const notes = $('inp-notes').value.trim() || null;
   const tagsRaw = $('inp-tags').value.trim();
-  const tags = tagsRaw
+  const manualTags = tagsRaw
     ? tagsRaw.split(',').map(t => t.trim().toLowerCase()).filter(Boolean)
     : [];
+
+  // Checked tag areas
+  const checkedAreas = [...document.querySelectorAll('.tag-area-check:checked')]
+    .map(cb => cb.value);
+  const allTags = [...new Set([...checkedAreas, ...manualTags])];
 
   $('btn-add').textContent = 'Saving...';
   $('btn-add').disabled = true;
 
-  const { error } = await db.from('bookmarks').insert({
-    url, title, source_type: sourceType, notes, tags, status: 'unread'
-  });
+  const { data, error } = await db.from('bookmarks').insert({
+    url, title, source_type: sourceType, notes, tags: allTags, status: 'unread'
+  }).select();
 
   if (error) {
     toast('Failed to save');
@@ -436,9 +548,257 @@ async function handleAdd() {
     return;
   }
 
+  // Sync junction table for checked tag areas
+  if (data && data[0] && checkedAreas.length) {
+    const bmId = data[0].id;
+    const junctionRows = checkedAreas
+      .map(name => tagAreas.find(a => a.name === name))
+      .filter(Boolean)
+      .map(a => ({ bookmark_id: bmId, tag_area_id: a.id }));
+    if (junctionRows.length) {
+      await db.from('bookmark_tags').insert(junctionRows);
+    }
+  }
+
   closeModal();
-  await loadBookmarks(); // this triggers autoFetchMissingTitles
+  await loadBookmarks();
   toast('Saved!');
+
+  // Non-blocking AI tag suggestion
+  if (data && data[0] && window.AI && AI.isConfigured() && tagAreas.length) {
+    autoTagBookmark(data[0]);
+  }
+}
+
+// ── AI Auto-Tag ───────────────────────────
+
+async function autoTagBookmark(bookmark) {
+  const result = await AI.suggestTags(bookmark, tagAreas);
+  if (!result) return;
+
+  if (result.tags && result.tags.length) {
+    const matchedAreas = result.tags
+      .map(name => tagAreas.find(a => a.name.toLowerCase() === name.toLowerCase()))
+      .filter(Boolean);
+
+    if (matchedAreas.length) {
+      const rows = matchedAreas.map(a => ({ bookmark_id: bookmark.id, tag_area_id: a.id }));
+      await db.from('bookmark_tags').upsert(rows, { onConflict: 'bookmark_id,tag_area_id' });
+      toast(`AI tagged: ${matchedAreas.map(a => a.emoji + ' ' + a.name).join(', ')}`);
+      loadBookmarks();
+    }
+  }
+
+  if (result.suggest_new) {
+    showAISuggestion(result.suggest_new, bookmark);
+  }
+}
+
+function showAISuggestion(suggestion, bookmark) {
+  // Remove any existing suggestion bar
+  document.querySelectorAll('.ai-suggest-bar').forEach(el => el.remove());
+
+  const bar = document.createElement('div');
+  bar.className = 'ai-suggest-bar';
+  bar.innerHTML = `
+    <span>AI suggests new area: <strong>${esc(suggestion.emoji)} ${esc(suggestion.name)}</strong></span>
+    <button class="btn-ai-accept" onclick="acceptAISuggestion(this, '${esc(suggestion.name)}', '${esc(suggestion.description || '')}', '${esc(suggestion.emoji)}', '${bookmark.id}')">Add</button>
+    <button class="btn-ai-dismiss" onclick="this.parentElement.remove()">Dismiss</button>
+  `;
+  $('dashboard').insertBefore(bar, $('bookmarks-list'));
+
+  // Auto-dismiss after 10s
+  setTimeout(() => bar.remove(), 10000);
+}
+
+async function acceptAISuggestion(btn, name, description, emoji, bookmarkId) {
+  btn.disabled = true;
+  const { data, error } = await db.from('tag_areas').insert({
+    name, description, emoji, color: '#6c63ff'
+  }).select();
+
+  if (error) { toast('Failed to create area'); return; }
+
+  if (data && data[0]) {
+    await db.from('bookmark_tags').insert({
+      bookmark_id: bookmarkId,
+      tag_area_id: data[0].id
+    });
+  }
+
+  btn.closest('.ai-suggest-bar').remove();
+  toast(`Created area: ${emoji} ${name}`);
+  loadTagAreas();
+  loadBookmarks();
+}
+
+// ── Edit Bookmark ─────────────────────────
+
+function showEditModal(id) {
+  const bm = allBookmarks.find(b => b.id === id);
+  if (!bm) return;
+
+  const tagsOptions = tagAreas.map(a => {
+    const checked = (bm.tags || []).includes(a.name) ? 'checked' : '';
+    return `<label class="tag-check-label"><input type="checkbox" value="${esc(a.name)}" class="tag-area-check" ${checked}> ${a.emoji} ${esc(a.name)}</label>`;
+  }).join('');
+
+  const sheet = $('modal-sheet');
+  sheet.innerHTML = `
+    <div class="handle"></div>
+    <h2>Edit Bookmark</h2>
+    <input type="url" id="edit-url" value="${esc(bm.url)}">
+    <input type="text" id="edit-title" value="${esc(bm.title || '')}" placeholder="Title">
+    <select id="edit-source">
+      <option value="youtube" ${bm.source_type === 'youtube' ? 'selected' : ''}>YouTube</option>
+      <option value="twitter" ${bm.source_type === 'twitter' ? 'selected' : ''}>Twitter / X</option>
+      <option value="linkedin" ${bm.source_type === 'linkedin' ? 'selected' : ''}>LinkedIn</option>
+      <option value="substack" ${bm.source_type === 'substack' ? 'selected' : ''}>Substack</option>
+      <option value="blog" ${bm.source_type === 'blog' ? 'selected' : ''}>Blog</option>
+      <option value="book" ${bm.source_type === 'book' ? 'selected' : ''}>Book</option>
+    </select>
+    <select id="edit-status">
+      <option value="unread" ${bm.status === 'unread' ? 'selected' : ''}>Unread</option>
+      <option value="reading" ${bm.status === 'reading' ? 'selected' : ''}>Reading</option>
+      <option value="done" ${bm.status === 'done' ? 'selected' : ''}>Done</option>
+    </select>
+    ${tagAreas.length ? `
+      <div class="setting-group">
+        <label>Tag Areas</label>
+        <div class="tag-checks">${tagsOptions}</div>
+      </div>` : ''}
+    <input type="text" id="edit-tags" value="${esc((bm.tags || []).join(', '))}" placeholder="Tags (comma separated)">
+    <textarea id="edit-notes" placeholder="Notes">${esc(bm.notes || '')}</textarea>
+    <div class="modal-btns">
+      <button class="btn btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-save" id="btn-edit">Save</button>
+    </div>`;
+
+  $('modal-overlay').classList.remove('hidden');
+  $('btn-edit').addEventListener('click', () => handleEdit(id));
+}
+
+async function handleEdit(id) {
+  const url = $('edit-url').value.trim();
+  if (!url) { toast('URL is required'); return; }
+
+  const title = $('edit-title').value.trim() || null;
+  const sourceType = $('edit-source').value;
+  const status = $('edit-status').value;
+  const notes = $('edit-notes').value.trim() || null;
+  const tagsRaw = $('edit-tags').value.trim();
+  const manualTags = tagsRaw
+    ? tagsRaw.split(',').map(t => t.trim().toLowerCase()).filter(Boolean)
+    : [];
+  const checkedAreas = [...document.querySelectorAll('.tag-area-check:checked')]
+    .map(cb => cb.value);
+  const allTags = [...new Set([...checkedAreas, ...manualTags])];
+
+  $('btn-edit').textContent = 'Saving...';
+  $('btn-edit').disabled = true;
+
+  const { error } = await db.from('bookmarks').update({
+    url, title, source_type: sourceType, status, notes, tags: allTags
+  }).eq('id', id);
+
+  if (error) {
+    toast('Update failed');
+    $('btn-edit').textContent = 'Save';
+    $('btn-edit').disabled = false;
+    return;
+  }
+
+  // Sync junction table: delete old, insert new
+  await db.from('bookmark_tags').delete().eq('bookmark_id', id);
+  const junctionRows = checkedAreas
+    .map(name => tagAreas.find(a => a.name === name))
+    .filter(Boolean)
+    .map(a => ({ bookmark_id: id, tag_area_id: a.id }));
+  if (junctionRows.length) {
+    await db.from('bookmark_tags').insert(junctionRows);
+  }
+
+  closeModal();
+  await loadBookmarks();
+  toast('Updated!');
+}
+
+// ── Bulk Actions ──────────────────────────
+
+function toggleSelectMode() {
+  if (selectMode) {
+    exitSelectMode();
+  } else {
+    selectMode = true;
+    selectedIds.clear();
+    $('select-btn').classList.add('active');
+    $('bulk-bar').classList.remove('hidden');
+    updateBulkCount();
+    applyFilters();
+  }
+}
+
+function exitSelectMode() {
+  selectMode = false;
+  selectedIds.clear();
+  $('select-btn').classList.remove('active');
+  $('bulk-bar').classList.add('hidden');
+  applyFilters();
+}
+
+function toggleSelect(id) {
+  if (selectedIds.has(id)) selectedIds.delete(id);
+  else selectedIds.add(id);
+  updateBulkCount();
+  applyFilters();
+}
+
+function updateBulkCount() {
+  const el = $('bulk-count');
+  if (el) el.textContent = `${selectedIds.size} selected`;
+}
+
+function bulkStatusPrompt() {
+  if (!selectedIds.size) { toast('Select bookmarks first'); return; }
+
+  const sheet = $('modal-sheet');
+  sheet.innerHTML = `
+    <div class="handle"></div>
+    <h2>Change Status</h2>
+    <p style="color:var(--text-secondary);font-size:14px;margin-bottom:16px">${selectedIds.size} bookmark${selectedIds.size > 1 ? 's' : ''} selected</p>
+    <div class="modal-btns" style="flex-direction:column">
+      <button class="btn btn-save" onclick="bulkSetStatus('unread')">Set Unread</button>
+      <button class="btn btn-save" style="background:var(--amber)" onclick="bulkSetStatus('reading')">Set Reading</button>
+      <button class="btn btn-save" style="background:var(--teal)" onclick="bulkSetStatus('done')">Set Done</button>
+      <button class="btn btn-cancel" onclick="closeModal()">Cancel</button>
+    </div>`;
+  $('modal-overlay').classList.remove('hidden');
+}
+
+async function bulkSetStatus(status) {
+  const ids = [...selectedIds];
+  closeModal();
+
+  const { error } = await db.from('bookmarks').update({ status }).in('id', ids);
+  if (error) { toast('Bulk update failed'); return; }
+
+  exitSelectMode();
+  await loadBookmarks();
+  if (window.Stats) Stats.loadHistory(db);
+  toast(`${ids.length} bookmark${ids.length > 1 ? 's' : ''} → ${status}`);
+}
+
+async function bulkDelete() {
+  if (!selectedIds.size) { toast('Select bookmarks first'); return; }
+  if (!confirm(`Delete ${selectedIds.size} bookmark${selectedIds.size > 1 ? 's' : ''}?`)) return;
+
+  const ids = [...selectedIds];
+  const { error } = await db.from('bookmarks').delete().in('id', ids);
+  if (error) { toast('Bulk delete failed'); return; }
+
+  exitSelectMode();
+  await loadBookmarks();
+  toast(`Deleted ${ids.length} bookmark${ids.length > 1 ? 's' : ''}`);
 }
 
 // ── Status & Delete ───────────────────────
@@ -458,14 +818,15 @@ async function cycleStatus(id, current) {
   const { error } = await db.from('bookmarks').update({ status: next }).eq('id', id);
   if (error) {
     toast('Update failed');
-    loadBookmarks(); // revert
+    loadBookmarks();
+  } else if (window.Stats) {
+    Stats.loadHistory(db);
   }
 }
 
 async function deleteBookmark(id) {
   if (!confirm('Delete this bookmark?')) return;
 
-  // Optimistic
   allBookmarks = allBookmarks.filter(b => b.id !== id);
   updateStats();
   updateCounts();
@@ -480,12 +841,272 @@ async function deleteBookmark(id) {
   toast('Deleted');
 }
 
+// ── Tag Areas View ────────────────────────
+
+function renderAreasView() {
+  const container = $('areas-view');
+  if (!container) return;
+
+  // Count bookmarks per tag
+  const tagCounts = {};
+  let unsortedCount = 0;
+  for (const bm of allBookmarks) {
+    if (!bm.tags || !bm.tags.length) {
+      unsortedCount++;
+    } else {
+      for (const t of bm.tags) {
+        tagCounts[t] = (tagCounts[t] || 0) + 1;
+      }
+    }
+  }
+
+  let html = `<div class="areas-grid">`;
+
+  // Unsorted card
+  html += `
+    <div class="area-card" onclick="filterByTag('');currentView='list';localStorage.setItem('view','list');applyView();applyFilters()">
+      <span class="area-emoji">📥</span>
+      <span class="area-name">Unsorted</span>
+      <span class="area-count">${unsortedCount}</span>
+    </div>`;
+
+  // Tag area cards
+  for (const area of tagAreas) {
+    const count = tagCounts[area.name] || 0;
+    html += `
+      <div class="area-card" style="border-left:3px solid ${esc(area.color)}" onclick="filterByTag('${esc(area.name)}')">
+        <div class="area-card-header">
+          <span class="area-emoji">${esc(area.emoji)}</span>
+          <div class="area-sort-btns">
+            <button class="area-sort-btn" onclick="event.stopPropagation();moveArea('${area.id}',-1)" title="Move up">▲</button>
+            <button class="area-sort-btn" onclick="event.stopPropagation();moveArea('${area.id}',1)" title="Move down">▼</button>
+          </div>
+        </div>
+        <span class="area-name">${esc(area.name)}</span>
+        <span class="area-count">${count}</span>
+        <button class="area-edit-btn" onclick="event.stopPropagation();showEditAreaModal('${area.id}')">Edit</button>
+      </div>`;
+  }
+
+  // Add new area card
+  html += `
+    <div class="area-card area-card-add" onclick="showAddAreaModal()">
+      <span class="area-emoji">+</span>
+      <span class="area-name">New Area</span>
+    </div>`;
+
+  html += `</div>`;
+  container.innerHTML = html;
+}
+
+// ── Tag Area CRUD ─────────────────────────
+
+function showAddAreaModal() {
+  const sheet = $('modal-sheet');
+  sheet.innerHTML = `
+    <div class="handle"></div>
+    <h2>New Tag Area</h2>
+    <input type="text" id="area-name" placeholder="Area name" autofocus>
+    <input type="text" id="area-emoji" placeholder="Emoji (e.g. 🎬)" maxlength="4" value="📁">
+    <input type="color" id="area-color" value="#6c63ff" style="height:44px">
+    <input type="text" id="area-desc" placeholder="Description (optional)">
+    <div class="modal-btns">
+      <button class="btn btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-save" id="btn-add-area">Create</button>
+    </div>`;
+
+  $('modal-overlay').classList.remove('hidden');
+  $('btn-add-area').addEventListener('click', handleAddArea);
+}
+
+async function handleAddArea() {
+  const name = $('area-name').value.trim();
+  if (!name) { toast('Name is required'); return; }
+
+  const emoji = $('area-emoji').value.trim() || '📁';
+  const color = $('area-color').value;
+  const description = $('area-desc').value.trim() || null;
+  const sort_order = tagAreas.length;
+
+  $('btn-add-area').textContent = 'Creating...';
+  $('btn-add-area').disabled = true;
+
+  const { error } = await db.from('tag_areas').insert({ name, emoji, color, description, sort_order });
+  if (error) {
+    toast(error.message.includes('unique') ? 'Area name already exists' : 'Failed to create');
+    $('btn-add-area').textContent = 'Create';
+    $('btn-add-area').disabled = false;
+    return;
+  }
+
+  closeModal();
+  await loadTagAreas();
+  toast(`Created: ${emoji} ${name}`);
+}
+
+function showEditAreaModal(id) {
+  const area = tagAreas.find(a => a.id === id);
+  if (!area) return;
+
+  const mergeOptions = tagAreas
+    .filter(a => a.id !== id)
+    .map(a => `<option value="${a.id}">${a.emoji} ${esc(a.name)}</option>`)
+    .join('');
+
+  const sheet = $('modal-sheet');
+  sheet.innerHTML = `
+    <div class="handle"></div>
+    <h2>Edit Area</h2>
+    <input type="text" id="area-name" value="${esc(area.name)}">
+    <input type="text" id="area-emoji" value="${esc(area.emoji)}" maxlength="4">
+    <input type="color" id="area-color" value="${esc(area.color)}" style="height:44px">
+    <input type="text" id="area-desc" value="${esc(area.description || '')}" placeholder="Description">
+    <div class="modal-btns">
+      <button class="btn btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-save" id="btn-save-area">Save</button>
+    </div>
+    ${mergeOptions ? `
+      <div class="section-title">Merge into another area</div>
+      <div class="setting-group">
+        <select id="merge-target">
+          <option value="">Select target area...</option>
+          ${mergeOptions}
+        </select>
+        <button class="btn-danger" id="btn-merge-area" style="margin-top:8px">Merge &amp; Delete</button>
+      </div>` : ''}
+    <button class="btn-danger" id="btn-delete-area">Delete Area</button>`;
+
+  $('modal-overlay').classList.remove('hidden');
+
+  $('btn-save-area').addEventListener('click', async () => {
+    const name = $('area-name').value.trim();
+    if (!name) { toast('Name is required'); return; }
+
+    const { error } = await db.from('tag_areas').update({
+      name,
+      emoji: $('area-emoji').value.trim() || '📁',
+      color: $('area-color').value,
+      description: $('area-desc').value.trim() || null
+    }).eq('id', id);
+
+    if (error) { toast('Update failed'); return; }
+    closeModal();
+    await loadTagAreas();
+    await loadBookmarks();
+    toast('Area updated');
+  });
+
+  $('btn-delete-area').addEventListener('click', async () => {
+    if (!confirm(`Delete area "${area.name}"? Bookmarks won't be deleted.`)) return;
+    await db.from('tag_areas').delete().eq('id', id);
+    closeModal();
+    await loadTagAreas();
+    await loadBookmarks();
+    toast('Area deleted');
+  });
+
+  if ($('btn-merge-area')) {
+    $('btn-merge-area').addEventListener('click', async () => {
+      const targetId = $('merge-target').value;
+      if (!targetId) { toast('Select a target area'); return; }
+      if (!confirm(`Merge "${area.name}" into target? This cannot be undone.`)) return;
+
+      // Reassign junction entries
+      const { data: entries } = await db.from('bookmark_tags').select('bookmark_id').eq('tag_area_id', id);
+      if (entries && entries.length) {
+        const rows = entries.map(e => ({ bookmark_id: e.bookmark_id, tag_area_id: targetId }));
+        await db.from('bookmark_tags').upsert(rows, { onConflict: 'bookmark_id,tag_area_id' });
+      }
+
+      // Delete source area (cascade deletes its junction entries)
+      await db.from('tag_areas').delete().eq('id', id);
+
+      closeModal();
+      await loadTagAreas();
+      await loadBookmarks();
+      toast('Areas merged');
+    });
+  }
+}
+
+async function moveArea(id, direction) {
+  const idx = tagAreas.findIndex(a => a.id === id);
+  if (idx < 0) return;
+  const newIdx = idx + direction;
+  if (newIdx < 0 || newIdx >= tagAreas.length) return;
+
+  // Swap sort_order
+  const a = tagAreas[idx];
+  const b = tagAreas[newIdx];
+
+  await db.from('tag_areas').update({ sort_order: newIdx }).eq('id', a.id);
+  await db.from('tag_areas').update({ sort_order: idx }).eq('id', b.id);
+
+  await loadTagAreas();
+}
+
+// ── Re-tag All ────────────────────────────
+
+async function retagAll() {
+  if (!window.AI || !AI.isConfigured()) {
+    toast('Configure AI key in Settings first');
+    return;
+  }
+  if (!tagAreas.length) {
+    toast('Create some tag areas first');
+    return;
+  }
+  if (!confirm(`Re-tag ${allBookmarks.length} bookmarks with AI? This may take a while.`)) return;
+
+  const progressEl = document.createElement('div');
+  progressEl.className = 'retag-progress';
+  progressEl.innerHTML = `<div class="retag-bar"><div class="retag-fill" id="retag-fill"></div></div><span id="retag-text">0/${allBookmarks.length}</span>`;
+  $('dashboard').insertBefore(progressEl, $('bookmarks-list'));
+
+  await AI.retagAll(allBookmarks, tagAreas, async (done, total, bm, result) => {
+    const fill = $('retag-fill');
+    const text = $('retag-text');
+    if (fill) fill.style.width = `${(done / total) * 100}%`;
+    if (text) text.textContent = `${done}/${total}`;
+
+    if (result && result.tags && result.tags.length) {
+      const matchedAreas = result.tags
+        .map(name => tagAreas.find(a => a.name.toLowerCase() === name.toLowerCase()))
+        .filter(Boolean);
+      if (matchedAreas.length) {
+        const rows = matchedAreas.map(a => ({ bookmark_id: bm.id, tag_area_id: a.id }));
+        await db.from('bookmark_tags').upsert(rows, { onConflict: 'bookmark_id,tag_area_id' });
+      }
+    }
+  });
+
+  progressEl.remove();
+  await loadBookmarks();
+  toast('Re-tag complete!');
+}
+
+// ── Stats Modal ───────────────────────────
+
+async function showStatsModal() {
+  if (!window.Stats) return;
+
+  await Stats.loadHistory(db);
+  const stats = Stats.computeStats(allBookmarks, tagAreas);
+
+  const sheet = $('modal-sheet');
+  sheet.innerHTML = Stats.renderStatsModal(stats);
+  $('modal-overlay').classList.remove('hidden');
+}
+
 // ── Settings Modal ────────────────────────
 
 function showSettingsModal() {
   const sbUrl = localStorage.getItem('sb_url') || '';
   const sbKey = localStorage.getItem('sb_key') || '';
   const bookmarkletCode = generateBookmarklet(sbUrl, sbKey);
+
+  const aiKey = window.AI ? AI.getKey() : '';
+  const aiModel = window.AI ? AI.getModel() : '';
 
   const sheet = $('modal-sheet');
   sheet.innerHTML = `
@@ -505,6 +1126,24 @@ function showSettingsModal() {
       <button class="btn btn-cancel" onclick="closeModal()">Cancel</button>
       <button class="btn btn-save" id="btn-save-settings">Save</button>
     </div>
+
+    <!-- AI Settings -->
+    <div class="section-title">AI Tag Suggestions (OpenRouter)</div>
+    <div class="setting-group">
+      <label>API Key</label>
+      <input type="password" id="set-ai-key" value="${esc(aiKey)}" placeholder="sk-or-...">
+    </div>
+    <div class="setting-group">
+      <label>Model</label>
+      <select id="set-ai-model">
+        <option value="z-ai/glm-4.5-air:free" ${aiModel === 'z-ai/glm-4.5-air:free' ? 'selected' : ''}>GLM-4.5 Air (Free)</option>
+        <option value="google/gemini-2.0-flash-exp:free" ${aiModel === 'google/gemini-2.0-flash-exp:free' ? 'selected' : ''}>Gemini 2.0 Flash (Free)</option>
+        <option value="meta-llama/llama-3.1-8b-instruct:free" ${aiModel === 'meta-llama/llama-3.1-8b-instruct:free' ? 'selected' : ''}>Llama 3.1 8B (Free)</option>
+        <option value="openai/gpt-4o-mini" ${aiModel === 'openai/gpt-4o-mini' ? 'selected' : ''}>GPT-4o Mini</option>
+      </select>
+    </div>
+    <button class="btn btn-save" id="btn-save-ai" style="width:100%;margin-top:4px">Save AI Settings</button>
+    <button class="btn btn-cancel" id="btn-retag-all" style="width:100%;margin-top:8px;background:var(--primary-dim);color:var(--primary)">Re-tag All Bookmarks with AI</button>
 
     <button class="btn-danger" id="btn-reset">Reset App</button>
 
@@ -558,6 +1197,18 @@ function showSettingsModal() {
     toast('Settings saved');
   });
 
+  $('btn-save-ai').addEventListener('click', () => {
+    if (window.AI) {
+      AI.saveSettings($('set-ai-key').value.trim(), $('set-ai-model').value);
+      toast('AI settings saved');
+    }
+  });
+
+  $('btn-retag-all').addEventListener('click', () => {
+    closeModal();
+    retagAll();
+  });
+
   $('btn-reset').addEventListener('click', () => {
     if (confirm('Disconnect and reset the app?')) {
       localStorage.clear();
@@ -577,7 +1228,6 @@ function showSettingsModal() {
 // ── Bookmarklet Generator ─────────────────
 
 function generateBookmarklet(sbUrl, sbKey) {
-  // Minified bookmarklet that grabs page URL + title, POSTs to Supabase, shows toast
   return `javascript:void(function(){var u=location.href,t=document.title;fetch('${sbUrl}/rest/v1/bookmarks',{method:'POST',headers:{'apikey':'${sbKey}','Authorization':'Bearer ${sbKey}','Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({url:u,title:t})}).then(function(r){var d=document.createElement('div');d.style.cssText='position:fixed;top:20px;right:20px;padding:14px 24px;border-radius:12px;font:600 14px -apple-system,system-ui,sans-serif;z-index:2147483647;box-shadow:0 4px 24px rgba(0,0,0,.3);transition:opacity .3s;';if(r.ok){d.style.background='%236c63ff';d.style.color='%23fff';d.textContent='\\u2713 Saved to ContentDeck'}else{d.style.background='%23ff6b6b';d.style.color='%23fff';d.textContent='\\u2717 Failed to save'}document.body.appendChild(d);setTimeout(function(){d.style.opacity='0';setTimeout(function(){d.remove()},300)},2e3)})})()`;
 }
 

@@ -1,5 +1,5 @@
 /* ══════════════════════════════════════════
-   ContentDeck v2 — Styles
+   ContentDeck v3 — Styles
    ══════════════════════════════════════════ */
 
 *, *::before, *::after {
@@ -179,6 +179,7 @@ header h1 {
 
 .icon-btn:hover { background: var(--surface); color: var(--text); }
 .icon-btn:active { background: var(--surface-hover); }
+.icon-btn.active { color: var(--primary); background: var(--primary-dim); }
 
 /* ── Stats Bar ────────────────────────── */
 
@@ -189,7 +190,11 @@ header h1 {
   padding: 0 20px 8px;
   font-size: 13px;
   color: var(--text-secondary);
+  cursor: pointer;
+  transition: opacity 0.2s;
 }
+
+.stats-bar:hover { opacity: 0.8; }
 
 .stats-bar .stat {
   display: flex;
@@ -206,6 +211,209 @@ header h1 {
 .stats-bar .stat-num.unread { color: var(--primary); }
 .stats-bar .stat-num.reading { color: var(--amber); }
 .stats-bar .stat-num.done { color: var(--teal); }
+
+/* ── Areas View ──────────────────────── */
+
+.areas-view {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 16px;
+  padding-bottom: calc(88px + var(--safe-bottom));
+  -webkit-overflow-scrolling: touch;
+}
+
+.areas-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+@media (min-width: 768px) {
+  .areas-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (min-width: 1200px) {
+  .areas-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+.area-card {
+  background: var(--surface);
+  border: 1px solid transparent;
+  border-radius: 14px;
+  padding: 16px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, transform 0.15s;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  position: relative;
+  animation: cardIn 0.25s ease both;
+}
+
+.area-card:hover {
+  border-color: var(--border);
+  background: var(--surface-hover);
+}
+
+.area-card:active { transform: scale(0.97); }
+
+.area-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.area-emoji {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.area-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.area-count {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.area-edit-btn {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  background: none;
+  border: none;
+  color: var(--text-tertiary);
+  font-size: 11px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s, color 0.2s;
+}
+
+.area-card:hover .area-edit-btn { opacity: 1; }
+.area-edit-btn:hover { color: var(--primary); }
+
+.area-sort-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.area-card:hover .area-sort-btns { opacity: 1; }
+
+.area-sort-btn {
+  background: none;
+  border: none;
+  color: var(--text-tertiary);
+  font-size: 10px;
+  cursor: pointer;
+  padding: 1px 4px;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.area-sort-btn:hover { color: var(--primary); }
+
+.area-card-add {
+  border: 2px dashed var(--border);
+  background: transparent;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 100px;
+}
+
+.area-card-add .area-emoji {
+  font-size: 32px;
+  color: var(--text-tertiary);
+}
+
+.area-card-add .area-name { color: var(--text-tertiary); }
+.area-card-add:hover { border-color: var(--primary); }
+.area-card-add:hover .area-emoji,
+.area-card-add:hover .area-name { color: var(--primary); }
+
+/* ── Bulk Bar ─────────────────────────── */
+
+.bulk-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  animation: fadeIn 0.15s ease;
+}
+
+.bulk-bar span {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.bulk-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.btn-bulk {
+  padding: 6px 14px;
+  border: none;
+  border-radius: 8px;
+  background: var(--primary-dim);
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-bulk:hover { background: var(--primary-glow); }
+
+.btn-bulk-danger {
+  background: rgba(255, 107, 107, 0.1);
+  color: var(--danger);
+}
+
+.btn-bulk-danger:hover { background: rgba(255, 107, 107, 0.2); }
+
+.bulk-check {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary);
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.bookmark-card.select-active { cursor: pointer; }
+
+/* ── Sort Select ──────────────────────── */
+
+.sort-select {
+  padding: 5px 28px 5px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' fill='%237c7c96' viewBox='0 0 16 16'%3E%3Cpath d='M8 12L2 6h12z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  transition: border-color 0.2s;
+}
+
+.sort-select:hover { border-color: var(--primary); }
+.sort-select option { background: var(--surface); }
 
 /* ── Search ───────────────────────────── */
 
@@ -536,6 +744,27 @@ main {
   padding-top: 1px;
 }
 
+/* ── Edit Button ──────────────────────── */
+
+.edit-btn {
+  background: none;
+  border: none;
+  color: var(--text-tertiary);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 2px 4px;
+  transition: color 0.2s;
+  opacity: 0;
+}
+
+.bookmark-card:hover .edit-btn { opacity: 0.6; }
+.edit-btn:hover { color: var(--primary); opacity: 1 !important; }
+
+/* On mobile, always show edit button */
+@media (max-width: 767px) {
+  .edit-btn { opacity: 0.5; }
+}
+
 .status-badge {
   padding: 4px 9px;
   border-radius: 6px;
@@ -653,6 +882,7 @@ main {
   background: var(--border);
   border-radius: 2px;
   margin: 0 auto 14px;
+  cursor: grab;
 }
 
 .modal-sheet h2 {
@@ -749,6 +979,42 @@ main {
 }
 
 .btn-danger:hover { background: rgba(255, 107, 107, 0.15); }
+
+/* ── Tag Area Checkboxes (in modals) ──── */
+
+.tag-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.tag-check-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.tag-check-label:has(input:checked) {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--primary-dim);
+}
+
+.tag-check-label input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  accent-color: var(--primary);
+  margin: 0;
+}
 
 /* ── Settings Sections ────────────────── */
 
@@ -857,6 +1123,161 @@ main {
   margin-top: 6px;
 }
 
+/* ── AI Suggestion Bar ────────────────── */
+
+.ai-suggest-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: var(--primary-dim);
+  border-radius: 10px;
+  margin: 0 16px 8px;
+  font-size: 13px;
+  color: var(--text);
+  animation: fadeIn 0.25s ease;
+}
+
+.ai-suggest-bar span { flex: 1; }
+
+.btn-ai-accept {
+  padding: 5px 14px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-ai-dismiss {
+  padding: 5px 10px;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.btn-ai-dismiss:hover { color: var(--text); }
+
+/* ── Re-tag Progress ──────────────────── */
+
+.retag-progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.retag-bar {
+  flex: 1;
+  height: 6px;
+  background: var(--surface);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.retag-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--primary);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+/* ── Stats Modal ──────────────────────── */
+
+.stat-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.stat-card {
+  background: var(--bg);
+  border-radius: 12px;
+  padding: 14px;
+  text-align: center;
+}
+
+.stat-card-num {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--primary);
+  line-height: 1.1;
+}
+
+.stat-card-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 4px;
+  font-weight: 600;
+}
+
+/* 30-day bar chart */
+.stats-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 80px;
+  padding: 8px 0;
+  margin-bottom: 8px;
+}
+
+.chart-bar-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  justify-content: flex-end;
+}
+
+.chart-bar {
+  width: 100%;
+  background: var(--primary);
+  border-radius: 2px 2px 0 0;
+  min-height: 2px;
+  transition: height 0.3s ease;
+  opacity: 0.7;
+}
+
+.chart-bar-wrap:hover .chart-bar { opacity: 1; }
+
+.chart-label {
+  font-size: 8px;
+  color: var(--text-tertiary);
+  margin-top: 3px;
+}
+
+/* Tag stats breakdown */
+.tag-stats {
+  margin-bottom: 8px;
+}
+
+.tag-stat-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border);
+}
+
+.tag-stat-row:last-child { border-bottom: none; }
+
+.tag-stat-count {
+  font-weight: 700;
+  color: var(--teal);
+}
+
 /* ── Toast ────────────────────────────── */
 
 .toast {
@@ -908,8 +1329,9 @@ main {
 
 /* ── Scrollbar ────────────────────────── */
 
-main::-webkit-scrollbar { width: 3px; }
-main::-webkit-scrollbar-track { background: transparent; }
-main::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+main, .modal-sheet, .areas-view { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+main::-webkit-scrollbar, .areas-view::-webkit-scrollbar { width: 3px; }
+main::-webkit-scrollbar-track, .areas-view::-webkit-scrollbar-track { background: transparent; }
+main::-webkit-scrollbar-thumb, .areas-view::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 .modal-sheet::-webkit-scrollbar { width: 3px; }
 .modal-sheet::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
