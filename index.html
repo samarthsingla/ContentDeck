@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0a0a0f">
+  <title>ContentDeck</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ── Setup Screen ── -->
+  <div id="setup-screen" class="screen">
+    <div class="setup-container">
+      <div class="setup-logo">📑</div>
+      <h1>ContentDeck</h1>
+      <p class="setup-subtitle">Your personal content dashboard</p>
+
+      <div class="setup-form">
+        <input type="url" id="setup-url" placeholder="Supabase Project URL" autocomplete="off">
+        <input type="text" id="setup-key" placeholder="Supabase Anon Key" autocomplete="off">
+        <button id="setup-save">Connect</button>
+      </div>
+
+      <details class="setup-help">
+        <summary>How do I get these?</summary>
+        <ol>
+          <li>Go to <strong>supabase.com</strong> and create a free account</li>
+          <li>Create a new project (any name, any region)</li>
+          <li>Go to <strong>SQL Editor</strong> and run the <code>setup.sql</code> script</li>
+          <li>Go to <strong>Settings &gt; API</strong></li>
+          <li>Copy the <strong>Project URL</strong> and <strong>anon public</strong> key</li>
+          <li>Paste them above and hit Connect</li>
+        </ol>
+      </details>
+    </div>
+  </div>
+
+  <!-- ── Main Dashboard ── -->
+  <div id="dashboard" class="screen hidden">
+    <header>
+      <h1>ContentDeck</h1>
+      <div class="header-actions">
+        <button id="settings-btn" class="icon-btn" aria-label="Settings">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.32 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Stats Bar -->
+    <div id="stats-bar" class="stats-bar"></div>
+
+    <!-- Search -->
+    <div class="search-wrap">
+      <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="search" id="search-input" placeholder="Search bookmarks..." autocomplete="off">
+    </div>
+
+    <!-- Source Tabs -->
+    <nav class="tabs" id="source-tabs">
+      <button class="tab active" data-source="all">All <span class="count"></span></button>
+      <button class="tab" data-source="youtube">YouTube <span class="count"></span></button>
+      <button class="tab" data-source="twitter">Twitter <span class="count"></span></button>
+      <button class="tab" data-source="linkedin">LinkedIn <span class="count"></span></button>
+      <button class="tab" data-source="substack">Substack <span class="count"></span></button>
+      <button class="tab" data-source="blog">Blogs <span class="count"></span></button>
+      <button class="tab" data-source="book">Books <span class="count"></span></button>
+    </nav>
+
+    <!-- Status Filters -->
+    <div class="filter-row">
+      <div class="status-filters" id="status-filters">
+        <button class="status-filter active" data-status="unread">Unread</button>
+        <button class="status-filter" data-status="reading">Reading</button>
+        <button class="status-filter" data-status="done">Done</button>
+        <button class="status-filter" data-status="all">All</button>
+      </div>
+      <div id="active-tag" class="active-tag hidden"></div>
+    </div>
+
+    <!-- Bookmarks -->
+    <main id="bookmarks-list"></main>
+
+    <!-- FAB -->
+    <button id="add-btn" class="fab" aria-label="Add bookmark">+</button>
+  </div>
+
+  <!-- ── Modal ── -->
+  <div id="modal-overlay" class="modal-overlay hidden">
+    <div class="modal-sheet" id="modal-sheet"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="app.js"></script>
+</body>
+</html>
