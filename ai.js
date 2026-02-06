@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════
-// ContentDeck v3.5 — AI Integration (OpenRouter)
+// ContentDeck v4.0 — AI Integration (OpenRouter)
 // https://github.com/aditya30103/ContentDeck
 // ═══════════════════════════════════════════
 

@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════
-// ContentDeck v3.5 — Reading Stats
+// ContentDeck v4.0 — Reading Stats
 // https://github.com/aditya30103/ContentDeck
 // ═══════════════════════════════════════════
 

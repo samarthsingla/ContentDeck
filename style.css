@@ -1,5 +1,5 @@
 /* ══════════════════════════════════════════
-   ContentDeck v3.5 — Styles
+   ContentDeck v4.0 — Styles
    https://github.com/aditya30103/ContentDeck
    ══════════════════════════════════════════ */
 
@@ -770,6 +770,15 @@ main {
 
 .bookmark-meta .dot { opacity: 0.35; }
 
+.duration-badge {
+  background: rgba(255, 68, 68, 0.15);
+  color: var(--youtube);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
 .bookmark-notes {
   font-size: 12px;
   color: var(--text-tertiary);
@@ -813,6 +822,7 @@ main {
 
 /* ── Edit Button ──────────────────────── */
 
+.refresh-btn,
 .edit-btn {
   background: none;
   border: none;
@@ -820,15 +830,20 @@ main {
   font-size: 14px;
   cursor: pointer;
   padding: 2px 4px;
-  transition: color 0.2s;
+  transition: color 0.2s, transform 0.2s;
   opacity: 0;
 }
 
+.bookmark-card:hover .refresh-btn,
 .bookmark-card:hover .edit-btn { opacity: 0.6; }
+.refresh-btn:hover,
 .edit-btn:hover { color: var(--primary); opacity: 1 !important; }
 
-/* On mobile, always show edit button */
+.refresh-btn:active { transform: rotate(180deg); }
+
+/* On mobile, always show action buttons */
 @media (max-width: 767px) {
+  .refresh-btn,
   .edit-btn { opacity: 0.5; }
 }
 
@@ -1497,3 +1512,341 @@ main::-webkit-scrollbar-track, .areas-view::-webkit-scrollbar-track { background
 main::-webkit-scrollbar-thumb, .areas-view::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 .modal-sheet::-webkit-scrollbar { width: 3px; }
 .modal-sheet::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* ══════════════════════════════════════════
+   Detail Drawer (Slide-in from Right)
+   ══════════════════════════════════════════ */
+
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 1000;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.drawer-overlay.show {
+  opacity: 1;
+}
+
+.detail-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  max-width: 480px;
+  background: var(--bg);
+  z-index: 1001;
+  transform: translateX(100%);
+  transition: transform 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--border);
+}
+
+.detail-drawer.show {
+  transform: translateX(0);
+}
+
+.drawer-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: 24px;
+  cursor: pointer;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, color 0.2s;
+}
+
+.drawer-close:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.drawer-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  padding-top: 60px;
+}
+
+/* ── Drawer Header ─────────────────────── */
+
+.drawer-thumb {
+  width: 100%;
+  aspect-ratio: 16/9;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--surface);
+  margin-bottom: 16px;
+}
+
+.drawer-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.drawer-thumb.no-image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+}
+
+.drawer-title {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.35;
+  margin-bottom: 8px;
+  color: var(--text);
+}
+
+.drawer-title a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.drawer-title a:hover {
+  color: var(--primary);
+}
+
+.drawer-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+
+.drawer-meta .favicon {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+}
+
+.drawer-meta .source-pill {
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.drawer-meta .source-pill.youtube { background: rgba(255, 68, 68, 0.15); color: var(--youtube); }
+.drawer-meta .source-pill.twitter { background: rgba(29, 161, 242, 0.15); color: var(--twitter); }
+.drawer-meta .source-pill.linkedin { background: rgba(10, 102, 194, 0.15); color: var(--linkedin); }
+.drawer-meta .source-pill.substack { background: rgba(255, 103, 25, 0.15); color: var(--substack); }
+.drawer-meta .source-pill.blog { background: rgba(78, 205, 196, 0.15); color: var(--teal); }
+.drawer-meta .source-pill.book { background: rgba(245, 166, 35, 0.15); color: var(--amber); }
+
+.drawer-status {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  cursor: pointer;
+  border: none;
+  transition: transform 0.15s;
+}
+
+.drawer-status:active { transform: scale(0.95); }
+.drawer-status.unread { background: rgba(108, 99, 255, 0.15); color: var(--primary); }
+.drawer-status.reading { background: rgba(245, 166, 35, 0.15); color: var(--amber); }
+.drawer-status.done { background: rgba(78, 205, 196, 0.15); color: var(--teal); }
+
+/* ── Drawer Sections ───────────────────── */
+
+.drawer-section {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.drawer-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-tertiary);
+  margin-bottom: 12px;
+}
+
+.drawer-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.drawer-excerpt {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+/* ── Drawer Notes ──────────────────────── */
+
+.drawer-notes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.drawer-note {
+  padding: 12px;
+  background: var(--surface);
+  border-radius: 10px;
+  border-left: 3px solid var(--primary);
+}
+
+.drawer-note.insight { border-left-color: #ffd700; }
+.drawer-note.question { border-left-color: #ff6b6b; }
+.drawer-note.highlight { border-left-color: #4ecdc4; }
+.drawer-note.action { border-left-color: #6c63ff; }
+
+.drawer-note-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.drawer-note-type {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.drawer-note-time {
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+.drawer-note-content {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.drawer-add-note {
+  margin-top: 12px;
+}
+
+.drawer-add-note textarea {
+  width: 100%;
+  padding: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-size: 14px;
+  resize: vertical;
+  min-height: 80px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.drawer-add-note textarea:focus {
+  border-color: var(--primary);
+}
+
+.drawer-note-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.note-type-btn {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.note-type-btn:hover,
+.note-type-btn.active {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.btn-add-note {
+  margin-left: auto;
+  padding: 8px 16px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.btn-add-note:hover {
+  opacity: 0.9;
+}
+
+/* ── Drawer Actions ────────────────────── */
+
+.drawer-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.drawer-actions .btn {
+  flex: 1;
+  padding: 12px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.2s;
+}
+
+.drawer-actions .btn-edit {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.drawer-actions .btn-open {
+  background: var(--primary);
+  color: white;
+}
+
+.drawer-actions .btn-delete {
+  background: rgba(255, 107, 107, 0.15);
+  color: var(--danger);
+}
+
+/* ── Responsive ────────────────────────── */
+
+@media (max-width: 480px) {
+  .detail-drawer {
+    max-width: 100%;
+  }
+}

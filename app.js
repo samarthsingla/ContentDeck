@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════
-// ContentDeck v3.5 — Personal Content Dashboard
+// ContentDeck v4.0 — Personal Content Dashboard
 // https://github.com/aditya30103/ContentDeck
 // ═══════════════════════════════════════════
 
@@ -271,33 +271,101 @@ async function loadTagAreas() {
 // ── Auto Metadata Fetching (Title + Image) ──
 
 async function autoFetchMissingMetadata() {
-  const needsMetadata = allBookmarks.filter(b => !b.title || !b.image);
-  if (!needsMetadata.length) return;
+  // Check for missing title, image, or YouTube-specific fields
+  const needsMetadata = allBookmarks.filter(b =>
+    !b.title || !b.image ||
+    (b.source_type === 'youtube' && !b.duration)
+  );
+  if (!needsMetadata.length) {
+    console.log('Auto-fetch: All bookmarks have metadata');
+    return;
+  }
 
-  let updated = false;
+  console.log(`Auto-fetch: ${needsMetadata.length} bookmarks need metadata`);
+  let updated = 0;
 
   for (const b of needsMetadata) {
-    const meta = await fetchMetadata(b.url, b.source_type);
-    const updates = {};
-    if (!b.title && meta.title) updates.title = meta.title;
-    if (!b.image && meta.image) updates.image = meta.image;
+    try {
+      const meta = await fetchMetadata(b.url, b.source_type);
+      const updates = {};
+      if (!b.title && meta.title) updates.title = meta.title;
+      if (!b.image && meta.image) updates.image = meta.image;
+      if (!b.duration && meta.duration) updates.duration = meta.duration;
+      if (!b.channel && meta.channel) updates.channel = meta.channel;
 
-    if (Object.keys(updates).length) {
-      await db.from('bookmarks').update(updates).eq('id', b.id);
-      Object.assign(b, updates);
-      updated = true;
+      if (Object.keys(updates).length) {
+        const { error } = await db.from('bookmarks').update(updates).eq('id', b.id);
+        if (!error) {
+          Object.assign(b, updates);
+          updated++;
+        }
+      }
+    } catch (e) {
+      console.warn('Auto-fetch failed for', b.url, e);
     }
   }
 
-  if (updated) applyFilters();
+  if (updated) {
+    console.log(`Auto-fetch: Updated ${updated} bookmarks`);
+    applyFilters();
+  }
+}
+
+// YouTube API key (stored in settings)
+const YT_API_KEY = 'AIzaSyD-ehlrtDUos9il83eTs1AQVbDQKXuP7Fw';
+
+function extractYouTubeId(url) {
+  const patterns = [
+    /youtube\.com\/watch\?v=([^&]+)/,
+    /youtu\.be\/([^?]+)/,
+    /youtube\.com\/embed\/([^?]+)/,
+    /youtube\.com\/v\/([^?]+)/,
+    /youtube\.com\/shorts\/([^?]+)/
+  ];
+  for (const p of patterns) {
+    const m = url.match(p);
+    if (m) return m[1];
+  }
+  return null;
+}
+
+function parseYouTubeDuration(iso) {
+  // PT1H2M3S → 1:02:03 or PT5M30S → 5:30
+  const match = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+  if (!match) return null;
+  const h = parseInt(match[1] || 0);
+  const m = parseInt(match[2] || 0);
+  const s = parseInt(match[3] || 0);
+  if (h > 0) return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
 async function fetchMetadata(url, sourceType) {
-  const result = { title: null, image: null };
+  const result = { title: null, image: null, duration: null, channel: null };
 
   try {
-    // YouTube: get thumbnail from oembed
+    // YouTube: use Data API for rich metadata
     if (sourceType === 'youtube' || /youtube\.com|youtu\.be/i.test(url)) {
+      const videoId = extractYouTubeId(url);
+      if (videoId && YT_API_KEY) {
+        const resp = await fetch(
+          `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${videoId}&key=${YT_API_KEY}`
+        );
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data.items && data.items[0]) {
+            const item = data.items[0];
+            result.title = item.snippet.title;
+            result.channel = item.snippet.channelTitle;
+            result.image = item.snippet.thumbnails?.maxres?.url
+              || item.snippet.thumbnails?.high?.url
+              || item.snippet.thumbnails?.medium?.url;
+            result.duration = parseYouTubeDuration(item.contentDetails.duration);
+            return result;
+          }
+        }
+      }
+      // Fallback to oembed if Data API fails
       const resp = await fetch(
         `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`
       );
@@ -538,15 +606,14 @@ function renderBookmarks(bookmarks) {
             <div class="source-badge ${esc(b.source_type)}">${src.icon}</div>
           </div>` : `
           <div class="source-icon ${esc(b.source_type)}">${src.icon}</div>`}
-        <div class="bookmark-body">
-          <div class="bookmark-title">
-            <a href="${esc(b.url)}" target="_blank" rel="noopener" ${selectMode ? 'onclick="event.preventDefault()"' : ''}>${title}</a>
-          </div>
+        <div class="bookmark-body" onclick="${selectMode ? '' : `event.stopPropagation();showDrawer('${b.id}')`}" style="cursor:${selectMode ? 'default' : 'pointer'}">
+          <div class="bookmark-title">${title}</div>
           <div class="bookmark-meta">
             ${faviconUrl ? `<img class="favicon" src="${faviconUrl}" alt="${esc(host)}" loading="lazy" onerror="this.style.display='none'">` : ''}
-            <span>${esc(host)}</span>
+            <span>${b.channel ? esc(b.channel) : esc(host)}</span>
             <span class="dot">&middot;</span>
             <span>${time}</span>
+            ${b.duration ? `<span class="dot">&middot;</span><span class="duration-badge">${esc(b.duration)}</span>` : ''}
           </div>
           ${notes ? `<div class="bookmark-notes">${esc(notes)}</div>` : ''}
           ${tags.length ? `<div class="bookmark-tags">${tags.map(t =>
@@ -554,6 +621,7 @@ function renderBookmarks(bookmarks) {
           ).join('')}</div>` : ''}
         </div>
         <div class="bookmark-actions">
+          <button class="refresh-btn" onclick="event.stopPropagation();refreshMetadata('${b.id}')" title="Refresh metadata">↻</button>
           <button class="edit-btn" onclick="event.stopPropagation();showEditModal('${b.id}')" title="Edit">✎</button>
           <button class="status-badge ${esc(b.status)}"
                   onclick="event.stopPropagation();cycleStatus('${b.id}','${b.status}')">${b.status}</button>
@@ -678,6 +746,19 @@ async function handleAdd() {
 
   closeModal();
   await loadBookmarks();
+
+  // Fetch metadata (image) for the new bookmark in background
+  if (data && data[0]) {
+    const bm = data[0];
+    fetchMetadata(bm.url, bm.source_type).then(async meta => {
+      if (meta.image) {
+        await db.from('bookmarks').update({ image: meta.image }).eq('id', bm.id);
+        // Update local cache and re-render
+        const local = allBookmarks.find(b => b.id === bm.id);
+        if (local) { local.image = meta.image; applyFilters(); }
+      }
+    });
+  }
 
   // AI tag suggestion with indicator
   if (data && data[0] && window.AI && AI.isConfigured() && tagAreas.length && !checkedAreas.length) {
@@ -961,6 +1042,38 @@ async function deleteBookmark(id) {
     return;
   }
   toast('Deleted');
+}
+
+async function refreshMetadata(id) {
+  const bm = allBookmarks.find(b => b.id === id);
+  if (!bm) return;
+
+  toast('Fetching metadata...');
+
+  try {
+    const meta = await fetchMetadata(bm.url, bm.source_type);
+    const updates = {};
+
+    if (meta.title) updates.title = meta.title;
+    if (meta.image) updates.image = meta.image;
+    if (meta.duration) updates.duration = meta.duration;
+    if (meta.channel) updates.channel = meta.channel;
+
+    if (Object.keys(updates).length) {
+      const { error } = await db.from('bookmarks').update(updates).eq('id', id);
+      if (error) {
+        toast('Update failed');
+        return;
+      }
+      Object.assign(bm, updates);
+      applyFilters();
+      toast('Metadata updated!');
+    } else {
+      toast('No metadata found');
+    }
+  } catch (e) {
+    toast('Fetch failed');
+  }
 }
 
 // ── Tag Areas View ────────────────────────
@@ -1487,6 +1600,174 @@ function $(id) { return document.getElementById(id); }
 
 function closeModal() {
   $('modal-overlay').classList.add('hidden');
+}
+
+// ── Detail Drawer ─────────────────────────
+
+let currentDrawerBookmark = null;
+
+function showDrawer(id) {
+  const bm = allBookmarks.find(b => b.id === id);
+  if (!bm) return;
+
+  currentDrawerBookmark = bm;
+  renderDrawerContent(bm);
+
+  $('drawer-overlay').classList.remove('hidden');
+  $('detail-drawer').classList.remove('hidden');
+
+  // Trigger animation
+  requestAnimationFrame(() => {
+    $('drawer-overlay').classList.add('show');
+    $('detail-drawer').classList.add('show');
+  });
+
+  // Close on overlay click
+  $('drawer-overlay').onclick = closeDrawer;
+
+  // Close on Escape
+  document.addEventListener('keydown', handleDrawerEscape);
+}
+
+function closeDrawer() {
+  $('drawer-overlay').classList.remove('show');
+  $('detail-drawer').classList.remove('show');
+
+  setTimeout(() => {
+    $('drawer-overlay').classList.add('hidden');
+    $('detail-drawer').classList.add('hidden');
+  }, 300);
+
+  document.removeEventListener('keydown', handleDrawerEscape);
+  currentDrawerBookmark = null;
+}
+
+function handleDrawerEscape(e) {
+  if (e.key === 'Escape') closeDrawer();
+}
+
+function renderDrawerContent(bm) {
+  const src = SOURCE[bm.source_type] || SOURCE.blog;
+  const host = hostname(bm.url);
+  const time = timeAgo(bm.created_at);
+  const faviconUrl = host
+    ? `https://www.google.com/s2/favicons?domain=${encodeURIComponent(host)}&sz=32`
+    : '';
+
+  const sourceLabel = {
+    youtube: 'YouTube', twitter: 'Twitter', linkedin: 'LinkedIn',
+    substack: 'Substack', blog: 'Blog', book: 'Book'
+  };
+
+  // Notes will be loaded from bookmark_notes table later
+  const notesHtml = bm.notes
+    ? `<div class="drawer-note">
+         <div class="drawer-note-content">${esc(bm.notes)}</div>
+       </div>`
+    : '<p style="color:var(--text-tertiary);font-size:13px">No notes yet. Add your thoughts below.</p>';
+
+  const tagsHtml = (bm.tags || []).map(t =>
+    `<button class="tag-pill" onclick="filterByTag('${esc(t)}');closeDrawer()">${esc(t)}</button>`
+  ).join('') || '<span style="color:var(--text-tertiary);font-size:13px">No tags</span>';
+
+  $('drawer-content').innerHTML = `
+    ${bm.image ? `
+      <div class="drawer-thumb">
+        <img src="${esc(bm.image)}" alt="" onerror="this.parentElement.classList.add('no-image');this.parentElement.innerHTML='${src.icon}'">
+      </div>
+    ` : `
+      <div class="drawer-thumb no-image">${src.icon}</div>
+    `}
+
+    <h2 class="drawer-title">
+      <a href="${esc(bm.url)}" target="_blank" rel="noopener">${esc(bm.title || host || bm.url)}</a>
+    </h2>
+
+    <div class="drawer-meta">
+      ${faviconUrl ? `<img class="favicon" src="${faviconUrl}" alt="" onerror="this.style.display='none'">` : ''}
+      <span>${bm.channel ? esc(bm.channel) : esc(host)}</span>
+      <span style="opacity:0.3">&middot;</span>
+      <span>${time}</span>
+      ${bm.duration ? `<span style="opacity:0.3">&middot;</span><span class="duration-badge">${esc(bm.duration)}</span>` : ''}
+      <span class="source-pill ${esc(bm.source_type)}">${sourceLabel[bm.source_type] || 'Blog'}</span>
+      <button class="drawer-status ${esc(bm.status)}" onclick="cycleDrawerStatus()">${bm.status}</button>
+    </div>
+
+    <div class="drawer-section">
+      <div class="drawer-section-title">Tags</div>
+      <div class="drawer-tags">${tagsHtml}</div>
+    </div>
+
+    <div class="drawer-section">
+      <div class="drawer-section-title">Notes & Reflections</div>
+      <div class="drawer-notes-list" id="drawer-notes-list">
+        ${notesHtml}
+      </div>
+      <div class="drawer-add-note">
+        <textarea id="drawer-note-input" placeholder="Add a note, insight, or question..."></textarea>
+        <div class="drawer-note-actions">
+          <button class="note-type-btn active" data-type="note">Note</button>
+          <button class="note-type-btn" data-type="insight">Insight</button>
+          <button class="note-type-btn" data-type="question">Question</button>
+          <button class="note-type-btn" data-type="highlight">Highlight</button>
+          <button class="btn-add-note" onclick="addDrawerNote()">Add</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="drawer-actions">
+      <button class="btn btn-edit" onclick="closeDrawer();showEditModal('${bm.id}')">Edit</button>
+      <button class="btn btn-open" onclick="window.open('${esc(bm.url)}','_blank')">Open Link</button>
+      <button class="btn btn-delete" onclick="if(confirm('Delete?')){closeDrawer();deleteBookmark('${bm.id}')}">Delete</button>
+    </div>
+  `;
+
+  // Note type button handling
+  document.querySelectorAll('.note-type-btn').forEach(btn => {
+    btn.onclick = () => {
+      document.querySelectorAll('.note-type-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    };
+  });
+}
+
+async function cycleDrawerStatus() {
+  if (!currentDrawerBookmark) return;
+  const order = ['unread', 'reading', 'done'];
+  const idx = order.indexOf(currentDrawerBookmark.status);
+  const next = order[(idx + 1) % 3];
+
+  const { error } = await db.from('bookmarks').update({ status: next }).eq('id', currentDrawerBookmark.id);
+  if (!error) {
+    currentDrawerBookmark.status = next;
+    renderDrawerContent(currentDrawerBookmark);
+    applyFilters();
+    toast(`Status: ${next}`);
+  }
+}
+
+async function addDrawerNote() {
+  if (!currentDrawerBookmark) return;
+  const input = $('drawer-note-input');
+  const content = input.value.trim();
+  if (!content) return;
+
+  const activeType = document.querySelector('.note-type-btn.active');
+  const noteType = activeType ? activeType.dataset.type : 'note';
+
+  // For now, append to notes field (later: use bookmark_notes table)
+  const existingNotes = currentDrawerBookmark.notes || '';
+  const newNotes = existingNotes
+    ? `${existingNotes}\n\n[${noteType.toUpperCase()}] ${content}`
+    : `[${noteType.toUpperCase()}] ${content}`;
+
+  const { error } = await db.from('bookmarks').update({ notes: newNotes }).eq('id', currentDrawerBookmark.id);
+  if (!error) {
+    currentDrawerBookmark.notes = newNotes;
+    input.value = '';
+    renderDrawerContent(currentDrawerBookmark);
+    toast('Note added!');
+  }
 }
 
 function toast(msg) {
