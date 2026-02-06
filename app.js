@@ -113,10 +113,27 @@ function applyView() {
 }
 
 function toggleView() {
+  // If graph is open, close it first
+  if (!$('graph-view').classList.contains('hidden')) {
+    hideGraphView();
+  }
   currentView = currentView === 'areas' ? 'list' : 'areas';
   localStorage.setItem('view', currentView);
   applyView();
   if (currentView === 'areas') renderAreasView();
+}
+
+let graphVisible = false;
+
+function toggleGraphView() {
+  if (graphVisible) {
+    hideGraphView();
+    applyView();
+    graphVisible = false;
+  } else {
+    showGraphView();
+    graphVisible = true;
+  }
 }
 
 // ── Events ────────────────────────────────
@@ -171,6 +188,15 @@ function bindEvents() {
 
   // View toggle
   $('view-toggle-btn').addEventListener('click', toggleView);
+
+  // Graph view
+  $('graph-btn').addEventListener('click', toggleGraphView);
+  $('graph-filter').addEventListener('change', () => {
+    if (!$('graph-view').classList.contains('hidden')) renderGraph();
+  });
+
+  // Daily view
+  $('calendar-btn').addEventListener('click', toggleDailyView);
 
   // Select mode
   $('select-btn').addEventListener('click', toggleSelectMode);
@@ -1076,6 +1102,400 @@ async function refreshMetadata(id) {
   }
 }
 
+// ── Daily Notes View ──────────────────────
+
+let dailyCurrentMonth = new Date();
+let dailySelectedDate = null;
+
+function showDailyView() {
+  $('list-controls').classList.add('hidden');
+  $('bookmarks-list').classList.add('hidden');
+  $('areas-view').classList.add('hidden');
+  $('stats-bar').classList.add('hidden');
+  $('graph-view').classList.add('hidden');
+
+  $('daily-view').classList.remove('hidden');
+  dailyCurrentMonth = new Date();
+  dailySelectedDate = new Date().toISOString().slice(0, 10);
+  renderDailyCalendar();
+}
+
+function hideDailyView() {
+  $('daily-view').classList.add('hidden');
+  $('list-controls').classList.remove('hidden');
+  $('bookmarks-list').classList.remove('hidden');
+  $('stats-bar').classList.remove('hidden');
+}
+
+function renderDailyCalendar() {
+  const year = dailyCurrentMonth.getFullYear();
+  const month = dailyCurrentMonth.getMonth();
+
+  // Update header
+  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'];
+  $('daily-month-label').textContent = `${monthNames[month]} ${year}`;
+
+  // Build calendar
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  const startDay = firstDay.getDay();
+  const daysInMonth = lastDay.getDate();
+
+  // Count bookmarks per day
+  const dayCounts = {};
+  for (const b of allBookmarks) {
+    const day = b.created_at.slice(0, 10);
+    dayCounts[day] = (dayCounts[day] || 0) + 1;
+  }
+
+  const today = new Date().toISOString().slice(0, 10);
+  let html = '';
+
+  // Previous month days
+  const prevMonth = new Date(year, month, 0);
+  const prevDays = prevMonth.getDate();
+  for (let i = startDay - 1; i >= 0; i--) {
+    const d = prevDays - i;
+    const dateStr = new Date(year, month - 1, d).toISOString().slice(0, 10);
+    const count = dayCounts[dateStr] || 0;
+    html += `<div class="daily-cell other-month${count ? ' has-items' : ''}" data-date="${dateStr}">
+      <span class="daily-day">${d}</span>
+    </div>`;
+  }
+
+  // Current month days
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = new Date(year, month, d).toISOString().slice(0, 10);
+    const count = dayCounts[dateStr] || 0;
+    const isToday = dateStr === today;
+    const isSelected = dateStr === dailySelectedDate;
+    html += `<div class="daily-cell${isToday ? ' today' : ''}${isSelected ? ' selected' : ''}${count ? ' has-items' : ''}"
+                  data-date="${dateStr}" onclick="selectDailyDate('${dateStr}')">
+      <span class="daily-day">${d}</span>
+    </div>`;
+  }
+
+  // Next month days
+  const remaining = 42 - (startDay + daysInMonth);
+  for (let d = 1; d <= remaining; d++) {
+    const dateStr = new Date(year, month + 1, d).toISOString().slice(0, 10);
+    const count = dayCounts[dateStr] || 0;
+    html += `<div class="daily-cell other-month${count ? ' has-items' : ''}" data-date="${dateStr}">
+      <span class="daily-day">${d}</span>
+    </div>`;
+  }
+
+  $('daily-calendar').innerHTML = html;
+  renderDailySelected();
+}
+
+function selectDailyDate(dateStr) {
+  dailySelectedDate = dateStr;
+  renderDailyCalendar();
+}
+
+function renderDailySelected() {
+  if (!dailySelectedDate) {
+    $('daily-selected-date').textContent = 'Select a day';
+    $('daily-selected-count').textContent = '';
+    $('daily-selected-list').innerHTML = '<p style="color:var(--text-tertiary);font-size:13px;text-align:center;padding:20px">Click on a day to see bookmarks</p>';
+    return;
+  }
+
+  const date = new Date(dailySelectedDate);
+  const options = { weekday: 'long', month: 'long', day: 'numeric' };
+  $('daily-selected-date').textContent = date.toLocaleDateString('en-US', options);
+
+  const dayBookmarks = allBookmarks.filter(b => b.created_at.slice(0, 10) === dailySelectedDate);
+  $('daily-selected-count').textContent = `${dayBookmarks.length} bookmark${dayBookmarks.length !== 1 ? 's' : ''}`;
+
+  if (!dayBookmarks.length) {
+    $('daily-selected-list').innerHTML = '<p style="color:var(--text-tertiary);font-size:13px;text-align:center;padding:20px">No bookmarks saved this day</p>';
+    return;
+  }
+
+  const icons = { youtube: '▶', twitter: '𝕏', linkedin: 'in', substack: '✉', blog: '📄', book: '📚' };
+
+  $('daily-selected-list').innerHTML = dayBookmarks.map(b => {
+    const time = new Date(b.created_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    const title = b.title || hostname(b.url) || b.url;
+    return `<div class="daily-item" onclick="showDrawer('${b.id}')">
+      <div class="daily-item-icon ${b.source_type}">${icons[b.source_type] || '📑'}</div>
+      <div class="daily-item-title">${esc(title)}</div>
+      <div class="daily-item-time">${time}</div>
+    </div>`;
+  }).join('');
+}
+
+function dailyPrevMonth() {
+  dailyCurrentMonth.setMonth(dailyCurrentMonth.getMonth() - 1);
+  renderDailyCalendar();
+}
+
+function dailyNextMonth() {
+  dailyCurrentMonth.setMonth(dailyCurrentMonth.getMonth() + 1);
+  renderDailyCalendar();
+}
+
+function dailyGoToday() {
+  dailyCurrentMonth = new Date();
+  dailySelectedDate = new Date().toISOString().slice(0, 10);
+  renderDailyCalendar();
+}
+
+let dailyVisible = false;
+
+function toggleDailyView() {
+  if (dailyVisible) {
+    hideDailyView();
+    applyView();
+    dailyVisible = false;
+  } else {
+    // Close graph if open
+    if (graphVisible) {
+      hideGraphView();
+      graphVisible = false;
+    }
+    showDailyView();
+    dailyVisible = true;
+  }
+}
+
+// ── Knowledge Graph View ──────────────────
+
+let graphSimulation = null;
+let graphZoom = null;
+let graphSvg = null;
+
+function showGraphView() {
+  // Hide other views
+  $('list-controls').classList.add('hidden');
+  $('bookmarks-list').classList.add('hidden');
+  $('areas-view').classList.add('hidden');
+  $('stats-bar').classList.add('hidden');
+
+  // Show graph
+  $('graph-view').classList.remove('hidden');
+  renderGraph();
+}
+
+function hideGraphView() {
+  $('graph-view').classList.add('hidden');
+  $('list-controls').classList.remove('hidden');
+  $('bookmarks-list').classList.remove('hidden');
+  $('stats-bar').classList.remove('hidden');
+
+  // Clean up simulation and legend
+  if (graphSimulation) {
+    graphSimulation.stop();
+    graphSimulation = null;
+  }
+  const legend = document.querySelector('.graph-legend');
+  if (legend) legend.remove();
+}
+
+function renderGraph() {
+  const svg = d3.select('#graph-svg');
+  svg.selectAll('*').remove();
+
+  const container = document.getElementById('graph-view');
+  const width = container.clientWidth;
+  const height = container.clientHeight - 50;
+
+  graphSvg = svg.attr('viewBox', [0, 0, width, height]);
+
+  // Build nodes
+  const nodes = allBookmarks.map(b => ({
+    id: b.id,
+    title: b.title || hostname(b.url) || b.url,
+    url: b.url,
+    source_type: b.source_type,
+    tags: b.tags || [],
+    domain: hostname(b.url),
+    image: b.image
+  }));
+
+  // Build edges based on connections
+  const links = [];
+  const filter = $('graph-filter').value;
+
+  for (let i = 0; i < nodes.length; i++) {
+    for (let j = i + 1; j < nodes.length; j++) {
+      const a = nodes[i];
+      const b = nodes[j];
+      let connected = false;
+      let type = 'default';
+
+      // Same tags
+      if (filter === 'all' || filter === 'tags') {
+        const sharedTags = a.tags.filter(t => b.tags.includes(t));
+        if (sharedTags.length > 0) {
+          connected = true;
+          type = 'same-tag';
+        }
+      }
+
+      // Same domain
+      if ((filter === 'all' || filter === 'domain') && a.domain && a.domain === b.domain) {
+        connected = true;
+        type = type === 'same-tag' ? 'same-tag' : 'same-domain';
+      }
+
+      // Same source type
+      if ((filter === 'all' || filter === 'source') && a.source_type === b.source_type) {
+        if (!connected) {
+          connected = true;
+          type = 'same-source';
+        }
+      }
+
+      if (connected) {
+        links.push({ source: a.id, target: b.id, type });
+      }
+    }
+  }
+
+  // Source colors
+  const sourceColors = {
+    youtube: '#ff4444',
+    twitter: '#1da1f2',
+    linkedin: '#0a66c2',
+    substack: '#ff6719',
+    blog: '#4ecdc4',
+    book: '#f5a623'
+  };
+
+  // Create container group for zoom
+  const g = svg.append('g');
+
+  // Zoom behavior
+  graphZoom = d3.zoom()
+    .scaleExtent([0.2, 4])
+    .on('zoom', (event) => {
+      g.attr('transform', event.transform);
+    });
+
+  svg.call(graphZoom);
+
+  // Create simulation
+  graphSimulation = d3.forceSimulation(nodes)
+    .force('link', d3.forceLink(links).id(d => d.id).distance(80))
+    .force('charge', d3.forceManyBody().strength(-200))
+    .force('center', d3.forceCenter(width / 2, height / 2))
+    .force('collision', d3.forceCollide().radius(30));
+
+  // Draw links
+  const link = g.append('g')
+    .selectAll('line')
+    .data(links)
+    .join('line')
+    .attr('class', d => `graph-link ${d.type}`);
+
+  // Draw nodes
+  const node = g.append('g')
+    .selectAll('g')
+    .data(nodes)
+    .join('g')
+    .attr('class', 'graph-node')
+    .call(d3.drag()
+      .on('start', dragstarted)
+      .on('drag', dragged)
+      .on('end', dragended))
+    .on('click', (event, d) => {
+      event.stopPropagation();
+      showDrawer(d.id);
+    })
+    .on('mouseenter', (event, d) => showGraphTooltip(event, d))
+    .on('mouseleave', hideGraphTooltip);
+
+  // Node circles
+  node.append('circle')
+    .attr('r', 16)
+    .attr('fill', d => sourceColors[d.source_type] || '#6c63ff');
+
+  // Node icons
+  node.append('text')
+    .attr('dy', 4)
+    .attr('font-size', 12)
+    .text(d => {
+      const icons = { youtube: '▶', twitter: '𝕏', linkedin: 'in', substack: '✉', blog: '📄', book: '📚' };
+      return icons[d.source_type] || '📑';
+    });
+
+  // Simulation tick
+  graphSimulation.on('tick', () => {
+    link
+      .attr('x1', d => d.source.x)
+      .attr('y1', d => d.source.y)
+      .attr('x2', d => d.target.x)
+      .attr('y2', d => d.target.y);
+
+    node.attr('transform', d => `translate(${d.x},${d.y})`);
+  });
+
+  // Add legend
+  const legend = document.createElement('div');
+  legend.className = 'graph-legend';
+  legend.innerHTML = `
+    <div class="graph-legend-item"><span class="tag-line"></span> Shared Tags</div>
+    <div class="graph-legend-item"><span class="domain-line"></span> Same Domain</div>
+    <div class="graph-legend-item"><span class="source-line"></span> Same Source</div>
+  `;
+  container.appendChild(legend);
+
+  function dragstarted(event, d) {
+    if (!event.active) graphSimulation.alphaTarget(0.3).restart();
+    d.fx = d.x;
+    d.fy = d.y;
+  }
+
+  function dragged(event, d) {
+    d.fx = event.x;
+    d.fy = event.y;
+  }
+
+  function dragended(event, d) {
+    if (!event.active) graphSimulation.alphaTarget(0);
+    d.fx = null;
+    d.fy = null;
+  }
+}
+
+function showGraphTooltip(event, d) {
+  const tooltip = $('graph-tooltip');
+  tooltip.innerHTML = `
+    <div class="title">${esc(d.title)}</div>
+    <div class="meta">${esc(d.domain)}</div>
+    ${d.tags.length ? `<div class="tags">${d.tags.map(t => `<span class="tag">${esc(t)}</span>`).join('')}</div>` : ''}
+  `;
+  tooltip.style.left = (event.pageX + 10) + 'px';
+  tooltip.style.top = (event.pageY + 10) + 'px';
+  tooltip.classList.remove('hidden');
+}
+
+function hideGraphTooltip() {
+  $('graph-tooltip').classList.add('hidden');
+}
+
+function graphZoomIn() {
+  if (graphZoom && graphSvg) {
+    graphSvg.transition().duration(300).call(graphZoom.scaleBy, 1.5);
+  }
+}
+
+function graphZoomOut() {
+  if (graphZoom && graphSvg) {
+    graphSvg.transition().duration(300).call(graphZoom.scaleBy, 0.67);
+  }
+}
+
+function graphReset() {
+  if (graphZoom && graphSvg) {
+    graphSvg.transition().duration(500).call(graphZoom.transform, d3.zoomIdentity);
+  }
+}
+
 // ── Tag Areas View ────────────────────────
 
 function renderAreasView() {
@@ -1510,6 +1930,15 @@ function showSettingsModal() {
         </li>
         <li>Tap the name at top → rename to <b>"Bookmark"</b> → tap <b>Done</b></li>
       </ol>
+    </div>
+
+    <!-- Obsidian Export -->
+    <div class="section-title">Obsidian Export</div>
+    <div class="setting-group">
+      <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px">
+        Export all bookmarks as Markdown files with YAML frontmatter, organized by source type. Perfect for importing into Obsidian or any note-taking app.
+      </p>
+      <button class="btn btn-save" id="btn-export-obsidian" style="width:100%">Export to Markdown</button>
     </div>`;
 
   $('modal-overlay').classList.remove('hidden');
@@ -1550,6 +1979,8 @@ function showSettingsModal() {
     }
   });
 
+  $('btn-export-obsidian').addEventListener('click', exportToObsidian);
+
   $('btn-copy-bml').addEventListener('click', () => {
     navigator.clipboard.writeText(bookmarkletCode).then(() => {
       toast('Copied! Create a bookmark and paste as URL.');
@@ -1557,6 +1988,94 @@ function showSettingsModal() {
       toast('Copy failed — try manually selecting the code');
     });
   });
+}
+
+// ── Obsidian Export ───────────────────────
+
+async function exportToObsidian() {
+  if (!allBookmarks.length) {
+    toast('No bookmarks to export');
+    return;
+  }
+
+  closeModal();
+  toast('Generating export...');
+
+  const sourceLabels = {
+    youtube: 'YouTube', twitter: 'Twitter', linkedin: 'LinkedIn',
+    substack: 'Substack', blog: 'Blog', book: 'Book'
+  };
+
+  // Group by source type
+  const bySource = {};
+  for (const b of allBookmarks) {
+    const src = b.source_type || 'blog';
+    if (!bySource[src]) bySource[src] = [];
+    bySource[src].push(b);
+  }
+
+  // Generate markdown content
+  let allContent = '';
+  let fileCount = 0;
+
+  for (const [source, bookmarks] of Object.entries(bySource)) {
+    allContent += `\n\n# ${sourceLabels[source] || source}\n\n`;
+
+    for (const b of bookmarks) {
+      const title = (b.title || hostname(b.url) || b.url).replace(/[\\/:*?"<>|]/g, '-');
+      const created = new Date(b.created_at).toISOString().slice(0, 10);
+      const tags = (b.tags || []).map(t => `"${t}"`).join(', ');
+
+      const md = `---
+title: "${title.replace(/"/g, '\\"')}"
+url: ${b.url}
+source: ${source}
+status: ${b.status}
+created: ${created}
+${b.channel ? `channel: "${b.channel}"` : ''}
+${b.duration ? `duration: ${b.duration}` : ''}
+tags: [${tags}]
+---
+
+# ${title}
+
+- **URL**: [${b.url}](${b.url})
+- **Source**: ${sourceLabels[source] || source}
+- **Status**: ${b.status}
+- **Saved**: ${created}
+${b.channel ? `- **Channel**: ${b.channel}` : ''}
+${b.duration ? `- **Duration**: ${b.duration}` : ''}
+
+${(b.tags || []).length ? `## Tags\n${b.tags.map(t => `- #${t}`).join('\n')}\n` : ''}
+${b.notes ? `## Notes\n\n${b.notes}\n` : ''}
+---
+`;
+      allContent += `## ${title}\n\n\`\`\`\n${md}\`\`\`\n\n`;
+      fileCount++;
+    }
+  }
+
+  // Create combined markdown file
+  const header = `# ContentDeck Export
+
+Exported on ${new Date().toLocaleString()}
+Total bookmarks: ${fileCount}
+
+---
+${allContent}`;
+
+  // Download as single file
+  const blob = new Blob([header], { type: 'text/markdown' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `contentdeck-export-${new Date().toISOString().slice(0, 10)}.md`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  toast(`Exported ${fileCount} bookmarks!`);
 }
 
 // ── Bookmarklet Generator ─────────────────
