@@ -2207,6 +2207,12 @@ main::-webkit-scrollbar-thumb, .areas-view::-webkit-scrollbar-thumb { background
   color: white;
 }
 
+.drawer-actions .btn-obsidian {
+  background: rgba(124, 58, 237, 0.15);
+  color: #a78bfa;
+  border: 1px solid rgba(124, 58, 237, 0.3);
+}
+
 .drawer-actions .btn-delete {
   background: rgba(255, 107, 107, 0.15);
   color: var(--danger);

@@ -1469,8 +1469,24 @@ function showGraphTooltip(event, d) {
     <div class="meta">${esc(d.domain)}</div>
     ${d.tags.length ? `<div class="tags">${d.tags.map(t => `<span class="tag">${esc(t)}</span>`).join('')}</div>` : ''}
   `;
-  tooltip.style.left = (event.pageX + 10) + 'px';
-  tooltip.style.top = (event.pageY + 10) + 'px';
+
+  // Position tooltip, keeping it on screen
+  const rect = tooltip.getBoundingClientRect();
+  const graphRect = $('graph-view').getBoundingClientRect();
+  let x = event.clientX + 15;
+  let y = event.clientY + 15;
+
+  // Prevent going off right edge
+  if (x + 280 > window.innerWidth) {
+    x = event.clientX - 290;
+  }
+  // Prevent going off bottom
+  if (y + 100 > window.innerHeight) {
+    y = event.clientY - 110;
+  }
+
+  tooltip.style.left = x + 'px';
+  tooltip.style.top = y + 'px';
   tooltip.classList.remove('hidden');
 }
 
@@ -1992,6 +2008,93 @@ function showSettingsModal() {
 
 // ── Obsidian Export ───────────────────────
 
+function exportBookmarkToObsidian(id) {
+  const bm = allBookmarks.find(b => b.id === id);
+  if (!bm) return;
+
+  const title = (bm.title || hostname(bm.url) || 'Untitled').replace(/[\\/:*?"<>|]/g, '-');
+  const created = new Date(bm.created_at).toISOString().slice(0, 10);
+  const tags = bm.tags || [];
+  const sourceLabels = {
+    youtube: 'YouTube', twitter: 'Twitter', linkedin: 'LinkedIn',
+    substack: 'Substack', blog: 'Article', book: 'Book'
+  };
+  const sourceType = sourceLabels[bm.source_type] || 'Article';
+
+  // Parse notes into structured sections
+  let insights = [];
+  let questions = [];
+  let highlights = [];
+  let generalNotes = [];
+
+  if (bm.notes) {
+    const lines = bm.notes.split('\n');
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed) continue;
+      if (trimmed.startsWith('[INSIGHT]')) {
+        insights.push(trimmed.replace('[INSIGHT]', '').trim());
+      } else if (trimmed.startsWith('[QUESTION]')) {
+        questions.push(trimmed.replace('[QUESTION]', '').trim());
+      } else if (trimmed.startsWith('[HIGHLIGHT]')) {
+        highlights.push(trimmed.replace('[HIGHLIGHT]', '').trim());
+      } else if (trimmed.startsWith('[NOTE]')) {
+        generalNotes.push(trimmed.replace('[NOTE]', '').trim());
+      } else {
+        generalNotes.push(trimmed);
+      }
+    }
+  }
+
+  // Generate wikilinks from tags for Obsidian graph connectivity
+  const tagLinks = tags.map(t => `[[${t}]]`).join(' ');
+
+  // Build the Obsidian note
+  const obsidianNote = `---
+title: "${title.replace(/"/g, '\\"')}"
+source: ${bm.url}
+type: ${sourceType}
+status: ${bm.status}
+created: ${created}
+tags: [${tags.map(t => t.replace(/\s+/g, '-')).join(', ')}]
+${bm.channel ? `channel: "${bm.channel}"` : ''}
+${bm.duration ? `duration: "${bm.duration}"` : ''}
+---
+
+# ${title}
+
+> [!info] Source
+> ${sourceType}: [${hostname(bm.url)}](${bm.url})
+${bm.channel ? `> Channel: ${bm.channel}` : ''}
+${bm.duration ? `> Duration: ${bm.duration}` : ''}
+
+${tags.length ? `## Topics\n${tagLinks}\n` : ''}
+${insights.length ? `## Key Insights\n${insights.map(i => `- ${i}`).join('\n')}\n` : ''}
+${highlights.length ? `## Highlights\n${highlights.map(h => `> ${h}`).join('\n\n')}\n` : ''}
+${questions.length ? `## Questions to Explore\n${questions.map(q => `- [ ] ${q}`).join('\n')}\n` : ''}
+${generalNotes.length ? `## Notes\n${generalNotes.join('\n\n')}\n` : ''}
+---
+*Exported from [[ContentDeck]] on ${new Date().toLocaleDateString()}*
+`;
+
+  // Copy to clipboard
+  navigator.clipboard.writeText(obsidianNote).then(() => {
+    toast('Copied! Paste into Obsidian (Ctrl+N → Ctrl+V)');
+  }).catch(() => {
+    // Fallback: download as file
+    const blob = new Blob([obsidianNote], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${title.slice(0, 50)}.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast('Downloaded! Move to your Obsidian vault');
+  });
+}
+
 async function exportToObsidian() {
   if (!allBookmarks.length) {
     toast('No bookmarks to export');
@@ -2237,6 +2340,7 @@ function renderDrawerContent(bm) {
     <div class="drawer-actions">
       <button class="btn btn-edit" onclick="closeDrawer();showEditModal('${bm.id}')">Edit</button>
       <button class="btn btn-open" onclick="window.open('${esc(bm.url)}','_blank')">Open Link</button>
+      <button class="btn btn-obsidian" onclick="exportBookmarkToObsidian('${bm.id}')" title="Export to Obsidian">Export</button>
       <button class="btn btn-delete" onclick="if(confirm('Delete?')){closeDrawer();deleteBookmark('${bm.id}')}">Delete</button>
     </div>
   `;
