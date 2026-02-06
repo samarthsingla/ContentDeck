@@ -95,17 +95,28 @@ function showDashboard() {
 
 function applyView() {
   const areasView = $('areas-view');
+  const graphView = $('graph-view');
   const listControls = $('list-controls');
   const bookmarksList = $('bookmarks-list');
   const viewBtn = $('view-toggle-btn');
 
+  // Hide all views first
+  areasView.classList.add('hidden');
+  if (graphView) graphView.classList.add('hidden');
+  listControls.classList.add('hidden');
+  bookmarksList.classList.add('hidden');
+
   if (currentView === 'areas') {
     areasView.classList.remove('hidden');
-    listControls.classList.add('hidden');
-    bookmarksList.classList.add('hidden');
+    if (viewBtn) viewBtn.title = 'Graph View';
+  } else if (currentView === 'graph') {
+    if (graphView) graphView.classList.remove('hidden');
+    if (window.graphView) {
+      refreshGraphView();
+      window.graphView.show();
+    }
     if (viewBtn) viewBtn.title = 'List View';
   } else {
-    areasView.classList.add('hidden');
     listControls.classList.remove('hidden');
     bookmarksList.classList.remove('hidden');
     if (viewBtn) viewBtn.title = 'Areas View';
@@ -113,10 +124,28 @@ function applyView() {
 }
 
 function toggleView() {
-  currentView = currentView === 'areas' ? 'list' : 'areas';
+  const order = ['areas', 'graph', 'list'];
+  const idx = order.indexOf(currentView);
+  currentView = order[(idx + 1) % order.length];
   localStorage.setItem('view', currentView);
   applyView();
   if (currentView === 'areas') renderAreasView();
+}
+
+function refreshGraphView() {
+  if (!window.graphView) return;
+
+  // Build bookmarkAreas map from bookmark.tags + tagAreas
+  const bookmarkAreas = {};
+  for (const bm of allBookmarks) {
+    bookmarkAreas[bm.id] = [];
+    for (const tagName of (bm.tags || [])) {
+      const area = tagAreas.find(a => a.name === tagName);
+      if (area) bookmarkAreas[bm.id].push(area.id);
+    }
+  }
+
+  window.graphView.update(allBookmarks, tagAreas, bookmarkAreas);
 }
 
 // ── Events ────────────────────────────────
@@ -254,6 +283,7 @@ async function loadBookmarks() {
   updateCounts();
   applyFilters();
   if (currentView === 'areas') renderAreasView();
+  if (currentView === 'graph') refreshGraphView();
 
   autoFetchMissingMetadata();
   autoTagUntaggedBookmarks(); // Tag iOS/PC bookmarks that bypassed dashboard

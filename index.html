@@ -114,11 +114,29 @@
       </div>
     </div>
 
+    <!-- Graph View (spatial canvas) -->
+    <div id="graph-view" class="graph-view hidden">
+      <canvas id="graph-canvas"></canvas>
+    </div>
+
     <!-- Bookmarks -->
     <main id="bookmarks-list"></main>
 
     <!-- FAB -->
     <button id="add-btn" class="fab" aria-label="Add bookmark">+</button>
+  </div>
+
+  <!-- ── Editor Overlay ── -->
+  <div id="editor-overlay" class="editor-overlay hidden">
+    <div class="editor-header">
+      <button id="editor-back" class="icon-btn" aria-label="Back">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      </button>
+      <div id="editor-title" class="editor-title" contenteditable="true"></div>
+      <button id="editor-finish" class="btn btn-finish">Finish</button>
+    </div>
+    <div id="editor-tags" class="editor-tags"></div>
+    <div id="editor-container"></div>
   </div>
 
   <!-- ── Modal ── -->
@@ -130,5 +148,6 @@
   <script src="ai.js"></script>
   <script src="stats.js"></script>
   <script src="app.js"></script>
+  <script type="module" src="/src/main.js"></script>
 </body>
 </html>
