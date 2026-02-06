@@ -28,7 +28,8 @@ create index if not exists idx_bookmark_notes_type on bookmark_notes(note_type);
 
 -- RLS for bookmark_notes
 alter table bookmark_notes enable row level security;
-create policy if not exists "Allow all on bookmark_notes" on bookmark_notes
+drop policy if exists "Allow all on bookmark_notes" on bookmark_notes;
+create policy "Allow all on bookmark_notes" on bookmark_notes
   for all using (true) with check (true);
 
 -- Bookmark links for wikilinks/backlinks
@@ -39,6 +40,9 @@ create table if not exists bookmark_links (
   primary key (source_id, target_id)
 );
 
+create index if not exists idx_bookmark_links_target on bookmark_links(target_id);
+
 alter table bookmark_links enable row level security;
-create policy if not exists "Allow all on bookmark_links" on bookmark_links
+drop policy if exists "Allow all on bookmark_links" on bookmark_links;
+create policy "Allow all on bookmark_links" on bookmark_links
   for all using (true) with check (true);
