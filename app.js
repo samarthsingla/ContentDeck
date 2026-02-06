@@ -1949,13 +1949,16 @@ function showSettingsModal() {
     </div>
 
     <!-- Obsidian Export -->
-    <div class="section-title">Obsidian Export</div>
+    <div class="section-title">Obsidian Integration</div>
     <div class="setting-group">
-      <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px">
-        Export all bookmarks as Markdown files with YAML frontmatter, organized by source type. Perfect for importing into Obsidian or any note-taking app.
+      <label>Vault Name (for one-click export)</label>
+      <input type="text" id="set-obsidian-vault" value="${esc(loadCredential('obsidian_vault') || '')}" placeholder="e.g., MyVault or Personal">
+      <p style="font-size:11px;color:var(--text-tertiary);margin-top:6px">
+        Find your vault name in Obsidian's bottom-left corner. Once set, the Export button in drawer will open Obsidian directly.
       </p>
-      <button class="btn btn-save" id="btn-export-obsidian" style="width:100%">Export to Markdown</button>
-    </div>`;
+    </div>
+    <button class="btn btn-save" id="btn-save-obsidian" style="width:100%;margin-bottom:8px">Save Vault</button>
+    <button class="btn btn-cancel" id="btn-export-obsidian" style="width:100%;background:var(--primary-dim);color:var(--primary)">Export All Bookmarks</button>`;
 
   $('modal-overlay').classList.remove('hidden');
 
@@ -1992,6 +1995,17 @@ function showSettingsModal() {
       removeCredential('ai_model');
       localStorage.clear();
       location.reload();
+    }
+  });
+
+  $('btn-save-obsidian').addEventListener('click', () => {
+    const vault = $('set-obsidian-vault').value.trim();
+    if (vault) {
+      saveCredential('obsidian_vault', vault);
+      toast('Vault saved! Export will now open Obsidian directly');
+    } else {
+      removeCredential('obsidian_vault');
+      toast('Vault cleared - export will download files');
     }
   });
 
@@ -2077,22 +2091,31 @@ ${generalNotes.length ? `## Notes\n${generalNotes.join('\n\n')}\n` : ''}
 *Exported from [[ContentDeck]] on ${new Date().toLocaleDateString()}*
 `;
 
-  // Copy to clipboard
-  navigator.clipboard.writeText(obsidianNote).then(() => {
-    toast('Copied! Paste into Obsidian (Ctrl+N → Ctrl+V)');
-  }).catch(() => {
-    // Fallback: download as file
+  // Check if user has configured vault name for one-click export
+  const vaultName = loadCredential('obsidian_vault') || '';
+
+  if (vaultName) {
+    // Use Obsidian URI to create file directly in vault
+    const fileName = encodeURIComponent(title.slice(0, 100));
+    const content = encodeURIComponent(obsidianNote);
+    const obsidianUri = `obsidian://new?vault=${encodeURIComponent(vaultName)}&file=${fileName}&content=${content}`;
+
+    window.location.href = obsidianUri;
+    toast('Opening in Obsidian...');
+  } else {
+    // Download as file with proper name
+    const safeTitle = title.slice(0, 100).replace(/[\\/:*?"<>|]/g, '-');
     const blob = new Blob([obsidianNote], { type: 'text/markdown' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${title.slice(0, 50)}.md`;
+    a.download = `${safeTitle}.md`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    toast('Downloaded! Move to your Obsidian vault');
-  });
+    toast('Downloaded! Add vault name in Settings for one-click export');
+  }
 }
 
 async function exportToObsidian() {
