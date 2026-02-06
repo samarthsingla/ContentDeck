@@ -442,13 +442,22 @@ async function fetchMetadata(url, sourceType) {
           headers: { 'Accept': 'text/plain' }
         });
         if (readerResp.ok) {
-          const content = await readerResp.text();
+          let content = await readerResp.text();
           if (content && content.length > 100) {
-            // Extract clean text (skip markdown headers and links at the start)
+            // Jina Reader returns: Title: ...\nURL Source: ...\nMarkdown Content: ...\n<actual content>
+            // Extract only the actual content after the metadata header
+            const markdownMatch = content.match(/Markdown Content:\s*\n([\s\S]*)/i);
+            if (markdownMatch) {
+              content = markdownMatch[1];
+            }
+
+            // Clean up the content
             const cleanContent = content
               .replace(/^#.*\n/gm, '') // Remove headers
               .replace(/^\[.*?\]\(.*?\)\s*/gm, '') // Remove standalone links
               .replace(/!\[.*?\]\(.*?\)/g, '') // Remove images
+              .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Convert links to plain text
+              .replace(/[_*]{1,2}([^_*]+)[_*]{1,2}/g, '$1') // Remove bold/italic
               .trim();
 
             // First 500 chars as excerpt
@@ -2177,13 +2186,15 @@ ${generalNotes.length ? `## Notes\n${generalNotes.join('\n\n')}\n` : ''}
   const vaultName = loadCredential('obsidian_vault') || '';
 
   if (vaultName) {
-    // Use Obsidian URI to create file directly in vault
-    const fileName = encodeURIComponent(title.slice(0, 100));
+    // Use Obsidian URI to create file in vault/Inbox/{source}/ folder
+    const safeTitle = title.slice(0, 100).replace(/[\\/:*?"<>|]/g, '-');
+    const folderPath = `Inbox/${sourceType}`;
+    const filePath = `${folderPath}/${safeTitle}`;
     const content = encodeURIComponent(obsidianNote);
-    const obsidianUri = `obsidian://new?vault=${encodeURIComponent(vaultName)}&file=${fileName}&content=${content}`;
+    const obsidianUri = `obsidian://new?vault=${encodeURIComponent(vaultName)}&file=${encodeURIComponent(filePath)}&content=${content}`;
 
     window.location.href = obsidianUri;
-    toast('Opening in Obsidian...');
+    toast(`Exporting to ${folderPath}...`);
   } else {
     // Download as file with proper name
     const safeTitle = title.slice(0, 100).replace(/[\\/:*?"<>|]/g, '-');

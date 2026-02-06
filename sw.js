@@ -1,4 +1,4 @@
-const CACHE_NAME = 'contentdeck-v4.4.0';
+const CACHE_NAME = 'contentdeck-v4.5.0';
 const ASSETS = [
   './',
   './index.html',
