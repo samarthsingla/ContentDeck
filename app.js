@@ -297,10 +297,11 @@ async function loadTagAreas() {
 // ── Auto Metadata Fetching (Title + Image) ──
 
 async function autoFetchMissingMetadata() {
-  // Check for missing title, image, or YouTube-specific fields
+  // Check for missing title, image, YouTube fields, or article excerpts
   const needsMetadata = allBookmarks.filter(b =>
     !b.title || !b.image ||
-    (b.source_type === 'youtube' && !b.duration)
+    (b.source_type === 'youtube' && !b.duration) ||
+    (b.source_type !== 'youtube' && b.source_type !== 'twitter' && !b.excerpt)
   );
   if (!needsMetadata.length) {
     console.log('Auto-fetch: All bookmarks have metadata');
@@ -318,6 +319,9 @@ async function autoFetchMissingMetadata() {
       if (!b.image && meta.image) updates.image = meta.image;
       if (!b.duration && meta.duration) updates.duration = meta.duration;
       if (!b.channel && meta.channel) updates.channel = meta.channel;
+      if (!b.excerpt && meta.excerpt) updates.excerpt = meta.excerpt;
+      if (!b.word_count && meta.word_count) updates.word_count = meta.word_count;
+      if (!b.reading_time && meta.reading_time) updates.reading_time = meta.reading_time;
 
       if (Object.keys(updates).length) {
         const { error } = await db.from('bookmarks').update(updates).eq('id', b.id);
@@ -369,7 +373,7 @@ function parseYouTubeDuration(iso) {
 }
 
 async function fetchMetadata(url, sourceType) {
-  const result = { title: null, image: null, duration: null, channel: null };
+  const result = { title: null, image: null, duration: null, channel: null, excerpt: null, word_count: null, reading_time: null };
 
   try {
     // YouTube: use Data API for rich metadata
@@ -428,6 +432,40 @@ async function fetchMetadata(url, sourceType) {
         if (!result.title && data.data.title) result.title = data.data.title;
         if (data.data.image && data.data.image.url) result.image = data.data.image.url;
       }
+    }
+
+    // Article content: use Jina Reader for excerpts (blogs, substack, etc.)
+    // Skip for YouTube/Twitter which don't have readable articles
+    if (sourceType !== 'youtube' && sourceType !== 'twitter') {
+      try {
+        const readerResp = await fetch(`https://r.jina.ai/${url}`, {
+          headers: { 'Accept': 'text/plain' }
+        });
+        if (readerResp.ok) {
+          const content = await readerResp.text();
+          if (content && content.length > 100) {
+            // Extract clean text (skip markdown headers and links at the start)
+            const cleanContent = content
+              .replace(/^#.*\n/gm, '') // Remove headers
+              .replace(/^\[.*?\]\(.*?\)\s*/gm, '') // Remove standalone links
+              .replace(/!\[.*?\]\(.*?\)/g, '') // Remove images
+              .trim();
+
+            // First 500 chars as excerpt
+            const excerpt = cleanContent.slice(0, 500).trim();
+            if (excerpt.length > 50) {
+              result.excerpt = excerpt + (cleanContent.length > 500 ? '...' : '');
+            }
+
+            // Word count and reading time (200 wpm average)
+            const words = cleanContent.split(/\s+/).filter(w => w.length > 0).length;
+            if (words > 50) {
+              result.word_count = words;
+              result.reading_time = Math.max(1, Math.round(words / 200));
+            }
+          }
+        }
+      } catch (e) { /* Jina Reader failed, continue without excerpt */ }
     }
   } catch (e) { /* silent */ }
 
@@ -643,6 +681,7 @@ function renderBookmarks(bookmarks) {
             <span class="dot">&middot;</span>
             <span>${time}</span>
             ${b.duration ? `<span class="dot">&middot;</span><span class="duration-badge">${esc(b.duration)}</span>` : ''}
+            ${b.reading_time ? `<span class="dot">&middot;</span><span class="reading-time-badge">${b.reading_time} min</span>` : ''}
           </div>
           ${notes ? `<div class="bookmark-notes">${esc(notes)}</div>` : ''}
           ${tags.length ? `<div class="bookmark-tags">${tags.map(t =>
@@ -776,15 +815,21 @@ async function handleAdd() {
   closeModal();
   await loadBookmarks();
 
-  // Fetch metadata (image) for the new bookmark in background
+  // Fetch metadata (image, excerpt, etc.) for the new bookmark in background
   if (data && data[0]) {
     const bm = data[0];
     fetchMetadata(bm.url, bm.source_type).then(async meta => {
-      if (meta.image) {
-        await db.from('bookmarks').update({ image: meta.image }).eq('id', bm.id);
+      const updates = {};
+      if (meta.image) updates.image = meta.image;
+      if (meta.excerpt) updates.excerpt = meta.excerpt;
+      if (meta.word_count) updates.word_count = meta.word_count;
+      if (meta.reading_time) updates.reading_time = meta.reading_time;
+
+      if (Object.keys(updates).length) {
+        await db.from('bookmarks').update(updates).eq('id', bm.id);
         // Update local cache and re-render
         const local = allBookmarks.find(b => b.id === bm.id);
-        if (local) { local.image = meta.image; applyFilters(); }
+        if (local) { Object.assign(local, updates); applyFilters(); }
       }
     });
   }
@@ -2100,6 +2145,8 @@ created: ${created}
 tags: [${tags.map(t => t.replace(/\s+/g, '-')).join(', ')}]
 ${bm.channel ? `channel: "${bm.channel}"` : ''}
 ${bm.duration ? `duration: "${bm.duration}"` : ''}
+${bm.reading_time ? `reading_time: ${bm.reading_time}` : ''}
+${bm.word_count ? `word_count: ${bm.word_count}` : ''}
 ---
 
 # ${title}
@@ -2108,7 +2155,10 @@ ${bm.duration ? `duration: "${bm.duration}"` : ''}
 > ${sourceType}: [${hostname(bm.url)}](${bm.url})
 ${bm.channel ? `> Channel: ${bm.channel}` : ''}
 ${bm.duration ? `> Duration: ${bm.duration}` : ''}
+${bm.reading_time ? `> Reading time: ${bm.reading_time} min` : ''}
+${bm.word_count ? `> Word count: ${bm.word_count.toLocaleString()}` : ''}
 
+${bm.excerpt ? `## Summary\n> ${bm.excerpt}\n` : ''}
 ${tags.length ? `## Topics\n${tagLinks}\n` : ''}
 ${insights.length ? `## Key Insights\n${insights.map(i => `- ${i}`).join('\n')}\n` : ''}
 ${highlights.length ? `## Highlights\n${highlights.map(h => `> ${h}`).join('\n\n')}\n` : ''}
@@ -2366,9 +2416,18 @@ function renderDrawerContent(bm) {
       <span style="opacity:0.3">&middot;</span>
       <span>${time}</span>
       ${bm.duration ? `<span style="opacity:0.3">&middot;</span><span class="duration-badge">${esc(bm.duration)}</span>` : ''}
+      ${bm.reading_time ? `<span style="opacity:0.3">&middot;</span><span class="reading-time-badge">${bm.reading_time} min read</span>` : ''}
       <span class="source-pill ${esc(bm.source_type)}">${sourceLabel[bm.source_type] || 'Blog'}</span>
       <button class="drawer-status ${esc(bm.status)}" onclick="cycleDrawerStatus()">${bm.status}</button>
     </div>
+
+    ${bm.excerpt ? `
+    <div class="drawer-section drawer-excerpt">
+      <div class="drawer-section-title">Summary</div>
+      <p class="excerpt-text">${esc(bm.excerpt)}</p>
+      ${bm.word_count ? `<span class="word-count">${bm.word_count.toLocaleString()} words</span>` : ''}
+    </div>
+    ` : ''}
 
     <div class="drawer-section">
       <div class="drawer-section-title">Tags</div>

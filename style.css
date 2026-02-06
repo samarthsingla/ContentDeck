@@ -2067,6 +2067,29 @@ main::-webkit-scrollbar-thumb, .areas-view::-webkit-scrollbar-thumb { background
   color: var(--text-secondary);
 }
 
+.drawer-excerpt .excerpt-text {
+  margin: 0 0 8px 0;
+  color: var(--text-secondary);
+  font-style: italic;
+  padding: 12px;
+  background: var(--surface);
+  border-radius: 8px;
+  border-left: 3px solid var(--primary);
+}
+
+.drawer-excerpt .word-count {
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+.reading-time-badge {
+  background: rgba(78, 205, 196, 0.15);
+  color: #4ecdc4;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+}
+
 /* ── Drawer Notes ──────────────────────── */
 
 .drawer-notes-list {
