@@ -337,8 +337,10 @@ async function autoFetchMissingMetadata() {
   }
 }
 
-// YouTube API key (stored in settings)
-const YT_API_KEY = 'AIzaSyD-ehlrtDUos9il83eTs1AQVbDQKXuP7Fw';
+// YouTube API key (loaded from settings - never hardcode!)
+function getYouTubeApiKey() {
+  return loadCredential('yt_api_key') || '';
+}
 
 function extractYouTubeId(url) {
   const patterns = [
@@ -373,9 +375,10 @@ async function fetchMetadata(url, sourceType) {
     // YouTube: use Data API for rich metadata
     if (sourceType === 'youtube' || /youtube\.com|youtu\.be/i.test(url)) {
       const videoId = extractYouTubeId(url);
-      if (videoId && YT_API_KEY) {
+      const ytKey = getYouTubeApiKey();
+      if (videoId && ytKey) {
         const resp = await fetch(
-          `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${videoId}&key=${YT_API_KEY}`
+          `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${videoId}&key=${ytKey}`
         );
         if (resp.ok) {
           const data = await resp.json();
@@ -1911,6 +1914,17 @@ function showSettingsModal() {
     <button class="btn btn-save" id="btn-save-ai" style="width:100%;margin-top:4px">Save AI Settings</button>
     <button class="btn btn-cancel" id="btn-retag-all" style="width:100%;margin-top:8px;background:var(--primary-dim);color:var(--primary)">Re-tag All Bookmarks with AI</button>
 
+    <!-- YouTube API -->
+    <div class="section-title">YouTube API (for video metadata)</div>
+    <div class="setting-group">
+      <label>API Key</label>
+      <input type="password" id="set-yt-key" value="${esc(loadCredential('yt_api_key') || '')}" placeholder="AIzaSy...">
+      <p style="font-size:11px;color:var(--text-tertiary);margin-top:6px">
+        Get a free key from <a href="https://console.cloud.google.com" target="_blank" style="color:var(--primary)">Google Cloud Console</a> → APIs → YouTube Data API v3
+      </p>
+    </div>
+    <button class="btn btn-save" id="btn-save-yt" style="width:100%">Save YouTube Key</button>
+
     <button class="btn-danger" id="btn-reset">Reset App</button>
 
     <!-- PC Bookmarklet -->
@@ -1987,12 +2001,25 @@ function showSettingsModal() {
     retagAll();
   });
 
+  $('btn-save-yt').addEventListener('click', () => {
+    const key = $('set-yt-key').value.trim();
+    if (key) {
+      saveCredential('yt_api_key', key);
+      toast('YouTube API key saved!');
+    } else {
+      removeCredential('yt_api_key');
+      toast('YouTube key cleared');
+    }
+  });
+
   $('btn-reset').addEventListener('click', () => {
     if (confirm('Disconnect and reset the app?')) {
       removeCredential('sb_url');
       removeCredential('sb_key');
       removeCredential('ai_key');
       removeCredential('ai_model');
+      removeCredential('yt_api_key');
+      removeCredential('obsidian_vault');
       localStorage.clear();
       location.reload();
     }
@@ -2087,6 +2114,11 @@ ${insights.length ? `## Key Insights\n${insights.map(i => `- ${i}`).join('\n')}\
 ${highlights.length ? `## Highlights\n${highlights.map(h => `> ${h}`).join('\n\n')}\n` : ''}
 ${questions.length ? `## Questions to Explore\n${questions.map(q => `- [ ] ${q}`).join('\n')}\n` : ''}
 ${generalNotes.length ? `## Notes\n${generalNotes.join('\n\n')}\n` : ''}
+## Reflections
+
+*Add your deeper thoughts here after reviewing the material...*
+
+
 ---
 *Exported from [[ContentDeck]] on ${new Date().toLocaleDateString()}*
 `;
