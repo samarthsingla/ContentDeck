@@ -1,0 +1,145 @@
+import { Heart, Trash2, ExternalLink } from 'lucide-react'
+import { SourceBadge, StatusBadge } from '../ui/Badge'
+import { timeAgo, getDomain, getFaviconUrl, truncate } from '../../lib/utils'
+import type { Bookmark, Status } from '../../types'
+import { STATUS_NEXT } from '../../types'
+
+interface BookmarkCardProps {
+  bookmark: Bookmark
+  selected?: boolean
+  selectMode?: boolean
+  onCycleStatus: (id: string, newStatus: Status) => void
+  onToggleFavorite: (id: string, favorited: boolean) => void
+  onDelete: (id: string) => void
+  onSelect?: (id: string) => void
+  onClick?: (id: string) => void
+}
+
+export default function BookmarkCard({
+  bookmark: b,
+  selected,
+  selectMode,
+  onCycleStatus,
+  onToggleFavorite,
+  onDelete,
+  onSelect,
+  onClick,
+}: BookmarkCardProps) {
+  const domain = getDomain(b.url)
+  const readingTime = b.metadata?.reading_time
+
+  function handleClick() {
+    if (selectMode && onSelect) {
+      onSelect(b.id)
+    } else if (onClick) {
+      onClick(b.id)
+    }
+  }
+
+  function handleDelete(e: React.MouseEvent) {
+    e.stopPropagation()
+    if (confirm('Delete this bookmark?')) {
+      onDelete(b.id)
+    }
+  }
+
+  return (
+    <article
+      onClick={handleClick}
+      className={`
+        group relative flex gap-3 p-3 rounded-xl border transition-colors cursor-pointer
+        ${selected
+          ? 'border-primary-500 bg-primary-600/5 dark:bg-primary-400/5'
+          : 'border-surface-200 dark:border-surface-800 hover:border-surface-300 dark:hover:border-surface-700 bg-white dark:bg-surface-900'
+        }
+      `}
+      aria-label={b.title || b.url}
+    >
+      {/* Thumbnail */}
+      {b.image && (
+        <div className="hidden sm:block flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden bg-surface-100 dark:bg-surface-800">
+          <img
+            src={b.image}
+            alt=""
+            className="w-full h-full object-cover"
+            loading="lazy"
+          />
+        </div>
+      )}
+
+      {/* Content */}
+      <div className="flex-1 min-w-0">
+        {/* Top row: source + status + time */}
+        <div className="flex items-center gap-2 mb-1">
+          <SourceBadge source={b.source_type} />
+          <StatusBadge
+            status={b.status}
+            onClick={() => onCycleStatus(b.id, STATUS_NEXT[b.status])}
+          />
+          <span className="text-xs text-surface-400 dark:text-surface-500 ml-auto flex-shrink-0">
+            {timeAgo(b.created_at)}
+          </span>
+        </div>
+
+        {/* Title */}
+        <h3 className="text-sm font-medium text-surface-900 dark:text-surface-100 line-clamp-2 mb-1">
+          {b.title || truncate(b.url, 60)}
+        </h3>
+
+        {/* Domain + reading time */}
+        <div className="flex items-center gap-2 text-xs text-surface-500 dark:text-surface-400">
+          <img src={getFaviconUrl(b.url)} alt="" className="w-3.5 h-3.5" loading="lazy" />
+          <span>{domain}</span>
+          {readingTime && <span>&middot; {readingTime} min read</span>}
+        </div>
+
+        {/* Tags */}
+        {b.tags && b.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-2">
+            {b.tags.slice(0, 3).map((tag) => (
+              <span
+                key={tag}
+                className="px-2 py-0.5 rounded-full text-xs bg-primary-600/10 text-primary-600 dark:text-primary-400 font-medium"
+              >
+                {tag}
+              </span>
+            ))}
+            {b.tags.length > 3 && (
+              <span className="text-xs text-surface-400">+{b.tags.length - 3}</span>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Actions (visible on hover / always on mobile) */}
+      <div className="flex flex-col items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+        <button
+          onClick={(e) => { e.stopPropagation(); onToggleFavorite(b.id, !b.is_favorited) }}
+          className={`p-2 rounded-lg hover:bg-surface-100 dark:hover:bg-surface-800 min-w-[36px] min-h-[36px] flex items-center justify-center ${
+            b.is_favorited ? 'text-amber-500' : 'text-surface-400'
+          }`}
+          aria-label={b.is_favorited ? 'Remove from favorites' : 'Add to favorites'}
+        >
+          <Heart size={16} fill={b.is_favorited ? 'currentColor' : 'none'} />
+        </button>
+        <a
+          href={b.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          className="p-2 rounded-lg hover:bg-surface-100 dark:hover:bg-surface-800 text-surface-400 min-w-[36px] min-h-[36px] flex items-center justify-center"
+          aria-label="Open in new tab"
+        >
+          <ExternalLink size={16} />
+        </a>
+        <button
+          onClick={handleDelete}
+          className="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-surface-400 hover:text-red-500 min-w-[36px] min-h-[36px] flex items-center justify-center"
+          aria-label="Delete bookmark"
+        >
+          <Trash2 size={16} />
+        </button>
+      </div>
+    </article>
+  )
+}

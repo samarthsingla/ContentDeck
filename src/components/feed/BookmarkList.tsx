@@ -1,0 +1,102 @@
+import { useMemo } from 'react'
+import { Inbox, SearchX } from 'lucide-react'
+import { useUI } from '../../context/UIProvider'
+import BookmarkCard from './BookmarkCard'
+import EmptyState from '../ui/EmptyState'
+import Spinner from '../ui/Spinner'
+import type { Bookmark, Status } from '../../types'
+
+interface BookmarkListProps {
+  bookmarks: Bookmark[]
+  isLoading: boolean
+  onCycleStatus: (id: string, newStatus: Status) => void
+  onToggleFavorite: (id: string, favorited: boolean) => void
+  onDelete: (id: string) => void
+  onClick?: (id: string) => void
+}
+
+export default function BookmarkList({
+  bookmarks,
+  isLoading,
+  onCycleStatus,
+  onToggleFavorite,
+  onDelete,
+  onClick,
+}: BookmarkListProps) {
+  const { currentSource, currentStatus, searchQuery, currentSort, selectMode, selectedIds, toggleSelected } = useUI()
+
+  const filtered = useMemo(() => {
+    let result = bookmarks
+
+    // Source filter
+    if (currentSource !== 'all') {
+      result = result.filter((b) => b.source_type === currentSource)
+    }
+
+    // Status filter
+    if (currentStatus !== 'all') {
+      result = result.filter((b) => b.status === currentStatus)
+    }
+
+    // Search
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase()
+      result = result.filter(
+        (b) =>
+          (b.title?.toLowerCase().includes(q)) ||
+          b.url.toLowerCase().includes(q) ||
+          b.tags.some((t) => t.toLowerCase().includes(q))
+      )
+    }
+
+    // Sort
+    switch (currentSort) {
+      case 'oldest':
+        result = [...result].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+        break
+      case 'title':
+        result = [...result].sort((a, b) => (a.title ?? '').localeCompare(b.title ?? ''))
+        break
+      case 'newest':
+      default:
+        // Already sorted by created_at desc from API
+        break
+    }
+
+    return result
+  }, [bookmarks, currentSource, currentStatus, searchQuery, currentSort])
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Spinner size={32} />
+      </div>
+    )
+  }
+
+  if (bookmarks.length === 0) {
+    return <EmptyState icon={Inbox} title="No bookmarks yet" description="Add your first bookmark to get started." />
+  }
+
+  if (filtered.length === 0) {
+    return <EmptyState icon={SearchX} title="No matches" description="Try adjusting your filters or search query." />
+  }
+
+  return (
+    <div className="space-y-2">
+      {filtered.map((b) => (
+        <BookmarkCard
+          key={b.id}
+          bookmark={b}
+          selected={selectedIds.has(b.id)}
+          selectMode={selectMode}
+          onCycleStatus={onCycleStatus}
+          onToggleFavorite={onToggleFavorite}
+          onDelete={onDelete}
+          onSelect={toggleSelected}
+          onClick={onClick}
+        />
+      ))}
+    </div>
+  )
+}
