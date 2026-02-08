@@ -1,4 +1,4 @@
-const CACHE_NAME = 'contentdeck-v2.1.0'
+const CACHE_NAME = 'contentdeck-v2.2.0'
 
 self.addEventListener('install', () => {
   // Don't skip waiting — let the app decide when to activate
@@ -36,7 +36,28 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
-  // Stale-while-revalidate for app assets
+  // Network-first for navigation requests (HTML pages)
+  // This prevents serving stale HTML that references old JS/CSS bundles
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          if (response.ok) {
+            const clone = response.clone()
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone))
+          }
+          return response
+        })
+        .catch(() =>
+          caches.match(event.request).then(
+            (cached) => cached ?? new Response('Offline', { status: 503, headers: { 'Content-Type': 'text/plain' } })
+          )
+        )
+    )
+    return
+  }
+
+  // Stale-while-revalidate for other assets (JS, CSS, images, fonts)
   event.respondWith(
     caches.match(event.request).then((cached) => {
       const networkFetch = fetch(event.request).then((response) => {

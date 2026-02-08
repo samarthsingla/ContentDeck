@@ -6,13 +6,36 @@
     <meta name="theme-color" content="#0a0a0f" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="description" content="Personal content bookmarking dashboard — save articles, videos, tweets, and more. Organize with tags, reflect with notes, export to Obsidian." />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="ContentDeck" />
+    <meta property="og:description" content="Capture, organize, and reflect on everything you read. Save from any app, AI-powered tagging, export to Obsidian." />
+    <meta property="og:url" content="https://contentdeck.vercel.app" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="ContentDeck" />
+    <meta name="twitter:description" content="Capture, organize, and reflect on everything you read." />
+
     <title>ContentDeck</title>
     <link rel="icon" type="image/svg+xml" href="/icon.svg" />
-    <link rel="apple-touch-icon" href="/icon-180.png" />
+    <link rel="apple-touch-icon" href="/icon.svg" />
     <link rel="manifest" href="/manifest.json" />
+
+    <!-- Inline loading state — shown until React mounts -->
+    <style>
+      #loading{display:flex;align-items:center;justify-content:center;min-height:100vh;background:#09090b;color:#a1a1aa;font-family:system-ui,sans-serif;gap:12px}
+      #loading-spinner{width:24px;height:24px;border:3px solid #27272a;border-top-color:#6c63ff;border-radius:50%;animation:spin .6s linear infinite}
+      @keyframes spin{to{transform:rotate(360deg)}}
+      @media(prefers-color-scheme:light){#loading{background:#fafafa;color:#71717a}#loading-spinner{border-color:#e4e4e7;border-top-color:#6c63ff}}
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div id="loading"><div id="loading-spinner"></div><span>Loading...</span></div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

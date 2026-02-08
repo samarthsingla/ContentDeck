@@ -32,12 +32,17 @@ export default function UpdateBanner() {
 
     // Reload when the new SW takes over
     let refreshing = false
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
+    function onControllerChange() {
       if (!refreshing) {
         refreshing = true
         window.location.reload()
       }
-    })
+    }
+    navigator.serviceWorker.addEventListener('controllerchange', onControllerChange)
+
+    return () => {
+      navigator.serviceWorker.removeEventListener('controllerchange', onControllerChange)
+    }
   }, [])
 
   function handleUpdate() {
