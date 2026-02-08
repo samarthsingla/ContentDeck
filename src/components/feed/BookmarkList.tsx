@@ -23,7 +23,7 @@ export default function BookmarkList({
   onDelete,
   onClick,
 }: BookmarkListProps) {
-  const { currentSource, currentStatus, searchQuery, currentSort, selectMode, selectedIds, toggleSelected } = useUI()
+  const { currentSource, currentStatus, currentTag, searchQuery, currentSort, selectMode, selectedIds, toggleSelected } = useUI()
 
   const filtered = useMemo(() => {
     let result = bookmarks
@@ -36,6 +36,17 @@ export default function BookmarkList({
     // Status filter
     if (currentStatus !== 'all') {
       result = result.filter((b) => b.status === currentStatus)
+    }
+
+    // Tag filter
+    if (currentTag) {
+      if (currentTag === '__untagged__') {
+        result = result.filter((b) => !b.tags || b.tags.length === 0)
+      } else {
+        result = result.filter((b) =>
+          b.tags.some((t) => t.toLowerCase() === currentTag.toLowerCase())
+        )
+      }
     }
 
     // Search
@@ -64,7 +75,7 @@ export default function BookmarkList({
     }
 
     return result
-  }, [bookmarks, currentSource, currentStatus, searchQuery, currentSort])
+  }, [bookmarks, currentSource, currentStatus, currentTag, searchQuery, currentSort])
 
   if (isLoading) {
     return (

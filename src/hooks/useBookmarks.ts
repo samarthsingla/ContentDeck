@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useSupabase } from '../context/SupabaseProvider'
 import { useToast } from '../components/ui/Toast'
 import { fetchMetadata } from '../lib/metadata'
-import type { Bookmark, Status } from '../types'
+import type { Bookmark, Status, NoteType } from '../types'
 
 const QUERY_KEY = ['bookmarks'] as const
 
@@ -109,6 +109,160 @@ export function useBookmarks() {
     onSettled: () => queryClient.invalidateQueries({ queryKey: QUERY_KEY }),
   })
 
+  const updateBookmark = useMutation({
+    mutationFn: async ({ id, ...updates }: Partial<Bookmark> & { id: string }) => {
+      const { data, error } = await db
+        .from('bookmarks')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single()
+      if (error) throw error
+      return normalizeBookmark(data as Bookmark)
+    },
+    onMutate: async ({ id, ...updates }) => {
+      await queryClient.cancelQueries({ queryKey: QUERY_KEY })
+      const prev = queryClient.getQueryData<Bookmark[]>(QUERY_KEY)
+      queryClient.setQueryData<Bookmark[]>(QUERY_KEY, (old) =>
+        old?.map((b) => (b.id === id ? { ...b, ...updates } : b))
+      )
+      return { prev }
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.prev) queryClient.setQueryData(QUERY_KEY, context.prev)
+      toast.error('Update failed')
+    },
+    onSuccess: () => toast.success('Bookmark updated'),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: QUERY_KEY }),
+  })
+
+  const bulkUpdateStatus = useMutation({
+    mutationFn: async ({ ids, status }: { ids: string[]; status: Status }) => {
+      const { error } = await db
+        .from('bookmarks')
+        .update({ status })
+        .in('id', ids)
+      if (error) throw error
+    },
+    onMutate: async ({ ids, status }) => {
+      await queryClient.cancelQueries({ queryKey: QUERY_KEY })
+      const prev = queryClient.getQueryData<Bookmark[]>(QUERY_KEY)
+      queryClient.setQueryData<Bookmark[]>(QUERY_KEY, (old) =>
+        old?.map((b) => (ids.includes(b.id) ? { ...b, status } : b))
+      )
+      return { prev }
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.prev) queryClient.setQueryData(QUERY_KEY, context.prev)
+      toast.error('Bulk update failed')
+    },
+    onSuccess: (_data, vars) => toast.success(`${vars.ids.length} bookmarks updated`),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: QUERY_KEY }),
+  })
+
+  const bulkDelete = useMutation({
+    mutationFn: async (ids: string[]) => {
+      const { error } = await db
+        .from('bookmarks')
+        .delete()
+        .in('id', ids)
+      if (error) throw error
+    },
+    onMutate: async (ids) => {
+      await queryClient.cancelQueries({ queryKey: QUERY_KEY })
+      const prev = queryClient.getQueryData<Bookmark[]>(QUERY_KEY)
+      queryClient.setQueryData<Bookmark[]>(QUERY_KEY, (old) =>
+        old?.filter((b) => !ids.includes(b.id))
+      )
+      return { prev }
+    },
+    onError: (_err, _ids, context) => {
+      if (context?.prev) queryClient.setQueryData(QUERY_KEY, context.prev)
+      toast.error('Bulk delete failed')
+    },
+    onSuccess: (_data, ids) => toast.success(`${ids.length} bookmarks deleted`),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: QUERY_KEY }),
+  })
+
+  const addNote = useMutation({
+    mutationFn: async ({ bookmarkId, type, content }: { bookmarkId: string; type: NoteType; content: string }) => {
+      const bookmark = queryClient.getQueryData<Bookmark[]>(QUERY_KEY)?.find((b) => b.id === bookmarkId)
+      const currentNotes = bookmark?.notes ?? []
+      const newNote = { type, content, created_at: new Date().toISOString() }
+      const updatedNotes = [...currentNotes, newNote]
+      const { error } = await db
+        .from('bookmarks')
+        .update({ notes: updatedNotes })
+        .eq('id', bookmarkId)
+      if (error) throw error
+      return { bookmarkId, notes: updatedNotes }
+    },
+    onMutate: async ({ bookmarkId, type, content }) => {
+      await queryClient.cancelQueries({ queryKey: QUERY_KEY })
+      const prev = queryClient.getQueryData<Bookmark[]>(QUERY_KEY)
+      const newNote = { type, content, created_at: new Date().toISOString() }
+      queryClient.setQueryData<Bookmark[]>(QUERY_KEY, (old) =>
+        old?.map((b) => (b.id === bookmarkId ? { ...b, notes: [...b.notes, newNote] } : b))
+      )
+      return { prev }
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.prev) queryClient.setQueryData(QUERY_KEY, context.prev)
+      toast.error('Failed to add note')
+    },
+    onSuccess: () => toast.success('Note added'),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: QUERY_KEY }),
+  })
+
+  const deleteNote = useMutation({
+    mutationFn: async ({ bookmarkId, noteIndex }: { bookmarkId: string; noteIndex: number }) => {
+      const bookmark = queryClient.getQueryData<Bookmark[]>(QUERY_KEY)?.find((b) => b.id === bookmarkId)
+      const currentNotes = bookmark?.notes ?? []
+      const updatedNotes = currentNotes.filter((_, i) => i !== noteIndex)
+      const { error } = await db
+        .from('bookmarks')
+        .update({ notes: updatedNotes })
+        .eq('id', bookmarkId)
+      if (error) throw error
+      return { bookmarkId, notes: updatedNotes }
+    },
+    onMutate: async ({ bookmarkId, noteIndex }) => {
+      await queryClient.cancelQueries({ queryKey: QUERY_KEY })
+      const prev = queryClient.getQueryData<Bookmark[]>(QUERY_KEY)
+      queryClient.setQueryData<Bookmark[]>(QUERY_KEY, (old) =>
+        old?.map((b) => (b.id === bookmarkId ? { ...b, notes: b.notes.filter((_, i) => i !== noteIndex) } : b))
+      )
+      return { prev }
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.prev) queryClient.setQueryData(QUERY_KEY, context.prev)
+      toast.error('Failed to delete note')
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: QUERY_KEY }),
+  })
+
+  const markSynced = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await db
+        .from('bookmarks')
+        .update({ synced: true })
+        .eq('id', id)
+      if (error) throw error
+    },
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: QUERY_KEY })
+      const prev = queryClient.getQueryData<Bookmark[]>(QUERY_KEY)
+      queryClient.setQueryData<Bookmark[]>(QUERY_KEY, (old) =>
+        old?.map((b) => (b.id === id ? { ...b, synced: true } : b))
+      )
+      return { prev }
+    },
+    onError: (_err, _id, context) => {
+      if (context?.prev) queryClient.setQueryData(QUERY_KEY, context.prev)
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: QUERY_KEY }),
+  })
+
   const toggleFavorite = useMutation({
     mutationFn: async ({ id, is_favorited }: { id: string; is_favorited: boolean }) => {
       const { error } = await db
@@ -161,9 +315,15 @@ export function useBookmarks() {
     error: query.error,
     refetch: query.refetch,
     addBookmark,
+    updateBookmark,
     deleteBookmark,
+    bulkUpdateStatus,
+    bulkDelete,
     cycleStatus,
     toggleFavorite,
+    addNote,
+    deleteNote,
+    markSynced,
   }
 }
 

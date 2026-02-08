@@ -5,6 +5,7 @@ interface UIState {
   currentView: ViewMode
   currentSource: SourceType | 'all'
   currentStatus: Status | 'all'
+  currentTag: string | null
   searchQuery: string
   currentSort: SortOption
   selectMode: boolean
@@ -15,6 +16,7 @@ interface UIActions {
   setView: (view: ViewMode) => void
   setSource: (source: SourceType | 'all') => void
   setStatus: (status: Status | 'all') => void
+  setTag: (tag: string | null) => void
   setSearch: (query: string) => void
   setSort: (sort: SortOption) => void
   toggleSelectMode: () => void
@@ -31,6 +33,7 @@ export function UIProvider({ children }: { children: React.ReactNode }) {
   )
   const [currentSource, setCurrentSource] = useState<SourceType | 'all'>('all')
   const [currentStatus, setCurrentStatus] = useState<Status | 'all'>('unread')
+  const [currentTag, setCurrentTag] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [currentSort, setCurrentSort] = useState<SortOption>('newest')
   const [selectMode, setSelectMode] = useState(false)
@@ -43,6 +46,7 @@ export function UIProvider({ children }: { children: React.ReactNode }) {
 
   const setSource = useCallback((source: SourceType | 'all') => setCurrentSource(source), [])
   const setStatus = useCallback((status: Status | 'all') => setCurrentStatus(status), [])
+  const setTag = useCallback((tag: string | null) => setCurrentTag(tag), [])
   const setSearch = useCallback((query: string) => setSearchQuery(query), [])
   const setSort = useCallback((sort: SortOption) => setCurrentSort(sort), [])
 
@@ -73,13 +77,13 @@ export function UIProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo(
     () => ({
-      currentView, currentSource, currentStatus, searchQuery, currentSort,
+      currentView, currentSource, currentStatus, currentTag, searchQuery, currentSort,
       selectMode, selectedIds,
-      setView, setSource, setStatus, setSearch, setSort,
+      setView, setSource, setStatus, setTag, setSearch, setSort,
       toggleSelectMode, toggleSelected, selectAll, clearSelection,
     }),
-    [currentView, currentSource, currentStatus, searchQuery, currentSort,
-     selectMode, selectedIds, setView, setSource, setStatus, setSearch, setSort,
+    [currentView, currentSource, currentStatus, currentTag, searchQuery, currentSort,
+     selectMode, selectedIds, setView, setSource, setStatus, setTag, setSearch, setSort,
      toggleSelectMode, toggleSelected, selectAll, clearSelection]
   )
 

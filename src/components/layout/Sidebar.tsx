@@ -1,4 +1,4 @@
-import { Inbox, BookOpen, CheckCircle, Star, Plus, Sun, Moon, LogOut, LayoutGrid, List } from 'lucide-react'
+import { Inbox, BookOpen, CheckCircle, Star, Plus, Sun, Moon, Settings, BarChart3, LogOut, LayoutGrid, List } from 'lucide-react'
 import { useUI } from '../../context/UIProvider'
 import { useTheme } from '../../hooks/useTheme'
 import type { Status, ViewMode } from '../../types'
@@ -7,6 +7,8 @@ interface SidebarProps {
   counts: { unread: number; reading: number; done: number; favorited: number }
   onAdd: () => void
   onDisconnect: () => void
+  onSettings: () => void
+  onStats: () => void
 }
 
 const statusNav: { status: Status | 'all'; label: string; icon: React.ElementType }[] = [
@@ -16,8 +18,8 @@ const statusNav: { status: Status | 'all'; label: string; icon: React.ElementTyp
   { status: 'done', label: 'Done', icon: CheckCircle },
 ]
 
-export default function Sidebar({ counts, onAdd, onDisconnect }: SidebarProps) {
-  const { currentStatus, setStatus, currentView, setView } = useUI()
+export default function Sidebar({ counts, onAdd, onDisconnect, onSettings, onStats }: SidebarProps) {
+  const { currentStatus, setStatus, currentView, setView, currentTag, setTag } = useUI()
   const { toggleTheme, isDark } = useTheme()
 
   const totalCount = counts.unread + counts.reading + counts.done
@@ -41,11 +43,11 @@ export default function Sidebar({ counts, onAdd, onDisconnect }: SidebarProps) {
         <div className="space-y-0.5">
           {statusNav.map(({ status, label, icon: Icon }) => {
             const count = status === 'all' ? totalCount : counts[status as Status] ?? 0
-            const active = currentStatus === status
+            const active = currentStatus === status && !currentTag
             return (
               <button
                 key={status}
-                onClick={() => setStatus(status)}
+                onClick={() => { setStatus(status); setTag(null) }}
                 className={`
                   w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors min-h-[44px]
                   ${active
@@ -65,7 +67,7 @@ export default function Sidebar({ counts, onAdd, onDisconnect }: SidebarProps) {
           <button
             onClick={() => {
               setStatus('all')
-              // Favorites filter handled separately via UI state
+              setTag(null)
             }}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-surface-600 dark:text-surface-400 hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors min-h-[44px]"
           >
@@ -74,6 +76,23 @@ export default function Sidebar({ counts, onAdd, onDisconnect }: SidebarProps) {
             <span className="text-xs text-surface-400 dark:text-surface-500">{counts.favorited}</span>
           </button>
         </div>
+
+        {/* Active tag filter indicator */}
+        {currentTag && (
+          <div className="mt-4 px-3">
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary-600/10">
+              <span className="text-xs font-medium text-primary-600 dark:text-primary-400 flex-1 truncate">
+                {currentTag === '__untagged__' ? 'Untagged' : `Tag: ${currentTag}`}
+              </span>
+              <button
+                onClick={() => setTag(null)}
+                className="text-primary-600 dark:text-primary-400 hover:text-primary-700 text-xs font-medium"
+              >
+                Clear
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* View Toggle */}
         <div className="mt-6 px-3">
@@ -108,6 +127,20 @@ export default function Sidebar({ counts, onAdd, onDisconnect }: SidebarProps) {
         >
           {isDark ? <Sun size={18} /> : <Moon size={18} />}
           {isDark ? 'Light Mode' : 'Dark Mode'}
+        </button>
+        <button
+          onClick={onStats}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-surface-600 dark:text-surface-400 hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors min-h-[44px]"
+        >
+          <BarChart3 size={18} />
+          Statistics
+        </button>
+        <button
+          onClick={onSettings}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-surface-600 dark:text-surface-400 hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors min-h-[44px]"
+        >
+          <Settings size={18} />
+          Settings
         </button>
         <button
           onClick={onDisconnect}

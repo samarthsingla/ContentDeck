@@ -1,6 +1,7 @@
 import { Heart, Trash2, ExternalLink } from 'lucide-react'
 import { SourceBadge, StatusBadge } from '../ui/Badge'
 import { timeAgo, getDomain, getFaviconUrl, truncate } from '../../lib/utils'
+import { useUI } from '../../context/UIProvider'
 import type { Bookmark, Status } from '../../types'
 import { STATUS_NEXT } from '../../types'
 
@@ -25,6 +26,7 @@ export default function BookmarkCard({
   onSelect,
   onClick,
 }: BookmarkCardProps) {
+  const { setTag } = useUI()
   const domain = getDomain(b.url)
   const readingTime = b.metadata?.reading_time
 
@@ -41,6 +43,11 @@ export default function BookmarkCard({
     if (confirm('Delete this bookmark?')) {
       onDelete(b.id)
     }
+  }
+
+  function handleTagClick(e: React.MouseEvent, tag: string) {
+    e.stopPropagation()
+    setTag(tag)
   }
 
   return (
@@ -97,12 +104,13 @@ export default function BookmarkCard({
         {b.tags && b.tags.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-2">
             {b.tags.slice(0, 3).map((tag) => (
-              <span
+              <button
                 key={tag}
-                className="px-2 py-0.5 rounded-full text-xs bg-primary-600/10 text-primary-600 dark:text-primary-400 font-medium"
+                onClick={(e) => handleTagClick(e, tag)}
+                className="px-2 py-0.5 rounded-full text-xs bg-primary-600/10 text-primary-600 dark:text-primary-400 font-medium hover:bg-primary-600/20 transition-colors"
               >
                 {tag}
-              </span>
+              </button>
             ))}
             {b.tags.length > 3 && (
               <span className="text-xs text-surface-400">+{b.tags.length - 3}</span>

@@ -22,7 +22,7 @@ export default function App() {
     <SupabaseProvider url={credentials.url} anonKey={credentials.key}>
       <UIProvider>
         <ToastProvider>
-          <Dashboard onDisconnect={clearCredentials} />
+          <Dashboard credentials={credentials} onDisconnect={clearCredentials} />
         </ToastProvider>
       </UIProvider>
     </SupabaseProvider>

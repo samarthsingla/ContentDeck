@@ -1,13 +1,14 @@
-import { Search, Sun, Moon, Plus } from 'lucide-react'
+import { Search, Sun, Moon, Plus, Settings } from 'lucide-react'
 import { useTheme } from '../../hooks/useTheme'
 
 interface MobileHeaderProps {
   onAdd: () => void
   onToggleSearch: () => void
+  onSettings: () => void
   showSearch: boolean
 }
 
-export default function MobileHeader({ onAdd, onToggleSearch }: MobileHeaderProps) {
+export default function MobileHeader({ onAdd, onToggleSearch, onSettings }: MobileHeaderProps) {
   const { toggleTheme, isDark } = useTheme()
 
   return (
@@ -23,6 +24,13 @@ export default function MobileHeader({ onAdd, onToggleSearch }: MobileHeaderProp
           aria-label="Search"
         >
           <Search size={20} className="text-surface-600 dark:text-surface-400" />
+        </button>
+        <button
+          onClick={onSettings}
+          className="p-2.5 rounded-lg hover:bg-surface-100 dark:hover:bg-surface-800 min-w-[44px] min-h-[44px] flex items-center justify-center"
+          aria-label="Settings"
+        >
+          <Settings size={20} className="text-surface-600 dark:text-surface-400" />
         </button>
         <button
           onClick={toggleTheme}

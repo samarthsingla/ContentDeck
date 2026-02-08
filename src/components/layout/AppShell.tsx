@@ -7,6 +7,8 @@ interface AppShellProps {
   onAdd: () => void
   onDisconnect: () => void
   onToggleSearch: () => void
+  onSettings: () => void
+  onStats: () => void
   showSearch: boolean
   children: React.ReactNode
 }
@@ -16,18 +18,20 @@ export default function AppShell({
   onAdd,
   onDisconnect,
   onToggleSearch,
+  onSettings,
+  onStats,
   showSearch,
   children,
 }: AppShellProps) {
   return (
-    <div className="flex h-screen bg-surface-50 dark:bg-surface-950">
+    <div className="flex flex-1 min-w-0">
       {/* Desktop Sidebar */}
-      <Sidebar counts={counts} onAdd={onAdd} onDisconnect={onDisconnect} />
+      <Sidebar counts={counts} onAdd={onAdd} onDisconnect={onDisconnect} onSettings={onSettings} onStats={onStats} />
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Mobile Header */}
-        <MobileHeader onAdd={onAdd} onToggleSearch={onToggleSearch} showSearch={showSearch} />
+        <MobileHeader onAdd={onAdd} onToggleSearch={onToggleSearch} onSettings={onSettings} showSearch={showSearch} />
 
         {/* Content Area */}
         <main className="flex-1 overflow-y-auto" style={{ paddingBottom: 'calc(72px + var(--safe-bottom))' }}>
