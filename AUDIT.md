@@ -93,6 +93,21 @@ The v1 vanilla JS codebase had **47 issues** (7 critical, 19 major, 21 minor). T
 
 ---
 
+## v2.2 Shipping Audit — Issues Found & Fixed
+
+| # | Severity | File | Issue | Fix |
+|---|----------|------|-------|-----|
+| S1 | Critical | `sw.js` | Stale-while-revalidate for navigation requests — first-time visitors with empty cache hang if Vercel is slow | Network-first strategy for navigation (`event.request.mode === 'navigate'`), stale-while-revalidate only for assets |
+| S2 | High | (missing) | No `vercel.json` — no SPA rewrite rules, no cache headers, assets cached only 60s by default | Created `vercel.json` with SPA fallback rewrite, immutable cache headers for `/assets/*`, no-cache for `sw.js` |
+| S3 | High | `index.html` | No OG/Twitter meta tags — shared links look blank in messaging apps | Added `og:title`, `og:description`, `og:url`, `twitter:card`, `meta description` |
+| S4 | High | `index.html` | Blank white page while 485KB JS downloads — appears broken | Added inline CSS loading spinner (dark/light mode aware) inside `#root` |
+| S5 | Medium | `index.html` | `apple-touch-icon` references non-existent `icon-180.png` — 404 on every load | Changed to use existing `icon.svg` |
+| S6 | Medium | `manifest.json` | `start_url: "./"` — relative path breaks PWA install on some devices | Changed to `"/"` |
+| S7 | Low | `UpdateBanner.tsx` | Missing cleanup for `controllerchange` event listener — memory leak | Added `removeEventListener` in useEffect cleanup |
+| S8 | Low | `sw.js` | Cache version `v2.1.0` stale after code changes | Bumped to `v2.2.0` |
+
+---
+
 ## v2 Known Limitations (Accepted)
 
 These were identified during audit but are intentional tradeoffs or low-priority items for a personal app.
@@ -105,9 +120,9 @@ These were identified during audit but are intentional tradeoffs or low-priority
 
 ### PWA
 
-- **Missing raster icons**: Only SVG icon in manifest. Need 192x192 and 512x512 PNGs for full PWA installability on Android. `icon-180.png` referenced in `index.html` does not exist yet.
+- **Missing raster icons**: Only SVG icon in manifest. Need 192x192 and 512x512 PNGs for full PWA installability on Android.
 - **SW CACHE_NAME not synced with package.json**: Manual version bump required. Consider generating from build.
-- **No precaching**: First visit requires network. SW only caches on subsequent visits.
+- **No precaching**: First visit requires network. SW caches navigation (network-first) and assets (stale-while-revalidate) on subsequent visits.
 
 ### UX
 
@@ -136,5 +151,6 @@ These were identified during audit but are intentional tradeoffs or low-priority
 | v1 issues resolved | 39 |
 | v1 issues N/A (extension deprecated) | 5 |
 | v1 issues partially resolved | 3 |
-| v2 issues found & fixed | 14 |
+| v2.0 issues found & fixed | 14 |
+| v2.2 shipping audit fixes | 8 |
 | v2 known limitations (accepted) | 15 |

@@ -120,17 +120,18 @@ src/
   components/     React components (layout, feed, detail, modals, areas, ui)
   hooks/          TanStack Query hooks (useBookmarks, useTagAreas, useStats)
   context/        SupabaseProvider, UIProvider
-  lib/            supabase, metadata, ai, obsidian, utils
+  lib/            supabase, metadata, ai, obsidian, utils, mock-supabase, demo-data
   types/          TypeScript interfaces
   pages/          Dashboard (orchestrator)
-  App.tsx          Root: setup screen vs dashboard
+  App.tsx          Root: setup/demo/dashboard routing, share target handling
   main.tsx         Entry point
 
 public/
-  sw.js           Service worker (stale-while-revalidate)
-  manifest.json   PWA manifest
+  sw.js           Service worker (network-first navigation, stale-while-revalidate assets)
+  manifest.json   PWA manifest + share target
   icon.svg        App icon
 
+vercel.json       SPA rewrites, cache headers for static assets
 sql/
   setup.sql       Database schema (bookmarks, tag_areas, status_history, triggers)
 ```
@@ -157,11 +158,11 @@ bookmarklet, +)                        panel)
 
 ContentDeck is your **capture and reflection layer**. Obsidian is your **knowledge layer**. Ideas flow from consumption to permanent notes.
 
-## Known Issues
+## Known Limitations
 
-- OpenRouter free models have rate limits — if AI tagging fails, it retries with exponential backoff
+- OpenRouter free models have rate limits — AI tagging retries with exponential backoff
 - Missing raster PWA icons (192px, 512px) — installability limited on some Android devices
-- Service worker caches grow unbounded — clear via DevTools if needed
+- SW cache version (`CACHE_NAME` in `sw.js`) requires manual bump on major deploys
 
 ## Contributing
 

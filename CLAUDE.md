@@ -6,9 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ContentDeck — a personal content bookmarking PWA dashboard for the Capture → Consume → Reflect → Export workflow. Bridges web browsing and Obsidian knowledge management.
 
-**Status: v2.0 — React + Vite + Tailwind + TypeScript (migration complete).**
+**Status: v2.2 — React + Vite + Tailwind + TypeScript. Demo mode, PWA share target, shipping audit complete.**
 
-See `AUDIT.md` for the post-migration audit (39/47 v1 issues resolved, 14 new issues found and fixed).
+See `AUDIT.md` for the full audit trail (39/47 v1 issues resolved, 14 v2.0 bugs fixed, 8 v2.2 shipping fixes).
 
 ## v2 Tech Stack
 
@@ -18,7 +18,7 @@ See `AUDIT.md` for the post-migration audit (39/47 v1 issues resolved, 14 new is
 - **Icons:** Lucide React
 - **Backend:** Supabase (PostgreSQL + REST API) — no auth, anon key approach
 - **AI:** OpenRouter (client-side, user-provided API key, free models)
-- **Hosting:** Vercel (auto-deploy from `main` branch)
+- **Hosting:** Vercel (auto-deploy from `main` branch, `vercel.json` for SPA rewrites + cache headers)
 
 ## Commands
 
@@ -50,6 +50,8 @@ src/
 - **Accessibility first:** `focus-visible:ring-2` on all interactives, proper `<label>` elements, `motion-safe:`/`motion-reduce:` variants
 - **Demo mode:** credentials `{ url: 'demo', key: 'demo' }` → mock Supabase client operates on in-memory arrays, zero hook changes needed
 - **PWA Share Target:** `manifest.json` `share_target` + `?url=` query param handling in App.tsx → AddBookmarkModal pre-fill
+- **Service worker:** Network-first for navigation, stale-while-revalidate for assets. Version in `CACHE_NAME` must be bumped manually on deploys.
+- **Loading state:** Inline CSS spinner in `index.html` shown until React mounts (no blank page)
 
 ## Database (Supabase PostgreSQL)
 
