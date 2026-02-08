@@ -2,7 +2,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useSupabase } from '../context/SupabaseProvider'
 import { useToast } from '../components/ui/Toast'
 import { fetchMetadata } from '../lib/metadata'
-import type { Bookmark, Status, NoteType } from '../types'
+import { suggestTags } from '../lib/ai'
+import { detectSourceType } from '../lib/utils'
+import type { Bookmark, Status, NoteType, Note } from '../types'
 
 const QUERY_KEY = ['bookmarks'] as const
 
@@ -42,7 +44,7 @@ export function useBookmarks() {
         .insert({
           url: bookmark.url,
           title: bookmark.title || null,
-          source_type: bookmark.source_type || 'auto',
+          source_type: bookmark.source_type || detectSourceType(bookmark.url),
           tags: bookmark.tags || [],
           notes: bookmark.notes || [],
           status: 'unread',
@@ -62,6 +64,10 @@ export function useBookmarks() {
       toast.success('Bookmark added')
       // Auto-fetch metadata in background
       autoFetchMetadata(newBookmark)
+      // Auto-suggest tags via AI if no tags provided and API key exists
+      if (newBookmark.tags.length === 0 && localStorage.getItem('openrouter_key')) {
+        autoSuggestTags(newBookmark)
+      }
     },
     onError: () => toast.error('Failed to add bookmark'),
   })
@@ -186,8 +192,14 @@ export function useBookmarks() {
 
   const addNote = useMutation({
     mutationFn: async ({ bookmarkId, type, content }: { bookmarkId: string; type: NoteType; content: string }) => {
-      const bookmark = queryClient.getQueryData<Bookmark[]>(QUERY_KEY)?.find((b) => b.id === bookmarkId)
-      const currentNotes = bookmark?.notes ?? []
+      // Fetch current notes from DB (not cache, which onMutate already modified)
+      const { data: row, error: fetchErr } = await db
+        .from('bookmarks')
+        .select('notes')
+        .eq('id', bookmarkId)
+        .single()
+      if (fetchErr) throw fetchErr
+      const currentNotes = (row as { notes: Note[] | null }).notes ?? []
       const newNote = { type, content, created_at: new Date().toISOString() }
       const updatedNotes = [...currentNotes, newNote]
       const { error } = await db
@@ -195,7 +207,6 @@ export function useBookmarks() {
         .update({ notes: updatedNotes })
         .eq('id', bookmarkId)
       if (error) throw error
-      return { bookmarkId, notes: updatedNotes }
     },
     onMutate: async ({ bookmarkId, type, content }) => {
       await queryClient.cancelQueries({ queryKey: QUERY_KEY })
@@ -216,15 +227,20 @@ export function useBookmarks() {
 
   const deleteNote = useMutation({
     mutationFn: async ({ bookmarkId, noteIndex }: { bookmarkId: string; noteIndex: number }) => {
-      const bookmark = queryClient.getQueryData<Bookmark[]>(QUERY_KEY)?.find((b) => b.id === bookmarkId)
-      const currentNotes = bookmark?.notes ?? []
+      // Fetch current notes from DB (not cache, which onMutate already modified)
+      const { data: row, error: fetchErr } = await db
+        .from('bookmarks')
+        .select('notes')
+        .eq('id', bookmarkId)
+        .single()
+      if (fetchErr) throw fetchErr
+      const currentNotes = (row as { notes: Note[] | null }).notes ?? []
       const updatedNotes = currentNotes.filter((_, i) => i !== noteIndex)
       const { error } = await db
         .from('bookmarks')
         .update({ notes: updatedNotes })
         .eq('id', bookmarkId)
       if (error) throw error
-      return { bookmarkId, notes: updatedNotes }
     },
     onMutate: async ({ bookmarkId, noteIndex }) => {
       await queryClient.cancelQueries({ queryKey: QUERY_KEY })
@@ -306,6 +322,27 @@ export function useBookmarks() {
       }
     } catch {
       // Silent fail for metadata — non-critical
+    }
+  }
+
+  async function autoSuggestTags(bookmark: Bookmark) {
+    try {
+      const allTags = (queryClient.getQueryData<Bookmark[]>(QUERY_KEY) ?? [])
+        .flatMap((b) => b.tags)
+        .filter((t, i, arr) => arr.indexOf(t) === i)
+      const { tags } = await suggestTags(bookmark, allTags)
+      if (tags.length === 0) return
+
+      const merged = [...new Set([...bookmark.tags, ...tags])]
+      const { error } = await db.from('bookmarks').update({ tags: merged }).eq('id', bookmark.id)
+      if (!error) {
+        queryClient.setQueryData<Bookmark[]>(QUERY_KEY, (old) =>
+          old?.map((b) => (b.id === bookmark.id ? { ...b, tags: merged } : b))
+        )
+        toast.info(`AI suggested tags: ${tags.join(', ')}`)
+      }
+    } catch {
+      // Silent fail for AI tagging — non-critical
     }
   }
 

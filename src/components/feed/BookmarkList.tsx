@@ -23,10 +23,15 @@ export default function BookmarkList({
   onDelete,
   onClick,
 }: BookmarkListProps) {
-  const { currentSource, currentStatus, currentTag, searchQuery, currentSort, selectMode, selectedIds, toggleSelected } = useUI()
+  const { currentSource, currentStatus, currentTag, showFavorites, searchQuery, currentSort, selectMode, selectedIds, toggleSelected } = useUI()
 
   const filtered = useMemo(() => {
     let result = bookmarks
+
+    // Favorites filter
+    if (showFavorites) {
+      result = result.filter((b) => b.is_favorited)
+    }
 
     // Source filter
     if (currentSource !== 'all') {
@@ -75,7 +80,7 @@ export default function BookmarkList({
     }
 
     return result
-  }, [bookmarks, currentSource, currentStatus, currentTag, searchQuery, currentSort])
+  }, [bookmarks, currentSource, currentStatus, currentTag, showFavorites, searchQuery, currentSort])
 
   if (isLoading) {
     return (

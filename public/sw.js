@@ -1,7 +1,7 @@
-const CACHE_NAME = 'contentdeck-v2.0.0'
+const CACHE_NAME = 'contentdeck-v2.1.0'
 
 self.addEventListener('install', () => {
-  self.skipWaiting()
+  // Don't skip waiting — let the app decide when to activate
 })
 
 self.addEventListener('activate', (event) => {
@@ -13,11 +13,18 @@ self.addEventListener('activate', (event) => {
   self.clients.claim()
 })
 
+// Listen for skip-waiting message from the app
+self.addEventListener('message', (event) => {
+  if (event.data === 'SKIP_WAITING') {
+    self.skipWaiting()
+  }
+})
+
 self.addEventListener('fetch', (event) => {
   const url = event.request.url
 
   // Always go to network for API calls; return graceful error if offline
-  if (url.includes('supabase') || url.includes('openrouter.ai') || url.includes('microlink.io')) {
+  if (url.includes('supabase') || url.includes('openrouter.ai') || url.includes('microlink.io') || url.includes('oembed')) {
     event.respondWith(
       fetch(event.request).catch(
         () => new Response(JSON.stringify({ error: 'offline' }), {
@@ -29,16 +36,18 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
-  // Cache-first for app assets, with network fallback
+  // Stale-while-revalidate for app assets
   event.respondWith(
-    caches.match(event.request).then(
-      (cached) => cached || fetch(event.request).then((response) => {
+    caches.match(event.request).then((cached) => {
+      const networkFetch = fetch(event.request).then((response) => {
         if (response.ok && event.request.method === 'GET') {
           const clone = response.clone()
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone))
         }
         return response
-      })
-    )
+      }).catch(() => cached ?? new Response('Offline', { status: 503, headers: { 'Content-Type': 'text/plain' } }))
+
+      return cached || networkFetch
+    })
   )
 })

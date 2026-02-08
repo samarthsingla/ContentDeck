@@ -2,25 +2,36 @@ import type { Bookmark } from '../types'
 import { formatDate, getDomain } from './utils'
 import { SOURCE_LABELS } from '../types'
 
+/** Escape a string for use as a YAML double-quoted value */
+function yamlEscape(s: string): string {
+  return s
+    .replace(/\\/g, '\\\\')
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, '\\n')
+    .replace(/\r/g, '\\r')
+    .replace(/\t/g, '\\t')
+}
+
 /** Generate markdown for a single bookmark with YAML frontmatter */
 export function generateMarkdown(bookmark: Bookmark): string {
   const lines: string[] = []
 
   // YAML frontmatter
   lines.push('---')
-  lines.push(`url: "${bookmark.url}"`)
-  if (bookmark.title) lines.push(`title: "${bookmark.title.replace(/"/g, '\\"')}"`)
+  lines.push(`url: "${yamlEscape(bookmark.url)}"`)
+  if (bookmark.title) lines.push(`title: "${yamlEscape(bookmark.title)}"`)
   lines.push(`source: ${SOURCE_LABELS[bookmark.source_type]}`)
   lines.push(`status: ${bookmark.status}`)
   if (bookmark.is_favorited) lines.push('favorited: true')
   if (bookmark.tags.length > 0) {
-    lines.push(`tags: [${bookmark.tags.map((t) => `"${t}"`).join(', ')}]`)
+    lines.push(`tags: [${bookmark.tags.map((t) => `"${yamlEscape(t)}"`).join(', ')}]`)
   }
   lines.push(`created: ${formatDate(bookmark.created_at)}`)
   if (bookmark.started_reading_at) lines.push(`started: ${formatDate(bookmark.started_reading_at)}`)
   if (bookmark.finished_at) lines.push(`finished: ${formatDate(bookmark.finished_at)}`)
   if (bookmark.metadata?.reading_time) lines.push(`reading_time: ${bookmark.metadata.reading_time} min`)
-  if (bookmark.metadata?.channel) lines.push(`channel: "${bookmark.metadata.channel}"`)
+  if (bookmark.metadata?.channel) lines.push(`channel: "${yamlEscape(bookmark.metadata.channel)}"`)
+
   lines.push('---')
   lines.push('')
 

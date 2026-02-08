@@ -1,4 +1,5 @@
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import AppShell from '../components/layout/AppShell'
 import SourceTabs from '../components/feed/SourceTabs'
 import FeedToolbar from '../components/feed/FeedToolbar'
@@ -16,7 +17,11 @@ import { useTagAreas } from '../hooks/useTagAreas'
 import { useStats } from '../hooks/useStats'
 import { useUI } from '../context/UIProvider'
 import { useToast } from '../components/ui/Toast'
+import ProgressBar from '../components/ui/ProgressBar'
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
 import { exportToFileSystem, exportToClipboard } from '../lib/obsidian'
+import { fetchMetadata } from '../lib/metadata'
+import { suggestTags } from '../lib/ai'
 import type { Bookmark, Status, NoteType, TagArea, Credentials } from '../types'
 
 interface DashboardProps {
@@ -36,6 +41,7 @@ export default function Dashboard({ credentials, onDisconnect }: DashboardProps)
   const { stats, isLoading: statsLoading } = useStats(bookmarks)
   const { currentStatus, currentView, selectMode, selectedIds, clearSelection, setTag, setView } = useUI()
   const toast = useToast()
+  const queryClient = useQueryClient()
 
   const [showAddModal, setShowAddModal] = useState(false)
   const [showSearch, setShowSearch] = useState(false)
@@ -45,6 +51,120 @@ export default function Dashboard({ credentials, onDisconnect }: DashboardProps)
   const [editingArea, setEditingArea] = useState<TagArea | null>(null)
   const [editingBookmark, setEditingBookmark] = useState<Bookmark | null>(null)
   const [selectedBookmark, setSelectedBookmark] = useState<Bookmark | null>(null)
+  const [metaProgress, setMetaProgress] = useState<{ current: number; total: number } | null>(null)
+  const metaFetchedRef = useRef(false)
+  const aiTaggedRef = useRef(false)
+
+  // Keyboard shortcuts
+  useKeyboardShortcuts(useMemo(() => ({
+    onSearch: () => setShowSearch(true),
+    onNewBookmark: () => setShowAddModal(true),
+    onNavigateUp: () => {/* j/k navigation handled at list level */},
+    onNavigateDown: () => {/* j/k navigation handled at list level */},
+    onEscape: () => {
+      if (selectedBookmark) setSelectedBookmark(null)
+      else if (editingBookmark) setEditingBookmark(null)
+      else if (showSearch) setShowSearch(false)
+    },
+  }), [selectedBookmark, editingBookmark, showSearch]))
+
+  // Refs to access current values without triggering effect re-runs
+  const bookmarksRef = useRef(bookmarks)
+  bookmarksRef.current = bookmarks
+  const toastRef = useRef(toast)
+  toastRef.current = toast
+
+  // Auto-fetch missing metadata on first load
+  useEffect(() => {
+    if (isLoading || metaFetchedRef.current) return
+    const currentBookmarks = bookmarksRef.current
+    if (currentBookmarks.length === 0) return
+    metaFetchedRef.current = true
+
+    const missing = currentBookmarks.filter((b) => !b.title && !b.image)
+    if (missing.length === 0) return
+
+    let cancelled = false
+    async function fetchAll() {
+      setMetaProgress({ current: 0, total: missing.length })
+      for (let i = 0; i < missing.length; i++) {
+        if (cancelled) break
+        const b = missing[i]!
+        try {
+          const result = await fetchMetadata(b.url, b.source_type)
+          if (result.title || result.image) {
+            const updates: Record<string, unknown> = {}
+            if (result.title) updates.title = result.title
+            if (result.image) updates.image = result.image
+            if (result.metadata) updates.metadata = { ...b.metadata, ...result.metadata }
+            void fetch(`${credentials.url}/rest/v1/bookmarks?id=eq.${b.id}`, {
+              method: 'PATCH',
+              headers: {
+                'apikey': credentials.key,
+                'Authorization': `Bearer ${credentials.key}`,
+                'Content-Type': 'application/json',
+                'Prefer': 'return=minimal',
+              },
+              body: JSON.stringify(updates),
+            })
+          }
+        } catch { /* skip */ }
+        setMetaProgress({ current: i + 1, total: missing.length })
+      }
+      setMetaProgress(null)
+      // Invalidate to pick up metadata updates
+      void queryClient.invalidateQueries({ queryKey: ['bookmarks'] })
+    }
+    fetchAll()
+    return () => { cancelled = true }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading, credentials])
+
+  // Auto-tag untagged bookmarks via AI on load
+  useEffect(() => {
+    if (isLoading || aiTaggedRef.current) return
+    const currentBookmarks = bookmarksRef.current
+    if (currentBookmarks.length === 0) return
+    const apiKey = localStorage.getItem('openrouter_key')
+    if (!apiKey) return
+    aiTaggedRef.current = true
+
+    const untagged = currentBookmarks.filter((b) => !b.tags || b.tags.length === 0)
+    if (untagged.length === 0) return
+
+    const allTags = [...new Set(currentBookmarks.flatMap((b) => b.tags))]
+
+    let cancelled = false
+    async function tagAll() {
+      for (const b of untagged) {
+        if (cancelled) break
+        try {
+          const { tags } = await suggestTags(b, [...allTags])
+          if (tags.length === 0) continue
+          await fetch(`${credentials.url}/rest/v1/bookmarks?id=eq.${b.id}`, {
+            method: 'PATCH',
+            headers: {
+              'apikey': credentials.key,
+              'Authorization': `Bearer ${credentials.key}`,
+              'Content-Type': 'application/json',
+              'Prefer': 'return=minimal',
+            },
+            body: JSON.stringify({ tags }),
+          })
+          for (const t of tags) {
+            if (!allTags.includes(t)) allTags.push(t)
+          }
+          toastRef.current.info(`AI tagged "${b.title || 'bookmark'}": ${tags.join(', ')}`)
+        } catch { /* skip */ }
+      }
+      if (!cancelled) {
+        void queryClient.invalidateQueries({ queryKey: ['bookmarks'] })
+      }
+    }
+    tagAll()
+    return () => { cancelled = true }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading, credentials])
 
   // Compute counts
   const counts = useMemo(() => ({
@@ -108,13 +228,16 @@ export default function Dashboard({ credentials, onDisconnect }: DashboardProps)
     let success: boolean
     if ('showDirectoryPicker' in window) {
       success = await exportToFileSystem(bookmark, vaultFolder)
+      if (success) {
+        markSynced.mutate(bookmark.id)
+        toast.success('Exported to Obsidian')
+      }
     } else {
       success = await exportToClipboard(bookmark)
-      if (success) toast.info('Markdown copied to clipboard (File System API not available)')
-    }
-    if (success) {
-      markSynced.mutate(bookmark.id)
-      toast.success('Exported to Obsidian')
+      if (success) {
+        markSynced.mutate(bookmark.id)
+        toast.info('Markdown copied to clipboard')
+      }
     }
   }
 
@@ -162,6 +285,13 @@ export default function Dashboard({ credentials, onDisconnect }: DashboardProps)
           onStats={() => setShowStats(true)}
           showSearch={showSearch}
         >
+          {metaProgress && (
+            <ProgressBar
+              current={metaProgress.current}
+              total={metaProgress.total}
+              label={`Fetching metadata ${metaProgress.current}/${metaProgress.total}`}
+            />
+          )}
           <div className="max-w-3xl mx-auto px-4 py-4 space-y-4">
             {currentView === 'areas' ? (
               <AreasView

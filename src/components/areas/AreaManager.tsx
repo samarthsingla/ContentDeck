@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Trash2, GripVertical } from 'lucide-react'
 import Modal from '../ui/Modal'
 import Button from '../ui/Button'
@@ -209,6 +209,11 @@ function AreaListManager({
 }) {
   const [showCreate, setShowCreate] = useState(false)
   const [localAreas, setLocalAreas] = useState(areas)
+
+  // Sync with prop updates (new areas created, areas deleted externally)
+  useEffect(() => {
+    setLocalAreas(areas)
+  }, [areas])
 
   function moveArea(index: number, direction: 'up' | 'down') {
     const newAreas = [...localAreas]

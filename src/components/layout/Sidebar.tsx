@@ -19,7 +19,7 @@ const statusNav: { status: Status | 'all'; label: string; icon: React.ElementTyp
 ]
 
 export default function Sidebar({ counts, onAdd, onDisconnect, onSettings, onStats }: SidebarProps) {
-  const { currentStatus, setStatus, currentView, setView, currentTag, setTag } = useUI()
+  const { currentStatus, setStatus, currentView, setView, currentTag, setTag, showFavorites, setFavorites } = useUI()
   const { toggleTheme, isDark } = useTheme()
 
   const totalCount = counts.unread + counts.reading + counts.done
@@ -43,11 +43,11 @@ export default function Sidebar({ counts, onAdd, onDisconnect, onSettings, onSta
         <div className="space-y-0.5">
           {statusNav.map(({ status, label, icon: Icon }) => {
             const count = status === 'all' ? totalCount : counts[status as Status] ?? 0
-            const active = currentStatus === status && !currentTag
+            const active = currentStatus === status && !currentTag && !showFavorites
             return (
               <button
                 key={status}
-                onClick={() => { setStatus(status); setTag(null) }}
+                onClick={() => { setStatus(status); setTag(null); setFavorites(false) }}
                 className={`
                   w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors min-h-[44px]
                   ${active
@@ -66,10 +66,17 @@ export default function Sidebar({ counts, onAdd, onDisconnect, onSettings, onSta
           {/* Favorites */}
           <button
             onClick={() => {
+              setFavorites(true)
               setStatus('all')
               setTag(null)
             }}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-surface-600 dark:text-surface-400 hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors min-h-[44px]"
+            className={`
+              w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors min-h-[44px]
+              ${showFavorites
+                ? 'bg-primary-600/10 text-primary-600 dark:text-primary-400'
+                : 'text-surface-600 dark:text-surface-400 hover:bg-surface-100 dark:hover:bg-surface-800'
+              }
+            `}
           >
             <Star size={18} />
             <span className="flex-1 text-left">Favorites</span>

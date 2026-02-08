@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useRef } from 'react'
+import { createContext, useContext, useState, useCallback, useRef, useMemo } from 'react'
 import { X } from 'lucide-react'
 
 interface Toast {
@@ -37,11 +37,10 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     setToasts((prev) => prev.filter((t) => t.id !== id))
   }, [])
 
-  const value: ToastContextValue = {
-    success: useCallback((msg: string) => addToast(msg, 'success'), [addToast]),
-    error: useCallback((msg: string) => addToast(msg, 'error'), [addToast]),
-    info: useCallback((msg: string) => addToast(msg, 'info'), [addToast]),
-  }
+  const success = useCallback((msg: string) => addToast(msg, 'success'), [addToast])
+  const error = useCallback((msg: string) => addToast(msg, 'error'), [addToast])
+  const info = useCallback((msg: string) => addToast(msg, 'info'), [addToast])
+  const value = useMemo<ToastContextValue>(() => ({ success, error, info }), [success, error, info])
 
   return (
     <ToastContext.Provider value={value}>

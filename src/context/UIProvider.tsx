@@ -6,6 +6,7 @@ interface UIState {
   currentSource: SourceType | 'all'
   currentStatus: Status | 'all'
   currentTag: string | null
+  showFavorites: boolean
   searchQuery: string
   currentSort: SortOption
   selectMode: boolean
@@ -17,6 +18,7 @@ interface UIActions {
   setSource: (source: SourceType | 'all') => void
   setStatus: (status: Status | 'all') => void
   setTag: (tag: string | null) => void
+  setFavorites: (show: boolean) => void
   setSearch: (query: string) => void
   setSort: (sort: SortOption) => void
   toggleSelectMode: () => void
@@ -34,6 +36,7 @@ export function UIProvider({ children }: { children: React.ReactNode }) {
   const [currentSource, setCurrentSource] = useState<SourceType | 'all'>('all')
   const [currentStatus, setCurrentStatus] = useState<Status | 'all'>('unread')
   const [currentTag, setCurrentTag] = useState<string | null>(null)
+  const [showFavorites, setShowFavorites] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [currentSort, setCurrentSort] = useState<SortOption>('newest')
   const [selectMode, setSelectMode] = useState(false)
@@ -47,6 +50,7 @@ export function UIProvider({ children }: { children: React.ReactNode }) {
   const setSource = useCallback((source: SourceType | 'all') => setCurrentSource(source), [])
   const setStatus = useCallback((status: Status | 'all') => setCurrentStatus(status), [])
   const setTag = useCallback((tag: string | null) => setCurrentTag(tag), [])
+  const setFavorites = useCallback((show: boolean) => setShowFavorites(show), [])
   const setSearch = useCallback((query: string) => setSearchQuery(query), [])
   const setSort = useCallback((sort: SortOption) => setCurrentSort(sort), [])
 
@@ -77,13 +81,13 @@ export function UIProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo(
     () => ({
-      currentView, currentSource, currentStatus, currentTag, searchQuery, currentSort,
+      currentView, currentSource, currentStatus, currentTag, showFavorites, searchQuery, currentSort,
       selectMode, selectedIds,
-      setView, setSource, setStatus, setTag, setSearch, setSort,
+      setView, setSource, setStatus, setTag, setFavorites, setSearch, setSort,
       toggleSelectMode, toggleSelected, selectAll, clearSelection,
     }),
-    [currentView, currentSource, currentStatus, currentTag, searchQuery, currentSort,
-     selectMode, selectedIds, setView, setSource, setStatus, setTag, setSearch, setSort,
+    [currentView, currentSource, currentStatus, currentTag, showFavorites, searchQuery, currentSort,
+     selectMode, selectedIds, setView, setSource, setStatus, setTag, setFavorites, setSearch, setSort,
      toggleSelectMode, toggleSelected, selectAll, clearSelection]
   )
 

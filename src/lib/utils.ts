@@ -75,7 +75,14 @@ export function debounce<T extends (...args: never[]) => void>(fn: T, ms: number
   }) as T
 }
 
+/** Escape a value for safe embedding in a JS single-quoted string */
+function jsStringEscape(s: string): string {
+  return s.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '\\r')
+}
+
 /** Generate bookmarklet code */
 export function generateBookmarklet(sbUrl: string, sbKey: string): string {
-  return `javascript:void(function(){var u=location.href,t=document.title;fetch('${sbUrl}/rest/v1/bookmarks',{method:'POST',headers:{'apikey':'${sbKey}','Authorization':'Bearer ${sbKey}','Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({url:u,title:t,status:'unread'})}).then(function(r){if(r.ok){alert('Saved!')}else{alert('Error: '+r.status)}}).catch(function(){alert('Network error')})})()`
+  const safeUrl = jsStringEscape(sbUrl)
+  const safeKey = jsStringEscape(sbKey)
+  return `javascript:void(function(){var u=location.href,t=document.title;fetch('${safeUrl}/rest/v1/bookmarks',{method:'POST',headers:{'apikey':'${safeKey}','Authorization':'Bearer ${safeKey}','Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({url:u,title:t,status:'unread'})}).then(function(r){if(r.ok){alert('Saved!')}else{alert('Error: '+r.status)}}).catch(function(){alert('Network error')})})()`
 }

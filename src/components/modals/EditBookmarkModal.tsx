@@ -165,7 +165,7 @@ export default function EditBookmarkModal({ open, bookmark, onClose, onSave, isP
                 <button
                   type="button"
                   onClick={() => removeTag(tag)}
-                  className="text-surface-400 hover:text-red-500 min-w-[20px] min-h-[20px] flex items-center justify-center"
+                  className="text-primary-400 dark:text-primary-300 hover:text-red-500 min-w-[20px] min-h-[20px] flex items-center justify-center"
                   aria-label={`Remove tag ${tag}`}
                 >
                   &times;

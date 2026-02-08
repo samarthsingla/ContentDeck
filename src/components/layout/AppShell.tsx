@@ -34,7 +34,7 @@ export default function AppShell({
         <MobileHeader onAdd={onAdd} onToggleSearch={onToggleSearch} onSettings={onSettings} showSearch={showSearch} />
 
         {/* Content Area */}
-        <main className="flex-1 overflow-y-auto" style={{ paddingBottom: 'calc(72px + var(--safe-bottom))' }}>
+        <main id="main-content" className="flex-1 overflow-y-auto" style={{ paddingBottom: 'calc(72px + var(--safe-bottom))' }}>
           {children}
         </main>
 

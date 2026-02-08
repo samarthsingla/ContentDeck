@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { useMemo } from 'react'
 import { useSupabase } from '../context/SupabaseProvider'
 import { localDateString } from '../lib/utils'
 import type { Bookmark, StatusHistoryEntry } from '../types'
@@ -33,7 +34,8 @@ export function useStats(bookmarks: Bookmark[]) {
     },
   })
 
-  const stats = computeStats(bookmarks, historyQuery.data ?? [])
+  const historyData = historyQuery.data ?? []
+  const stats = useMemo(() => computeStats(bookmarks, historyData), [bookmarks, historyData])
 
   return {
     stats,

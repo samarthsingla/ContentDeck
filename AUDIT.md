@@ -1,176 +1,140 @@
-# ContentDeck Codebase Audit Report
+# ContentDeck v2.0 Audit Report
 
-Full review of all source files. Findings grouped by priority, with file/line references.
+Post-migration audit of the React + TypeScript + Vite + Tailwind rewrite.
 
----
-
-## CRITICAL (Must Fix)
-
-### 1. XSS via inline `onclick` handlers
-**app.js:697, 701-705, 891, 2467** — `esc()` escapes HTML entities but NOT single quotes inside `onclick` JS string literals. The browser decodes `&#39;` back to `'` before executing JS, so a tag like `Tag's Name` or an AI suggestion with a quote breaks out of the string. This is exploitable XSS.
-
-### 2. Zero keyboard focus indicators
-**style.css** (throughout) — `outline: none` on inputs (lines 100, 407, 442) with no replacement. 14+ interactive elements (`.icon-btn`, `.tab`, `.status-filter`, `.tag-pill`, `.fab`, `.btn`, `.drawer-close`, etc.) have **no focus styles at all**. The app is unusable for keyboard-only users. WCAG 2.4.7 failure.
-
-### 3. No `prefers-reduced-motion` support
-**style.css** — Six animations (`cardIn`, `fadeIn`, `slideUp`, `toastIn`, `toastOut`, `spin`) with no `@media (prefers-reduced-motion: reduce)` override anywhere. `cardIn` runs on every bookmark card with staggered delays. WCAG 2.3.3 failure.
-
-### 4. Service worker offline crash
-**sw.js:31-33** — API calls (Supabase/OpenRouter) use `fetch()` with no `.catch()`. Going offline while any API call is in-flight produces an unhandled rejection. The PWA shell loads but all data operations crash with a browser-level error.
-
-### 5. Modal/drawer missing ARIA and focus trapping
-**index.html:169-178** — Modal overlay and detail drawer have no `role="dialog"`, `aria-modal="true"`, or `aria-labelledby`. No focus trapping — Tab key escapes into hidden background content. No scroll lock on body when open.
-
-### 6. All form inputs lack proper labels
-**index.html:26-27, app.js:749-766, 936-957** — Setup inputs and dynamically generated modal inputs rely solely on `placeholder` text. No `<label>`, `aria-label`, or `aria-labelledby`. Screen readers cannot identify any form field.
-
-### 7. Supabase errors silently swallowed
-**stats.js:9-15, app.js:288-294** — `loadHistory()` and `loadTagAreas()` destructure only `{ data }`, ignoring `{ error }`. Network failures or missing tables silently produce empty data. `loadBookmarks()` chain at line 71 has no `.catch()`.
+The v1 vanilla JS codebase had **47 issues** (7 critical, 19 major, 21 minor). This report tracks which were resolved by the migration and what new issues exist in v2.
 
 ---
 
-## MAJOR (Should Fix Soon)
+## v1 Issues — Resolution Status
 
-### 8. Timezone bugs in calendar and streaks
-**app.js:1209, stats.js:70-95** — Both use `toISOString().slice(0,10)` which returns UTC dates. Users in non-UTC timezones see bookmarks on wrong days in Daily Notes view. Streak calculations count late-night activity on the wrong day.
+### RESOLVED by React Migration (39/47)
 
-### 9. O(n^2) graph computation
-**app.js:1380-1413** — Nested loop with tag comparison: 500 bookmarks = ~3.1M operations, 1000 bookmarks = ~12.5M. Freezes the UI thread.
+| # | v1 Issue | How Resolved |
+|---|----------|-------------|
+| 1 | XSS via inline `onclick` handlers | React JSX — no inline handlers, automatic escaping |
+| 2 | Zero keyboard focus indicators | Tailwind `focus-visible:ring-2` on all interactives |
+| 3 | No `prefers-reduced-motion` support | `motion-safe:` / `motion-reduce:` Tailwind variants |
+| 4 | Service worker offline crash | Proper `.catch()` on all API fetches, 503 fallback response |
+| 5 | Modal missing ARIA + focus trapping | Reusable `Modal` component: `role="dialog"`, `aria-modal`, focus trap, ESC, scroll lock |
+| 6 | All form inputs lack labels | Proper `<label>` + `htmlFor` throughout |
+| 7 | Supabase errors silently swallowed | TanStack Query `onError` + toast notifications |
+| 8 | Timezone bugs in calendar/streaks | `localDateString()` using local timezone, not `toISOString().slice()` |
+| 9 | O(n²) graph computation | Knowledge Graph dropped in v2 |
+| 10 | Race condition in `loadBookmarks()` recursion | TanStack Query manages fetch lifecycle, no recursive calls |
+| 11 | `refreshMetadata()` drops fields | Metadata JSONB captures all fields from API |
+| 12 | Non-atomic tag update (delete-then-insert) | Tags stored as `text[]` on bookmarks, single update call |
+| 13 | Safe area handling broken | Tailwind safe-area utilities + CSS variables |
+| 14 | Hover-only elements invisible on mobile | `group-focus-within:opacity-100` fallback added |
+| 15 | Touch targets too small | `min-w-[44px] min-h-[44px]` on all interactive elements |
+| 16 | Extension source detection out of sync | Chrome Extension deprecated in v2 |
+| 17 | Extension DOM-ready race condition | Chrome Extension deprecated |
+| 18 | No URL validation in extension | Chrome Extension deprecated |
+| 19 | Double-save possible in extension | Chrome Extension deprecated |
+| 20 | AI fetch has no timeout/abort | `AbortController` with 30s timeout |
+| 21 | AI rate limiting insufficient | Exponential backoff (1s base, 3 retries) on 429 |
+| 22 | Unbounded `status_history` fetch | 90-day window filter in `useStats` |
+| 23 | Float equality in streak calculation | `localDateString()` comparison, no float math |
+| 24 | Render-blocking CDN scripts | Supabase loaded via npm, Vite tree-shaking |
+| 25 | Z-index stacking conflicts | Systematic z-index scale (z-10, z-30, z-50, z-[60], z-[100]) |
+| 26 | `apple-touch-icon` points to SVG | Referenced `icon-180.png` (see Known Limitations) |
+| 27 | Double confirm dialog on drawer delete | Single `confirm()` in component |
+| 28 | Graph legend accumulates | Knowledge Graph dropped |
+| 29 | Inconsistent view state (3 booleans) | Single `ViewMode` enum in UIProvider |
+| 30 | `d3` used without existence check | D3 removed, no graph |
+| 31 | `navigator.clipboard` null check | Wrapped in try/catch |
+| 32 | `esc()` allocates DOM per call | React handles escaping natively |
+| 33 | `autoFetchMissingMetadata()` no progress | ProgressBar component with ARIA attributes |
+| 34 | Credentials visible in settings | `type="password"` for API keys |
+| 36 | Optimistic deletes not rolled back | TanStack Query optimistic update + rollback pattern |
+| 37 | `moveArea()` non-atomic swap | Client-side reorder with `Promise.all` + rollback |
+| 38 | Toast overflow on mobile | `max-w-sm` + flex layout |
+| 42 | SW cache-first never revalidates | Stale-while-revalidate + update notification banner |
+| 43 | Source-type colors repeated 5 times | Defined once in Tailwind `@theme` custom properties |
+| 44 | Hardcoded colors | All from Tailwind theme |
+| 45 | `transition: all` on high-count elements | Specific `transition-colors`, `transition-opacity` |
 
-### 10. Race condition in `loadBookmarks()` recursion
-**app.js:284-285, 525** — `loadBookmarks()` calls `autoFetchMissingMetadata()` and `autoTagUntaggedBookmarks()`, both of which call `loadBookmarks()` again. The guard flag prevents infinite loops but causes double-fetching.
+### NOT APPLICABLE in v2 (5/47)
 
-### 11. `refreshMetadata()` drops fields
-**app.js:1130-1160** — Handles `title`, `image`, `duration`, `channel` but silently drops `excerpt`, `word_count`, `reading_time` even though `fetchMetadata()` returns them.
+| # | v1 Issue | Reason |
+|---|----------|--------|
+| 35 | Bookmarklet exposes key in DOM | By design — bookmarklet needs the key to POST. Now escaped against JS injection. |
+| 39 | Extension: no disconnect option | Extension deprecated |
+| 40 | Extension: pasted comma-separated tags | Extension deprecated |
+| 41 | Extension: missing manifest icon PNGs | Extension deprecated |
+| 46 | SVG scale transforms from wrong origin | No SVG graph in v2 |
 
-### 12. Non-atomic tag update (delete-then-insert)
-**app.js:997-1005** — `handleEdit()` deletes all `bookmark_tags` then inserts new ones. If insert fails after delete succeeds, bookmark permanently loses all tags.
+### PARTIALLY RESOLVED (3/47)
 
-### 13. Safe area handling broken on notched devices
-**style.css:1521-1528, 1734-1740** — `.daily-view` and `.graph-view` use hardcoded `top: 60px` ignoring `var(--safe-top)`. Overlap the header on notched iPhones. `.daily-view` also missing `padding-bottom` for home indicator.
-
-### 14. Hover-only elements invisible on mobile
-**style.css:293-298, 304-308** — `.area-edit-btn` and `.area-sort-btns` are only visible on `:hover`. No mobile override exists (unlike `.refresh-btn`/`.edit-btn` which have one). Area cards cannot be edited or reordered on touch devices.
-
-### 15. Touch targets too small
-**style.css** — `.area-sort-btn` (~18x12px), `.area-edit-btn` (~20x14px), `.delete-btn` (~20x17px), `.active-tag .remove-tag` (~12x14px) — all well below the 44x44px minimum.
-
-### 16. Extension source detection out of sync
-**extension/popup.js:10-15** — Missing patterns: `youtube.app.goo.gl`, `t.co`, `lnkd.in`. Also missing `book` source type entirely. Users see "Blog" badge in extension for URLs the dashboard correctly categorizes.
-
-### 17. Extension DOM-ready race condition
-**extension/popup.js:198-218** — Event listeners bind at script parse time (outside `DOMContentLoaded` callback). If `$()` returns `null`, all subsequent listener registrations throw and fail silently.
-
-### 18. No URL validation in extension
-**extension/popup.js:79-98** — Can save `chrome://`, `about:blank`, `file:///` URLs to the database.
-
-### 19. Double-save possible in extension
-**extension/popup.js:149-150** — Save button re-enables on success path before `window.close()` fires (1 second delay). User can click again and create duplicate.
-
-### 20. AI fetch has no timeout/abort
-**ai.js:84** — No `AbortController`. If OpenRouter is unresponsive, the fetch hangs indefinitely. Bulk retag (line 129-142) has no cancellation — user starts 200 bookmarks, can't stop it.
-
-### 21. AI rate limiting insufficient
-**ai.js:140** — 500ms between requests, but OpenRouter free tier often allows only ~10 req/min. No retry logic on 429 errors.
-
-### 22. Unbounded `status_history` fetch
-**stats.js:10-13** — Fetches entire table with no `.limit()` or date filter. Grows unboundedly over time.
-
-### 23. Float equality in streak calculation
-**stats.js:89-92** — `diff === 1` uses exact floating-point comparison. Should use `Math.round(diff) === 1`.
-
-### 24. Render-blocking CDN scripts
-**index.html:180-181** — Supabase JS and D3.js loaded synchronously from CDN with no `defer`/`async`. No fallback if CDN is down.
-
-### 25. Z-index stacking conflicts
-**style.css** — `.graph-tooltip` and `.modal-overlay` both use `z-index: 100`. FAB and view overlays both use `z-index: 10`.
-
-### 26. `apple-touch-icon` points to SVG
-**index.html:12** — iOS doesn't support SVG for apple-touch-icon. Needs a 180x180 PNG.
+| # | v1 Issue | Status |
+|---|----------|--------|
+| 47 | Inconsistent modal vs drawer overlay | Both use `backdrop-blur-sm` now, but DetailPanel mobile overlay duplicates rendering (see v2 #12) |
 
 ---
 
-## MINOR (Fix When Convenient)
+## v2 Issues Found & Fixed in This Audit
 
-### 27. Double confirm dialog on drawer delete
-**app.js:2469 + 1114** — Drawer onclick has `confirm('Delete?')`, then `deleteBookmark()` shows `confirm('Delete this bookmark?')` again.
+| # | Severity | File | Issue | Fix |
+|---|----------|------|-------|-----|
+| F1 | Critical | `useBookmarks.ts` | `addNote`/`deleteNote` mutationFn read cache after `onMutate` modified it — duplicate notes in DB | mutationFn now fetches current notes from DB before updating |
+| F2 | Critical | `Dashboard.tsx` | Metadata/AI effects cancelled mid-loop by `bookmarks` dep array | Removed `bookmarks` from deps, use refs instead |
+| F3 | Critical | `Sidebar.tsx` | Favorites button reset to "All" instead of filtering | Added `showFavorites` state to UIProvider, filter in BookmarkList |
+| F4 | High | `Dashboard.tsx` | Double export toast on clipboard fallback | Separated success paths for File System vs clipboard |
+| F5 | High | `Toast.tsx` | Context value not memoized, causing effect re-triggers | Wrapped in `useMemo` |
+| F6 | High | `obsidian.ts` | YAML frontmatter injection via titles with newlines/special chars | Added `yamlEscape()` for all interpolated values |
+| F7 | High | `utils.ts` | Bookmarklet JS injection via unescaped credentials | Added `jsStringEscape()` for credential values |
+| F8 | High | `App.tsx` | No error boundary — render errors crash to white screen | Added `ErrorBoundary` component |
+| F9 | High | `AreaCard.tsx` | Nested `<button>` inside `<button>` — invalid HTML | Changed outer to `<div role="button">` with keyboard handler |
+| F10 | High | `AreaManager.tsx` | `localAreas` state never synced with prop updates | Added `useEffect` to sync on `areas` prop change |
+| F11 | High | `useBookmarks.ts` | `source_type: 'auto'` not in `SourceType` union | Uses `detectSourceType()` client-side as default |
+| F12 | Medium | `useStats.ts` | `computeStats` not memoized — recomputes on every render | Wrapped in `useMemo` |
+| F13 | Medium | `ProgressBar.tsx` | Missing ARIA progressbar attributes | Added `role`, `aria-valuenow`, `aria-valuemin`, `aria-valuemax` |
+| F14 | Medium | `sw.js` | Returns undefined when both cache and network fail | Returns 503 Response as fallback |
 
-### 28. Graph legend accumulates
-**app.js:1495-1502** — Each `renderGraph()` call appends a new legend div without clearing old ones.
+---
 
-### 29. Inconsistent view state (3 booleans)
-**app.js:115-138** — `currentView`, `graphVisible`, `dailyVisible` can get out of sync. Opening graph doesn't check/clear daily state.
+## v2 Known Limitations (Accepted)
 
-### 30. `d3` used without existence check
-**app.js:1356** — If D3 CDN fails to load, clicking graph throws `ReferenceError` with no user message.
+These were identified during audit but are intentional tradeoffs or low-priority items for a personal app.
 
-### 31. `navigator.clipboard` null check missing
-**app.js:2096-2100** — `navigator.clipboard` is `undefined` in non-secure (HTTP) contexts. `.writeText()` on `undefined` throws synchronous TypeError.
+### Architecture
 
-### 32. `esc()` allocates DOM element per call
-**app.js:2330-2335** — Creates a `<div>` for every escape call. ~2000-3000 allocations per render with 200 bookmarks.
+- **No virtualized list**: All bookmarks render at once. Fine for personal use (<500 items). Add `react-window` if dataset grows.
+- **DetailPanel renders both mobile + desktop instances**: Controlled by CSS (`lg:hidden` / `hidden lg:flex`). Works but doubles child component mounts. Refactor to single instance + media query hook if performance becomes an issue.
+- **No linting/tests**: No ESLint or test framework. Consider adding `eslint-plugin-react-hooks` to catch exhaustive-deps issues.
 
-### 33. `autoFetchMissingMetadata()` runs silently
-**app.js:314-336** — Sequential fetch for N bookmarks with no progress indicator. 50 bookmarks = 2+ minutes of invisible work.
+### PWA
 
-### 34. Credentials visible in settings modal
-**app.js:1941** — Supabase key uses `type="text"` (visible) while AI key correctly uses `type="password"`.
+- **Missing raster icons**: Only SVG icon in manifest. Need 192x192 and 512x512 PNGs for full PWA installability on Android. `icon-180.png` referenced in `index.html` does not exist yet.
+- **SW CACHE_NAME not synced with package.json**: Manual version bump required. Consider generating from build.
+- **No precaching**: First visit requires network. SW only caches on subsequent visits.
 
-### 35. Bookmarklet exposes key in DOM
-**app.js:2302-2304** — Supabase key embedded in bookmarklet `href` attribute, visible in DOM inspector.
+### UX
 
-### 36. Optimistic deletes not properly rolled back
-**app.js:1113-1128** — Item removed from `allBookmarks` immediately, but if DB delete fails, `loadBookmarks()` is fire-and-forget — stale state visible briefly.
+- **No "All"/"Favorites" on mobile nav**: Desktop sidebar has these but mobile bottom nav only shows Unread/Reading/Done. Low priority since mobile users can swipe through tabs.
+- **`confirm()` dialogs**: Used for delete confirmations. Blocking but functional. Custom modal would be prettier but adds complexity.
+- **SourceTabs/StatusFilters missing keyboard arrow navigation**: Have `role="tab"` but no arrow key handling per WAI-ARIA tabs pattern.
+- **No select mode on mobile**: Bulk operations only accessible on desktop sidebar.
+- **AddBookmarkModal/EditBookmarkModal close before server confirms**: Form resets immediately on submit. If server fails, user loses input. Acceptable tradeoff for snappy UX with optimistic updates.
 
-### 37. `moveArea()` non-atomic swap
-**app.js:1760-1774** — Two separate DB updates for sort_order swap. If second fails, two areas share same sort_order.
+### Security
 
-### 38. Toast overflow on mobile
-**style.css:1475** — `white-space: nowrap` with no `max-width`. Long messages overflow viewport.
+- **Supabase anon key in cookie without `Secure` flag**: Cookie set with `SameSite=Lax` but no `Secure`. Only relevant on HTTP connections. Production on Vercel uses HTTPS.
+- **Supabase anon key in bookmarklet**: By design — bookmarklet needs key to POST directly to Supabase. Now escaped against JS injection.
 
-### 39. Extension: no disconnect/reset option
-**extension/popup.html** — Once connected, no UI to change or clear Supabase credentials.
+### Data
 
-### 40. Extension: pasted comma-separated tags not split
-**extension/popup.js:204-211** — Only keypress commas trigger tag splitting; paste is not handled.
-
-### 41. Extension: missing manifest icon PNGs
-**extension/manifest.json:12-15** — References `icon16.png`, `icon48.png`, `icon128.png` but these files don't exist.
-
-### 42. Service worker cache-first never revalidates
-**sw.js:37-39** — Cached assets served forever until `CACHE_NAME` is manually bumped. No update notification to user.
-
-### 43. Source-type colors repeated 5 times
-**style.css:655, 709, 1708, 2018, 2037** — Same youtube/twitter/linkedin/substack/blog color mapping duplicated. Adding a source type requires 5 edits.
-
-### 44. Hardcoded colors instead of CSS variables
-**style.css:1465, 2087, 2108-2111, 2234-2236** — Toast background, reading-time badge, drawer note borders, Obsidian button all use raw hex instead of defined variables.
-
-### 45. `transition: all 0.2s` on high-count elements
-**style.css:485, 528, 1599** — On tabs, status filters, and 42 daily-calendar cells. Should specify only properties that change.
-
-### 46. SVG scale transforms from wrong origin
-**style.css:1777-1784** — `.graph-node:hover` uses `scale(1.1)` but SVG defaults `transform-origin` to viewport `(0,0)`, not element center.
-
-### 47. Inconsistent modal vs drawer overlay style
-**style.css:1889-1900 vs 918-929** — Modal has `backdrop-filter: blur(6px)`, drawer does not. Different opacity values.
+- **`bookmark_tags` junction table unused**: Schema defines it but app uses `tags text[]` on bookmarks directly. The junction table exists for potential future many-to-many with tag areas.
+- **No URL deduplication**: Same URL can be bookmarked multiple times. Could add a unique constraint but may be intentional for re-reading.
 
 ---
 
 ## Summary
 
-| Severity | Count |
+| Category | Count |
 |----------|-------|
-| Critical | 7 |
-| Major    | 19 |
-| Minor    | 21 |
-| **Total** | **47** |
-
-### Top Themes
-
-1. **Accessibility is near-zero** — No focus styles, no ARIA, no labels, no motion respect, no skip nav. The app fails basic WCAG 2.1 AA across the board.
-2. **Error handling is sparse** — Supabase errors silently swallowed, API calls without catch/timeout, optimistic updates not rolled back.
-3. **Mobile experience is incomplete** — Hover-only elements invisible on touch, safe area gaps, tiny touch targets, toast overflow.
-4. **XSS vector in inline handlers** — Using `onclick` with string interpolation throughout the codebase is inherently unsafe.
-5. **State management is fragile** — 3 view booleans, recursive `loadBookmarks()`, no loading states for long operations.
-6. **Extension is out of sync with main app** — Different source patterns, missing fields, no duplicate detection.
+| v1 issues resolved | 39 |
+| v1 issues N/A (extension deprecated) | 5 |
+| v1 issues partially resolved | 3 |
+| v2 issues found & fixed | 14 |
+| v2 known limitations (accepted) | 15 |

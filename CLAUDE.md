@@ -6,9 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ContentDeck — a personal content bookmarking PWA dashboard for the Capture → Consume → Reflect → Export workflow. Bridges web browsing and Obsidian knowledge management.
 
-**Status: Migrating from vanilla JS (v1) to React + Vite + Tailwind + TypeScript (v2).**
+**Status: v2.0 — React + Vite + Tailwind + TypeScript (migration complete).**
 
-See `UPGRADE-PLAN.md` for the full 4-phase migration plan. See `AUDIT.md` for the 47-issue audit of v1.
+See `AUDIT.md` for the post-migration audit (39/47 v1 issues resolved, 14 new issues found and fixed).
 
 ## v2 Tech Stack
 
@@ -84,7 +84,9 @@ DB triggers:
 - **Twitter oEmbed** — tweet titles (no key needed)
 - **Microlink API** — generic title fetching (50 req/day free tier)
 
-## Legacy v1 files (being replaced)
+## Error Handling
 
-These files are from the vanilla JS era and will be removed once v2 is complete:
-`app.js`, `ai.js`, `stats.js`, `style.css`, `index.html` (root), `sw.js`, `extension/`, `setup-v3.sql`, `migrate-*.sql`, `fix-sources.sql`
+- **Error Boundary**: Wraps the entire app — catches render errors, shows reload button
+- **TanStack Query**: All mutations have optimistic update + automatic rollback on error + toast notification
+- **Notes mutations**: `addNote`/`deleteNote` fetch current state from DB (not cache) to prevent race conditions
+- **AI/Metadata**: Fire-and-forget with silent failure — non-critical features
