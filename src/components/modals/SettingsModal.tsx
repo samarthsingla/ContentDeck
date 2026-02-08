@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Copy, Check, ExternalLink } from 'lucide-react'
+import { Copy, Check, ExternalLink, Smartphone, FlaskConical } from 'lucide-react'
 import Modal from '../ui/Modal'
 import Button from '../ui/Button'
 import { generateBookmarklet } from '../../lib/utils'
@@ -10,9 +10,10 @@ interface SettingsModalProps {
   onClose: () => void
   credentials: Credentials
   onDisconnect: () => void
+  isDemo?: boolean
 }
 
-export default function SettingsModal({ open, onClose, credentials, onDisconnect }: SettingsModalProps) {
+export default function SettingsModal({ open, onClose, credentials, onDisconnect, isDemo }: SettingsModalProps) {
   const [aiKey, setAiKey] = useState(() => localStorage.getItem('openrouter_key') ?? '')
   const [ytKey, setYtKey] = useState(() => localStorage.getItem('youtube_api_key') ?? '')
   const [obsidianVault, setObsidianVault] = useState(() => localStorage.getItem('obsidian_vault') ?? '')
@@ -46,25 +47,76 @@ export default function SettingsModal({ open, onClose, credentials, onDisconnect
   return (
     <Modal open={open} onClose={onClose} title="Settings" size="md">
       <div className="space-y-6">
-        {/* Supabase Connection */}
+        {/* Supabase Connection / Demo Notice */}
+        {isDemo ? (
+          <section className="rounded-lg border border-amber-300 dark:border-amber-600 bg-amber-50 dark:bg-amber-950/30 p-4">
+            <div className="flex items-start gap-3">
+              <FlaskConical size={20} className="text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <h3 className="text-sm font-semibold text-amber-800 dark:text-amber-200 mb-1">Demo Mode</h3>
+                <p className="text-xs text-amber-700 dark:text-amber-300 mb-3">
+                  You're exploring with sample data. Connect a Supabase database to save your own bookmarks.
+                </p>
+                <Button variant="secondary" size="sm" onClick={onDisconnect}>
+                  Connect Database
+                </Button>
+              </div>
+            </div>
+          </section>
+        ) : (
+          <section>
+            <h3 className="text-sm font-semibold text-surface-900 dark:text-surface-100 mb-2">Supabase Connection</h3>
+            <div className="space-y-2">
+              <div>
+                <label className="block text-xs text-surface-500 dark:text-surface-400 mb-1">Project URL</label>
+                <div className="px-3 py-2 rounded-lg bg-surface-100 dark:bg-surface-800 text-sm text-surface-600 dark:text-surface-400 truncate">
+                  {credentials.url}
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs text-surface-500 dark:text-surface-400 mb-1">Anon Key</label>
+                <div className="px-3 py-2 rounded-lg bg-surface-100 dark:bg-surface-800 text-sm text-surface-600 dark:text-surface-400 font-mono truncate">
+                  {credentials.key.slice(0, 20)}...
+                </div>
+              </div>
+              <Button variant="danger" onClick={onDisconnect} className="mt-2">
+                Disconnect
+              </Button>
+            </div>
+          </section>
+        )}
+
+        {/* Save from Your Phone */}
         <section>
-          <h3 className="text-sm font-semibold text-surface-900 dark:text-surface-100 mb-2">Supabase Connection</h3>
-          <div className="space-y-2">
-            <div>
-              <label className="block text-xs text-surface-500 dark:text-surface-400 mb-1">Project URL</label>
-              <div className="px-3 py-2 rounded-lg bg-surface-100 dark:bg-surface-800 text-sm text-surface-600 dark:text-surface-400 truncate">
-                {credentials.url}
-              </div>
+          <h3 className="text-sm font-semibold text-surface-900 dark:text-surface-100 mb-2 flex items-center gap-2">
+            <Smartphone size={16} />
+            Save from Your Phone
+          </h3>
+          <div className="space-y-3 text-xs text-surface-600 dark:text-surface-400">
+            <div className="rounded-lg bg-surface-50 dark:bg-surface-800/50 p-3 space-y-2">
+              <p className="font-medium text-surface-700 dark:text-surface-300">Install as App</p>
+              <ul className="space-y-1 list-disc list-inside">
+                <li><strong>Android:</strong> Chrome menu → "Install app"</li>
+                <li><strong>iOS:</strong> Safari → Share → "Add to Home Screen"</li>
+              </ul>
+              <p className="text-surface-500 dark:text-surface-500 pt-1">
+                After installing, share any URL from any app → pick ContentDeck from the share sheet.
+              </p>
             </div>
-            <div>
-              <label className="block text-xs text-surface-500 dark:text-surface-400 mb-1">Anon Key</label>
-              <div className="px-3 py-2 rounded-lg bg-surface-100 dark:bg-surface-800 text-sm text-surface-600 dark:text-surface-400 font-mono truncate">
-                {credentials.key.slice(0, 20)}...
-              </div>
+            <div className="rounded-lg bg-surface-50 dark:bg-surface-800/50 p-3 space-y-2">
+              <p className="font-medium text-surface-700 dark:text-surface-300">iOS Shortcut (power users)</p>
+              <ol className="space-y-1 list-decimal list-inside">
+                <li>Open Shortcuts app → tap +</li>
+                <li>Add "Get Contents of URL" action with your Supabase REST URL</li>
+                <li>Tap (i) → enable "Show in Share Sheet"</li>
+              </ol>
+              <p className="text-surface-500 dark:text-surface-500 pt-1">
+                Saves in the background without opening the app.
+              </p>
             </div>
-            <Button variant="danger" onClick={onDisconnect} className="mt-2">
-              Disconnect
-            </Button>
+            <p className="text-surface-500 dark:text-surface-500">
+              Or just tap <strong>+</strong> in the app and paste any URL.
+            </p>
           </div>
         </section>
 
@@ -119,30 +171,32 @@ export default function SettingsModal({ open, onClose, credentials, onDisconnect
           </div>
         </section>
 
-        {/* Bookmarklet */}
-        <section>
-          <h3 className="text-sm font-semibold text-surface-900 dark:text-surface-100 mb-2">Bookmarklet</h3>
-          <p className="text-xs text-surface-500 dark:text-surface-400 mb-2">
-            Drag this to your bookmarks bar, or copy the code below.
-          </p>
-          <div className="flex items-center gap-2">
-            <a
-              href={bookmarkletCode}
-              onClick={(e) => e.preventDefault()}
-              className="px-4 py-2 rounded-lg bg-primary-600 text-white text-sm font-medium cursor-grab"
-              draggable
-            >
-              + Save to ContentDeck
-            </a>
-            <button
-              onClick={handleCopyBookmarklet}
-              className="p-2 rounded-lg border border-surface-200 dark:border-surface-700 hover:bg-surface-100 dark:hover:bg-surface-800 min-w-[44px] min-h-[44px] flex items-center justify-center"
-              aria-label="Copy bookmarklet code"
-            >
-              {copiedBookmarklet ? <Check size={18} className="text-green-500" /> : <Copy size={18} className="text-surface-500" />}
-            </button>
-          </div>
-        </section>
+        {/* Bookmarklet — hidden in demo mode */}
+        {!isDemo && (
+          <section>
+            <h3 className="text-sm font-semibold text-surface-900 dark:text-surface-100 mb-2">Bookmarklet</h3>
+            <p className="text-xs text-surface-500 dark:text-surface-400 mb-2">
+              Drag this to your bookmarks bar, or copy the code below.
+            </p>
+            <div className="flex items-center gap-2">
+              <a
+                href={bookmarkletCode}
+                onClick={(e) => e.preventDefault()}
+                className="px-4 py-2 rounded-lg bg-primary-600 text-white text-sm font-medium cursor-grab"
+                draggable
+              >
+                + Save to ContentDeck
+              </a>
+              <button
+                onClick={handleCopyBookmarklet}
+                className="p-2 rounded-lg border border-surface-200 dark:border-surface-700 hover:bg-surface-100 dark:hover:bg-surface-800 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                aria-label="Copy bookmarklet code"
+              >
+                {copiedBookmarklet ? <Check size={18} className="text-green-500" /> : <Copy size={18} className="text-surface-500" />}
+              </button>
+            </div>
+          </section>
+        )}
 
         {/* Info */}
         <section className="pt-2 border-t border-surface-200 dark:border-surface-800">

@@ -7,13 +7,18 @@ const SupabaseContext = createContext<SupabaseClient | null>(null)
 export function SupabaseProvider({
   url,
   anonKey,
+  client: externalClient,
   children,
 }: {
   url: string
   anonKey: string
+  client?: SupabaseClient
   children: React.ReactNode
 }) {
-  const client = useMemo(() => getSupabaseClient(url, anonKey), [url, anonKey])
+  const client = useMemo(
+    () => externalClient ?? getSupabaseClient(url, anonKey),
+    [externalClient, url, anonKey],
+  )
 
   return (
     <SupabaseContext.Provider value={client}>

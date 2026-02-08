@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Modal from '../ui/Modal'
 import Button from '../ui/Button'
 import { detectSourceType } from '../../lib/utils'
@@ -10,14 +10,23 @@ interface AddBookmarkModalProps {
   onClose: () => void
   onAdd: (data: { url: string; title?: string; source_type?: string; tags?: string[] }) => void
   isPending: boolean
+  initialUrl?: string
 }
 
-export default function AddBookmarkModal({ open, onClose, onAdd, isPending }: AddBookmarkModalProps) {
+export default function AddBookmarkModal({ open, onClose, onAdd, isPending, initialUrl }: AddBookmarkModalProps) {
   const [url, setUrl] = useState('')
   const [title, setTitle] = useState('')
   const [detectedSource, setDetectedSource] = useState<SourceType | null>(null)
   const [tagInput, setTagInput] = useState('')
   const [tags, setTags] = useState<string[]>([])
+
+  // Pre-fill from share target or prop
+  useEffect(() => {
+    if (open && initialUrl && !url) {
+      setUrl(initialUrl)
+      setDetectedSource(detectSourceType(initialUrl))
+    }
+  }, [open, initialUrl]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleUrlChange(value: string) {
     setUrl(value)

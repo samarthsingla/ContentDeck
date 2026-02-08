@@ -27,9 +27,11 @@ import type { Bookmark, Status, NoteType, TagArea, Credentials } from '../types'
 interface DashboardProps {
   credentials: Credentials
   onDisconnect: () => void
+  isDemo?: boolean
+  sharedUrl?: string | null
 }
 
-export default function Dashboard({ credentials, onDisconnect }: DashboardProps) {
+export default function Dashboard({ credentials, onDisconnect, isDemo, sharedUrl }: DashboardProps) {
   const {
     bookmarks, isLoading,
     addBookmark, updateBookmark, deleteBookmark,
@@ -74,9 +76,9 @@ export default function Dashboard({ credentials, onDisconnect }: DashboardProps)
   const toastRef = useRef(toast)
   toastRef.current = toast
 
-  // Auto-fetch missing metadata on first load
+  // Auto-fetch missing metadata on first load (skip in demo)
   useEffect(() => {
-    if (isLoading || metaFetchedRef.current) return
+    if (isDemo || isLoading || metaFetchedRef.current) return
     const currentBookmarks = bookmarksRef.current
     if (currentBookmarks.length === 0) return
     metaFetchedRef.current = true
@@ -118,11 +120,11 @@ export default function Dashboard({ credentials, onDisconnect }: DashboardProps)
     fetchAll()
     return () => { cancelled = true }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoading, credentials])
+  }, [isDemo, isLoading, credentials])
 
-  // Auto-tag untagged bookmarks via AI on load
+  // Auto-tag untagged bookmarks via AI on load (skip in demo)
   useEffect(() => {
-    if (isLoading || aiTaggedRef.current) return
+    if (isDemo || isLoading || aiTaggedRef.current) return
     const currentBookmarks = bookmarksRef.current
     if (currentBookmarks.length === 0) return
     const apiKey = localStorage.getItem('openrouter_key')
@@ -164,7 +166,18 @@ export default function Dashboard({ credentials, onDisconnect }: DashboardProps)
     tagAll()
     return () => { cancelled = true }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoading, credentials])
+  }, [isDemo, isLoading, credentials])
+
+  // Open add modal with shared URL (PWA share target)
+  useEffect(() => {
+    if (sharedUrl && !isLoading) {
+      setShowAddModal(true)
+      // Clean query params from URL bar
+      if (window.history.replaceState) {
+        window.history.replaceState({}, '', window.location.pathname)
+      }
+    }
+  }, [sharedUrl, isLoading])
 
   // Compute counts
   const counts = useMemo(() => ({
@@ -342,6 +355,7 @@ export default function Dashboard({ credentials, onDisconnect }: DashboardProps)
         onClose={() => setShowAddModal(false)}
         onAdd={(data) => addBookmark.mutate(data)}
         isPending={addBookmark.isPending}
+        initialUrl={sharedUrl ?? undefined}
       />
 
       <EditBookmarkModal
@@ -357,6 +371,7 @@ export default function Dashboard({ credentials, onDisconnect }: DashboardProps)
         onClose={() => setShowSettings(false)}
         credentials={credentials}
         onDisconnect={onDisconnect}
+        isDemo={isDemo}
       />
 
       <StatsModal

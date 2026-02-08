@@ -4,6 +4,10 @@ A personal content bookmarking PWA — save articles, videos, tweets, and more f
 
 **Live:** [contentdeck.vercel.app](https://contentdeck.vercel.app)
 
+## Try It
+
+Visit [contentdeck.vercel.app](https://contentdeck.vercel.app) and click **Try Demo** — no account or setup required. Explore with sample data, then connect your own Supabase database when ready.
+
 ## Features
 
 ### Capture
@@ -36,9 +40,12 @@ A personal content bookmarking PWA — save articles, videos, tweets, and more f
 
 | Platform | Method |
 |----------|--------|
-| **iPhone/iPad** | iOS Shortcut via Share Sheet |
+| **Android** | Install PWA → share any URL → pick ContentDeck |
+| **iPhone/iPad** | Install PWA (Safari → Share → Add to Home Screen) or iOS Shortcut |
 | **PC Browser** | Bookmarklet (drag from Settings) |
 | **Dashboard** | Manual add with + button |
+
+The PWA Share Target works on Android Chrome and iOS Safari 16.4+. Install ContentDeck to your home screen, then share URLs from any app — ContentDeck appears in the system share sheet and opens with the URL pre-filled.
 
 ## Tech Stack
 
@@ -76,7 +83,7 @@ Push to GitHub and connect Vercel for auto-deploy, or `npx vercel --prod`.
 
 ### 4. Connect
 
-Open the deployed URL, paste your Supabase credentials, done.
+Open the deployed URL. You can **Try Demo** to explore with sample data, or paste your Supabase credentials to connect.
 
 ### 5. Optional Integrations
 

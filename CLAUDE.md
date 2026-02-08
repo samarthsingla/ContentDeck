@@ -35,10 +35,10 @@ src/
 ├── components/      # React components (layout, feed, detail, modals, areas, ui)
 ├── hooks/           # TanStack Query hooks (useBookmarks, useTagAreas, useStats, etc.)
 ├── context/         # SupabaseProvider, UIProvider
-├── lib/             # supabase.ts, metadata.ts, ai.ts, obsidian.ts, utils.ts
+├── lib/             # supabase.ts, metadata.ts, ai.ts, obsidian.ts, utils.ts, mock-supabase.ts, demo-data.ts
 ├── types/           # TypeScript interfaces (Bookmark, TagArea, Note, etc.)
 ├── pages/           # Dashboard.tsx (orchestrator)
-├── App.tsx          # Root: setup screen vs dashboard
+├── App.tsx          # Root: setup screen vs dashboard, demo mode detection, share target
 └── main.tsx         # Entry point
 ```
 
@@ -48,6 +48,8 @@ src/
 - **Source type colors** defined once in `tailwind.config.ts` (not duplicated in CSS)
 - **Reusable `Modal` component** has focus trapping, ARIA attributes, ESC handling built in
 - **Accessibility first:** `focus-visible:ring-2` on all interactives, proper `<label>` elements, `motion-safe:`/`motion-reduce:` variants
+- **Demo mode:** credentials `{ url: 'demo', key: 'demo' }` → mock Supabase client operates on in-memory arrays, zero hook changes needed
+- **PWA Share Target:** `manifest.json` `share_target` + `?url=` query param handling in App.tsx → AddBookmarkModal pre-fill
 
 ## Database (Supabase PostgreSQL)
 
@@ -72,6 +74,7 @@ DB triggers:
 - **Tab counts** should reflect current status filter
 - **Dates:** Always use local timezone (`toLocaleDateString()`), never `toISOString().slice()` for display
 - **Touch targets:** Minimum 44x44px on all interactive elements
+- **Demo mode** is detected by `credentials.url === 'demo'` — metadata fetch and AI tagging are skipped
 - **No Knowledge Graph** — dropped in v2 (Obsidian handles this)
 - **No Chrome Extension** — deprecated in v2
 
