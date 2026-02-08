@@ -105,45 +105,20 @@ function getFolder(bookmark: Bookmark): string {
   return folders[bookmark.source_type] || 'Articles'
 }
 
-/** Export a single bookmark via File System Access API */
-export async function exportToFileSystem(
-  bookmark: Bookmark,
-  vaultFolder: string
-): Promise<boolean> {
-  if (!('showDirectoryPicker' in window)) {
-    return exportToClipboard(bookmark)
-  }
+/** Export a single bookmark via Obsidian URI scheme (one-click) */
+export function exportToObsidianUri(bookmark: Bookmark, vaultName: string): boolean {
+  if (!vaultName) return false
 
-  try {
-    const dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' })
+  const sourceLabel = SOURCE_LABELS[bookmark.source_type] || 'Blog'
+  const safeTitle = (bookmark.title || getDomain(bookmark.url))
+    .slice(0, 100)
+    .replace(/[\\/:*?"<>|]/g, '-')
+  const filePath = `Inbox/${sourceLabel}/${safeTitle}`
+  const content = encodeURIComponent(generateMarkdown(bookmark))
+  const uri = `obsidian://new?vault=${encodeURIComponent(vaultName)}&file=${encodeURIComponent(filePath)}&content=${content}`
 
-    // Navigate to vault folder
-    let targetDir = dirHandle
-    if (vaultFolder) {
-      for (const part of vaultFolder.split('/').filter(Boolean)) {
-        targetDir = await targetDir.getDirectoryHandle(part, { create: true })
-      }
-    }
-
-    // Navigate to source subfolder
-    const folder = getFolder(bookmark)
-    targetDir = await targetDir.getDirectoryHandle(folder, { create: true })
-
-    // Write file
-    const filename = safeFilename(bookmark)
-    const fileHandle = await targetDir.getFileHandle(filename, { create: true })
-    const writable = await fileHandle.createWritable()
-    await writable.write(generateMarkdown(bookmark))
-    await writable.close()
-
-    return true
-  } catch (e) {
-    if (e instanceof DOMException && e.name === 'AbortError') {
-      return false // User cancelled picker
-    }
-    // Fallback to clipboard
-    return exportToClipboard(bookmark)
-  }
+  window.location.href = uri
+  return true
 }
 
 /** Fallback: copy markdown to clipboard */

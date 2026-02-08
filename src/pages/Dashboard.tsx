@@ -19,7 +19,7 @@ import { useUI } from '../context/UIProvider'
 import { useToast } from '../components/ui/Toast'
 import ProgressBar from '../components/ui/ProgressBar'
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
-import { exportToFileSystem, exportToClipboard } from '../lib/obsidian'
+import { exportToObsidianUri, exportToClipboard } from '../lib/obsidian'
 import { fetchMetadata } from '../lib/metadata'
 import { suggestTags } from '../lib/ai'
 import type { Bookmark, Status, NoteType, TagArea, Credentials } from '../types'
@@ -224,19 +224,20 @@ export default function Dashboard({ credentials, onDisconnect }: DashboardProps)
   )
 
   async function handleExport(bookmark: Bookmark) {
-    const vaultFolder = localStorage.getItem('obsidian_vault') ?? 'ContentDeck'
-    let success: boolean
-    if ('showDirectoryPicker' in window) {
-      success = await exportToFileSystem(bookmark, vaultFolder)
+    const vaultName = localStorage.getItem('obsidian_vault') ?? ''
+    if (vaultName) {
+      // One-click: open Obsidian directly via URI scheme → Inbox/{Source}/title.md
+      const success = exportToObsidianUri(bookmark, vaultName)
       if (success) {
         markSynced.mutate(bookmark.id)
-        toast.success('Exported to Obsidian')
+        toast.success(`Exporting to Inbox/${bookmark.source_type}...`)
       }
     } else {
-      success = await exportToClipboard(bookmark)
+      // No vault configured — copy markdown to clipboard
+      const success = await exportToClipboard(bookmark)
       if (success) {
         markSynced.mutate(bookmark.id)
-        toast.info('Markdown copied to clipboard')
+        toast.info('Markdown copied — add vault name in Settings for one-click export')
       }
     }
   }
