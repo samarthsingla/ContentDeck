@@ -26,6 +26,11 @@ See `AUDIT.md` for the full audit trail (39/47 v1 issues resolved, 14 v2.0 bugs 
 npm run dev          # Start Vite dev server
 npm run build        # Production build to dist/
 npm run preview      # Preview production build locally
+npm run lint         # ESLint check on src/
+npm run lint:fix     # ESLint auto-fix
+npm run format       # Prettier auto-format
+npm run format:check # Prettier check (CI-friendly)
+npm run typecheck    # TypeScript type check (no emit)
 ```
 
 ## Architecture (v2)
@@ -95,3 +100,41 @@ DB triggers:
 - **TanStack Query**: All mutations have optimistic update + automatic rollback on error + toast notification
 - **Notes mutations**: `addNote`/`deleteNote` fetch current state from DB (not cache) to prevent race conditions
 - **AI/Metadata**: Fire-and-forget with silent failure — non-critical features
+
+## Development Workflow
+
+### Branching Strategy
+
+- **`main`** = production (auto-deploys to Vercel)
+- **Feature branches** for all non-trivial work: `feat/`, `fix/`, `refactor/`, `chore/`
+- **Pull requests** to merge back to `main`
+
+### Conventional Commits
+
+All commits use conventional commit format:
+
+- `feat: <description>` — new feature
+- `fix: <description>` — bug fix
+- `refactor: <description>` — code restructuring (no behavior change)
+- `chore: <description>` — tooling, deps, config
+- `docs: <description>` — documentation only
+- `test: <description>` — tests only
+
+### Quality Checks
+
+Run in this order before every commit — all must pass:
+
+1. `npm run format:check` — Prettier formatting
+2. `npm run lint` — ESLint (zero errors required, warnings acceptable)
+3. `npm run typecheck` — TypeScript strict mode
+4. `npm run build` — Vite production build
+
+### Claude Code Skills
+
+| Skill | Description |
+|-------|-------------|
+| `/feature` | Full branch-to-PR workflow: plan → implement → verify → ship |
+| `/ship` | End-of-session: lint, build, commit, push |
+| `/audit` | Comprehensive codebase quality audit |
+| `/perf-check` | Performance profiling and optimization |
+| `/supabase-migrate` | Generate SQL migration files |
