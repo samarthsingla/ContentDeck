@@ -21,7 +21,8 @@ nul
 .vercel
 
 # Claude Code
-.claude/
+.claude/*
+!.claude/skills/
 
 # Local dev files
 INTEGRATIONS.md
