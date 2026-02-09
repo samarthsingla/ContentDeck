@@ -1,9 +1,9 @@
-import type { Bookmark, TagArea, StatusHistoryEntry } from '../types'
+import type { Bookmark, TagArea, StatusHistoryEntry } from '../types';
 
 function daysAgo(n: number): string {
-  const d = new Date()
-  d.setDate(d.getDate() - n)
-  return d.toISOString()
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return d.toISOString();
 }
 
 export const DEMO_BOOKMARKS: Bookmark[] = [
@@ -35,7 +35,11 @@ export const DEMO_BOOKMARKS: Bookmark[] = [
     status: 'reading',
     is_favorited: false,
     notes: [
-      { type: 'highlight', content: 'RSCs run only on the server — zero JS shipped to client for these components.', created_at: daysAgo(2) },
+      {
+        type: 'highlight',
+        content: 'RSCs run only on the server — zero JS shipped to client for these components.',
+        created_at: daysAgo(2),
+      },
     ],
     tags: ['react', 'frontend'],
     metadata: { duration: '24:15', channel: 'Theo' },
@@ -55,7 +59,12 @@ export const DEMO_BOOKMARKS: Bookmark[] = [
     status: 'done',
     is_favorited: true,
     notes: [
-      { type: 'insight', content: 'The shift from lifecycle methods to effects mirrors how we think about synchronization, not sequences.', created_at: daysAgo(5) },
+      {
+        type: 'insight',
+        content:
+          'The shift from lifecycle methods to effects mirrors how we think about synchronization, not sequences.',
+        created_at: daysAgo(5),
+      },
     ],
     tags: ['react', 'mental-models'],
     metadata: {},
@@ -129,8 +138,17 @@ export const DEMO_BOOKMARKS: Bookmark[] = [
     status: 'done',
     is_favorited: true,
     notes: [
-      { type: 'insight', content: 'DORA metrics work best when teams self-report, not when management enforces them.', created_at: daysAgo(4) },
-      { type: 'question', content: 'How would this apply to a team of < 5 engineers?', created_at: daysAgo(4) },
+      {
+        type: 'insight',
+        content:
+          'DORA metrics work best when teams self-report, not when management enforces them.',
+        created_at: daysAgo(4),
+      },
+      {
+        type: 'question',
+        content: 'How would this apply to a team of < 5 engineers?',
+        created_at: daysAgo(4),
+      },
     ],
     tags: ['productivity', 'engineering'],
     metadata: { word_count: 3200, reading_time: 13 },
@@ -186,7 +204,12 @@ export const DEMO_BOOKMARKS: Bookmark[] = [
     status: 'reading',
     is_favorited: false,
     notes: [
-      { type: 'highlight', content: 'A well-structured monolith is easier to split into services later than a poorly structured microservice architecture.', created_at: daysAgo(1) },
+      {
+        type: 'highlight',
+        content:
+          'A well-structured monolith is easier to split into services later than a poorly structured microservice architecture.',
+        created_at: daysAgo(1),
+      },
     ],
     tags: ['architecture', 'engineering'],
     metadata: { word_count: 5100, reading_time: 20 },
@@ -260,7 +283,7 @@ export const DEMO_BOOKMARKS: Bookmark[] = [
     status: 'unread',
     is_favorited: false,
     notes: [],
-    tags: [],  // intentionally untagged
+    tags: [], // intentionally untagged
     metadata: { word_count: 1200, reading_time: 5 },
     synced: false,
     created_at: daysAgo(1),
@@ -278,7 +301,7 @@ export const DEMO_BOOKMARKS: Bookmark[] = [
     status: 'unread',
     is_favorited: false,
     notes: [],
-    tags: [],  // intentionally untagged
+    tags: [], // intentionally untagged
     metadata: { word_count: 3800, reading_time: 15 },
     synced: false,
     created_at: daysAgo(0),
@@ -286,7 +309,7 @@ export const DEMO_BOOKMARKS: Bookmark[] = [
     started_reading_at: null,
     finished_at: null,
   },
-]
+];
 
 export const DEMO_TAG_AREAS: TagArea[] = [
   {
@@ -334,18 +357,78 @@ export const DEMO_TAG_AREAS: TagArea[] = [
     sort_order: 4,
     created_at: daysAgo(30),
   },
-]
+];
 
 export const DEMO_STATUS_HISTORY: StatusHistoryEntry[] = [
-  { id: 'hist-1', bookmark_id: 'demo-3', old_status: 'reading', new_status: 'done', changed_at: daysAgo(5) },
-  { id: 'hist-2', bookmark_id: 'demo-7', old_status: 'reading', new_status: 'done', changed_at: daysAgo(4) },
-  { id: 'hist-3', bookmark_id: 'demo-11', old_status: 'reading', new_status: 'done', changed_at: daysAgo(8) },
-  { id: 'hist-4', bookmark_id: 'demo-13', old_status: 'reading', new_status: 'done', changed_at: daysAgo(9) },
-  { id: 'hist-5', bookmark_id: 'demo-2', old_status: 'unread', new_status: 'reading', changed_at: daysAgo(2) },
-  { id: 'hist-6', bookmark_id: 'demo-6', old_status: 'unread', new_status: 'reading', changed_at: daysAgo(3) },
-  { id: 'hist-7', bookmark_id: 'demo-10', old_status: 'unread', new_status: 'reading', changed_at: daysAgo(2) },
-  { id: 'hist-8', bookmark_id: 'demo-12', old_status: 'unread', new_status: 'reading', changed_at: daysAgo(5) },
+  {
+    id: 'hist-1',
+    bookmark_id: 'demo-3',
+    old_status: 'reading',
+    new_status: 'done',
+    changed_at: daysAgo(5),
+  },
+  {
+    id: 'hist-2',
+    bookmark_id: 'demo-7',
+    old_status: 'reading',
+    new_status: 'done',
+    changed_at: daysAgo(4),
+  },
+  {
+    id: 'hist-3',
+    bookmark_id: 'demo-11',
+    old_status: 'reading',
+    new_status: 'done',
+    changed_at: daysAgo(8),
+  },
+  {
+    id: 'hist-4',
+    bookmark_id: 'demo-13',
+    old_status: 'reading',
+    new_status: 'done',
+    changed_at: daysAgo(9),
+  },
+  {
+    id: 'hist-5',
+    bookmark_id: 'demo-2',
+    old_status: 'unread',
+    new_status: 'reading',
+    changed_at: daysAgo(2),
+  },
+  {
+    id: 'hist-6',
+    bookmark_id: 'demo-6',
+    old_status: 'unread',
+    new_status: 'reading',
+    changed_at: daysAgo(3),
+  },
+  {
+    id: 'hist-7',
+    bookmark_id: 'demo-10',
+    old_status: 'unread',
+    new_status: 'reading',
+    changed_at: daysAgo(2),
+  },
+  {
+    id: 'hist-8',
+    bookmark_id: 'demo-12',
+    old_status: 'unread',
+    new_status: 'reading',
+    changed_at: daysAgo(5),
+  },
   // Extra completions to build a streak (yesterday and day before)
-  { id: 'hist-9', bookmark_id: 'demo-3', old_status: 'reading', new_status: 'done', changed_at: daysAgo(1) },
-  { id: 'hist-10', bookmark_id: 'demo-7', old_status: 'reading', new_status: 'done', changed_at: daysAgo(0) },
-]
+  {
+    id: 'hist-9',
+    bookmark_id: 'demo-3',
+    old_status: 'reading',
+    new_status: 'done',
+    changed_at: daysAgo(1),
+  },
+  {
+    id: 'hist-10',
+    bookmark_id: 'demo-7',
+    old_status: 'reading',
+    new_status: 'done',
+    changed_at: daysAgo(0),
+  },
+];

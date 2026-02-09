@@ -1,18 +1,18 @@
-import { useState, useEffect } from 'react'
-import { Trash2, GripVertical } from 'lucide-react'
-import Modal from '../ui/Modal'
-import Button from '../ui/Button'
-import type { TagArea } from '../../types'
+import { useState, useEffect } from 'react';
+import { Trash2, GripVertical } from 'lucide-react';
+import Modal from '../ui/Modal';
+import Button from '../ui/Button';
+import type { TagArea } from '../../types';
 
 interface AreaManagerProps {
-  open: boolean
-  onClose: () => void
-  areas: TagArea[]
-  editingArea: TagArea | null
-  onCreate: (data: { name: string; description?: string; color?: string; emoji?: string }) => void
-  onUpdate: (id: string, data: Partial<TagArea>) => void
-  onDelete: (id: string) => void
-  onReorder: (orderedIds: string[]) => void
+  open: boolean;
+  onClose: () => void;
+  areas: TagArea[];
+  editingArea: TagArea | null;
+  onCreate: (data: { name: string; description?: string; color?: string; emoji?: string }) => void;
+  onUpdate: (id: string, data: Partial<TagArea>) => void;
+  onDelete: (id: string) => void;
+  onReorder: (orderedIds: string[]) => void;
 }
 
 const PRESET_COLORS = [
@@ -24,14 +24,21 @@ const PRESET_COLORS = [
   '#8b5cf6', // violet
   '#ec4899', // pink
   '#14b8a6', // teal
-]
+];
 
-const PRESET_EMOJIS = ['📚', '🎥', '💻', '🧠', '📝', '🎯', '🔬', '💡', '🎨', '📊', '🏋️', '🌍']
+const PRESET_EMOJIS = ['📚', '🎥', '💻', '🧠', '📝', '🎯', '🔬', '💡', '🎨', '📊', '🏋️', '🌍'];
 
 export default function AreaManager({
-  open, onClose, areas, editingArea, onCreate, onUpdate, onDelete, onReorder,
+  open,
+  onClose,
+  areas,
+  editingArea,
+  onCreate,
+  onUpdate,
+  onDelete,
+  onReorder,
 }: AreaManagerProps) {
-  const isEditing = editingArea !== null
+  const isEditing = editingArea !== null;
 
   return (
     <Modal open={open} onClose={onClose} title={isEditing ? 'Edit Area' : 'Manage Areas'} size="md">
@@ -39,13 +46,13 @@ export default function AreaManager({
         <AreaForm
           area={editingArea}
           onSave={(data) => {
-            onUpdate(editingArea.id, data)
-            onClose()
+            onUpdate(editingArea.id, data);
+            onClose();
           }}
           onDelete={() => {
             if (confirm(`Delete "${editingArea.name}" area? Bookmarks won't be deleted.`)) {
-              onDelete(editingArea.id)
-              onClose()
+              onDelete(editingArea.id);
+              onClose();
             }
           }}
           onCancel={onClose}
@@ -59,7 +66,7 @@ export default function AreaManager({
         />
       )}
     </Modal>
-  )
+  );
 }
 
 // --- Form for creating/editing a single area ---
@@ -69,32 +76,35 @@ function AreaForm({
   onDelete,
   onCancel,
 }: {
-  area: TagArea | null
-  onSave: (data: { name: string; description?: string; color?: string; emoji?: string }) => void
-  onDelete?: () => void
-  onCancel: () => void
+  area: TagArea | null;
+  onSave: (data: { name: string; description?: string; color?: string; emoji?: string }) => void;
+  onDelete?: () => void;
+  onCancel: () => void;
 }) {
-  const [name, setName] = useState(area?.name ?? '')
-  const [description, setDescription] = useState(area?.description ?? '')
-  const [color, setColor] = useState(area?.color ?? '')
-  const [emoji, setEmoji] = useState(area?.emoji ?? '')
+  const [name, setName] = useState(area?.name ?? '');
+  const [description, setDescription] = useState(area?.description ?? '');
+  const [color, setColor] = useState(area?.color ?? '');
+  const [emoji, setEmoji] = useState(area?.emoji ?? '');
 
   function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    if (!name.trim()) return
+    e.preventDefault();
+    if (!name.trim()) return;
     onSave({
       name: name.trim(),
       description: description.trim() || undefined,
       color: color || undefined,
       emoji: emoji || undefined,
-    })
+    });
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {/* Name + Emoji */}
       <div>
-        <label htmlFor="area-name" className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">
+        <label
+          htmlFor="area-name"
+          className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1"
+        >
           Name
         </label>
         <div className="flex gap-2">
@@ -151,7 +161,9 @@ function AreaForm({
               type="button"
               onClick={() => setColor(color === c ? '' : c)}
               className={`w-8 h-8 rounded-full transition-transform ${
-                color === c ? 'ring-2 ring-offset-2 ring-primary-500 dark:ring-offset-surface-900 scale-110' : 'hover:scale-110'
+                color === c
+                  ? 'ring-2 ring-offset-2 ring-primary-500 dark:ring-offset-surface-900 scale-110'
+                  : 'hover:scale-110'
               }`}
               style={{ backgroundColor: c }}
               aria-label={`Color ${c}`}
@@ -162,7 +174,10 @@ function AreaForm({
 
       {/* Description */}
       <div>
-        <label htmlFor="area-desc" className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">
+        <label
+          htmlFor="area-desc"
+          className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1"
+        >
           Description <span className="text-surface-400 font-normal">(optional)</span>
         </label>
         <input
@@ -192,7 +207,7 @@ function AreaForm({
         </Button>
       </div>
     </form>
-  )
+  );
 }
 
 // --- List of all areas with reorder + create ---
@@ -202,29 +217,29 @@ function AreaListManager({
   onReorder,
   onClose,
 }: {
-  areas: TagArea[]
-  onCreate: (data: { name: string; description?: string; color?: string; emoji?: string }) => void
-  onReorder: (orderedIds: string[]) => void
-  onClose: () => void
+  areas: TagArea[];
+  onCreate: (data: { name: string; description?: string; color?: string; emoji?: string }) => void;
+  onReorder: (orderedIds: string[]) => void;
+  onClose: () => void;
 }) {
-  const [showCreate, setShowCreate] = useState(false)
-  const [localAreas, setLocalAreas] = useState(areas)
+  const [showCreate, setShowCreate] = useState(false);
+  const [localAreas, setLocalAreas] = useState(areas);
 
   // Sync with prop updates (new areas created, areas deleted externally)
   useEffect(() => {
-    setLocalAreas(areas)
-  }, [areas])
+    setLocalAreas(areas);
+  }, [areas]);
 
   function moveArea(index: number, direction: 'up' | 'down') {
-    const newAreas = [...localAreas]
-    const swapIndex = direction === 'up' ? index - 1 : index + 1
-    if (swapIndex < 0 || swapIndex >= newAreas.length) return
-    const a = newAreas[index]!
-    const b = newAreas[swapIndex]!
-    newAreas[index] = b
-    newAreas[swapIndex] = a
-    setLocalAreas(newAreas)
-    onReorder(newAreas.map((item) => item.id))
+    const newAreas = [...localAreas];
+    const swapIndex = direction === 'up' ? index - 1 : index + 1;
+    if (swapIndex < 0 || swapIndex >= newAreas.length) return;
+    const a = newAreas[index]!;
+    const b = newAreas[swapIndex]!;
+    newAreas[index] = b;
+    newAreas[swapIndex] = a;
+    setLocalAreas(newAreas);
+    onReorder(newAreas.map((item) => item.id));
   }
 
   if (showCreate) {
@@ -232,12 +247,12 @@ function AreaListManager({
       <AreaForm
         area={null}
         onSave={(data) => {
-          onCreate(data)
-          setShowCreate(false)
+          onCreate(data);
+          setShowCreate(false);
         }}
         onCancel={() => setShowCreate(false)}
       />
-    )
+    );
   }
 
   return (
@@ -253,10 +268,16 @@ function AreaListManager({
               key={area.id}
               className="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900"
             >
-              <GripVertical size={16} className="text-surface-300 dark:text-surface-600 flex-shrink-0" />
+              <GripVertical
+                size={16}
+                className="text-surface-300 dark:text-surface-600 flex-shrink-0"
+              />
               {area.emoji && <span className="text-base">{area.emoji}</span>}
               {area.color && (
-                <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: area.color }} />
+                <span
+                  className="w-3 h-3 rounded-full flex-shrink-0"
+                  style={{ backgroundColor: area.color }}
+                />
               )}
               <span className="flex-1 text-sm font-medium text-surface-900 dark:text-surface-100 truncate">
                 {area.name}
@@ -268,7 +289,17 @@ function AreaListManager({
                   className="p-1 rounded text-surface-400 hover:text-surface-600 dark:hover:text-surface-300 disabled:opacity-30 min-w-[28px] min-h-[28px] flex items-center justify-center"
                   aria-label="Move up"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
                     <path d="m18 15-6-6-6 6" />
                   </svg>
                 </button>
@@ -278,7 +309,17 @@ function AreaListManager({
                   className="p-1 rounded text-surface-400 hover:text-surface-600 dark:hover:text-surface-300 disabled:opacity-30 min-w-[28px] min-h-[28px] flex items-center justify-center"
                   aria-label="Move down"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
                     <path d="m6 9 6 6 6-6" />
                   </svg>
                 </button>
@@ -292,10 +333,8 @@ function AreaListManager({
         <Button variant="ghost" onClick={onClose}>
           Close
         </Button>
-        <Button onClick={() => setShowCreate(true)}>
-          Create Area
-        </Button>
+        <Button onClick={() => setShowCreate(true)}>Create Area</Button>
       </div>
     </div>
-  )
+  );
 }

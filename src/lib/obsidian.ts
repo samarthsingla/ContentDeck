@@ -1,6 +1,6 @@
-import type { Bookmark } from '../types'
-import { formatDate, getDomain } from './utils'
-import { SOURCE_LABELS } from '../types'
+import type { Bookmark } from '../types';
+import { formatDate, getDomain } from './utils';
+import { SOURCE_LABELS } from '../types';
 
 /** Escape a string for use as a YAML double-quoted value */
 function yamlEscape(s: string): string {
@@ -9,87 +9,93 @@ function yamlEscape(s: string): string {
     .replace(/"/g, '\\"')
     .replace(/\n/g, '\\n')
     .replace(/\r/g, '\\r')
-    .replace(/\t/g, '\\t')
+    .replace(/\t/g, '\\t');
 }
 
 /** Generate markdown for a single bookmark with YAML frontmatter */
 export function generateMarkdown(bookmark: Bookmark): string {
-  const lines: string[] = []
+  const lines: string[] = [];
 
   // YAML frontmatter
-  lines.push('---')
-  lines.push(`url: "${yamlEscape(bookmark.url)}"`)
-  if (bookmark.title) lines.push(`title: "${yamlEscape(bookmark.title)}"`)
-  lines.push(`source: ${SOURCE_LABELS[bookmark.source_type]}`)
-  lines.push(`status: ${bookmark.status}`)
-  if (bookmark.is_favorited) lines.push('favorited: true')
+  lines.push('---');
+  lines.push(`url: "${yamlEscape(bookmark.url)}"`);
+  if (bookmark.title) lines.push(`title: "${yamlEscape(bookmark.title)}"`);
+  lines.push(`source: ${SOURCE_LABELS[bookmark.source_type]}`);
+  lines.push(`status: ${bookmark.status}`);
+  if (bookmark.is_favorited) lines.push('favorited: true');
   if (bookmark.tags.length > 0) {
-    lines.push(`tags: [${bookmark.tags.map((t) => `"${yamlEscape(t)}"`).join(', ')}]`)
+    lines.push(`tags: [${bookmark.tags.map((t) => `"${yamlEscape(t)}"`).join(', ')}]`);
   }
-  lines.push(`created: ${formatDate(bookmark.created_at)}`)
-  if (bookmark.started_reading_at) lines.push(`started: ${formatDate(bookmark.started_reading_at)}`)
-  if (bookmark.finished_at) lines.push(`finished: ${formatDate(bookmark.finished_at)}`)
-  if (bookmark.metadata?.reading_time) lines.push(`reading_time: ${bookmark.metadata.reading_time} min`)
-  if (bookmark.metadata?.channel) lines.push(`channel: "${yamlEscape(bookmark.metadata.channel)}"`)
+  lines.push(`created: ${formatDate(bookmark.created_at)}`);
+  if (bookmark.started_reading_at)
+    lines.push(`started: ${formatDate(bookmark.started_reading_at)}`);
+  if (bookmark.finished_at) lines.push(`finished: ${formatDate(bookmark.finished_at)}`);
+  if (bookmark.metadata?.reading_time)
+    lines.push(`reading_time: ${bookmark.metadata.reading_time} min`);
+  if (bookmark.metadata?.channel) lines.push(`channel: "${yamlEscape(bookmark.metadata.channel)}"`);
 
-  lines.push('---')
-  lines.push('')
+  lines.push('---');
+  lines.push('');
 
   // Title
-  lines.push(`# ${bookmark.title || bookmark.url}`)
-  lines.push('')
+  lines.push(`# ${bookmark.title || bookmark.url}`);
+  lines.push('');
 
   // Link
-  lines.push(`> [Open original](${bookmark.url}) — ${getDomain(bookmark.url)}`)
-  lines.push('')
+  lines.push(`> [Open original](${bookmark.url}) — ${getDomain(bookmark.url)}`);
+  lines.push('');
 
   // Excerpt
   if (bookmark.excerpt) {
-    lines.push('## Summary')
-    lines.push('')
-    lines.push(bookmark.excerpt)
-    lines.push('')
+    lines.push('## Summary');
+    lines.push('');
+    lines.push(bookmark.excerpt);
+    lines.push('');
   }
 
   // Notes
   if (bookmark.notes.length > 0) {
-    lines.push('## Notes')
-    lines.push('')
+    lines.push('## Notes');
+    lines.push('');
     for (const note of bookmark.notes) {
-      const emoji = { insight: '💡', question: '❓', highlight: '🖍️', note: '📝' }[note.type]
-      const label = note.type.charAt(0).toUpperCase() + note.type.slice(1)
-      lines.push(`### ${emoji} ${label}`)
-      lines.push('')
-      lines.push(note.content)
-      lines.push('')
-      lines.push(`*${formatDate(note.created_at)}*`)
-      lines.push('')
+      const emoji = { insight: '💡', question: '❓', highlight: '🖍️', note: '📝' }[note.type];
+      const label = note.type.charAt(0).toUpperCase() + note.type.slice(1);
+      lines.push(`### ${emoji} ${label}`);
+      lines.push('');
+      lines.push(note.content);
+      lines.push('');
+      lines.push(`*${formatDate(note.created_at)}*`);
+      lines.push('');
     }
   }
 
   // Metadata footer
   if (bookmark.metadata?.duration || bookmark.metadata?.word_count) {
-    lines.push('---')
-    lines.push('')
-    const meta: string[] = []
-    if (bookmark.metadata.duration) meta.push(`Duration: ${bookmark.metadata.duration}`)
-    if (bookmark.metadata.word_count) meta.push(`Words: ${bookmark.metadata.word_count.toLocaleString()}`)
-    if (bookmark.metadata.reading_time) meta.push(`Reading time: ${bookmark.metadata.reading_time} min`)
-    lines.push(meta.join(' | '))
-    lines.push('')
+    lines.push('---');
+    lines.push('');
+    const meta: string[] = [];
+    if (bookmark.metadata.duration) meta.push(`Duration: ${bookmark.metadata.duration}`);
+    if (bookmark.metadata.word_count)
+      meta.push(`Words: ${bookmark.metadata.word_count.toLocaleString()}`);
+    if (bookmark.metadata.reading_time)
+      meta.push(`Reading time: ${bookmark.metadata.reading_time} min`);
+    lines.push(meta.join(' | '));
+    lines.push('');
   }
 
-  return lines.join('\n')
+  return lines.join('\n');
 }
 
 /** Generate a safe filename from a bookmark title */
 function safeFilename(bookmark: Bookmark): string {
-  const name = bookmark.title || getDomain(bookmark.url)
-  return name
-    .replace(/[<>:"/\\|?*]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .slice(0, 100) + '.md'
+  const name = bookmark.title || getDomain(bookmark.url);
+  return (
+    name
+      .replace(/[<>:"/\\|?*]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 100) + '.md'
+  );
 }
 
 /** Get the folder path based on source type */
@@ -101,33 +107,33 @@ function getFolder(bookmark: Bookmark): string {
     substack: 'Articles',
     blog: 'Articles',
     book: 'Books',
-  }
-  return folders[bookmark.source_type] || 'Articles'
+  };
+  return folders[bookmark.source_type] || 'Articles';
 }
 
 /** Export a single bookmark via Obsidian URI scheme (one-click) */
 export function exportToObsidianUri(bookmark: Bookmark, vaultName: string): boolean {
-  if (!vaultName) return false
+  if (!vaultName) return false;
 
-  const sourceLabel = SOURCE_LABELS[bookmark.source_type] || 'Blog'
+  const sourceLabel = SOURCE_LABELS[bookmark.source_type] || 'Blog';
   const safeTitle = (bookmark.title || getDomain(bookmark.url))
     .slice(0, 100)
-    .replace(/[\\/:*?"<>|]/g, '-')
-  const filePath = `Inbox/${sourceLabel}/${safeTitle}`
-  const content = encodeURIComponent(generateMarkdown(bookmark))
-  const uri = `obsidian://new?vault=${encodeURIComponent(vaultName)}&file=${encodeURIComponent(filePath)}&content=${content}`
+    .replace(/[\\/:*?"<>|]/g, '-');
+  const filePath = `Inbox/${sourceLabel}/${safeTitle}`;
+  const content = encodeURIComponent(generateMarkdown(bookmark));
+  const uri = `obsidian://new?vault=${encodeURIComponent(vaultName)}&file=${encodeURIComponent(filePath)}&content=${content}`;
 
-  window.location.href = uri
-  return true
+  window.location.href = uri;
+  return true;
 }
 
 /** Fallback: copy markdown to clipboard */
 export async function exportToClipboard(bookmark: Bookmark): Promise<boolean> {
   try {
-    await navigator.clipboard.writeText(generateMarkdown(bookmark))
-    return true
+    await navigator.clipboard.writeText(generateMarkdown(bookmark));
+    return true;
   } catch {
-    return false
+    return false;
   }
 }
 
@@ -135,73 +141,76 @@ export async function exportToClipboard(bookmark: Bookmark): Promise<boolean> {
 export async function batchExport(
   bookmarks: Bookmark[],
   vaultFolder: string,
-  onProgress?: (current: number, total: number) => void
+  onProgress?: (current: number, total: number) => void,
 ): Promise<{ exported: number; failed: number }> {
   if (!('showDirectoryPicker' in window)) {
     // Fallback: concatenate all and copy to clipboard
-    const combined = bookmarks.map(generateMarkdown).join('\n\n---\n\n')
+    const combined = bookmarks.map(generateMarkdown).join('\n\n---\n\n');
     try {
-      await navigator.clipboard.writeText(combined)
-      return { exported: bookmarks.length, failed: 0 }
+      await navigator.clipboard.writeText(combined);
+      return { exported: bookmarks.length, failed: 0 };
     } catch {
-      return { exported: 0, failed: bookmarks.length }
+      return { exported: 0, failed: bookmarks.length };
     }
   }
 
   try {
-    const dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' })
-    let exported = 0
-    let failed = 0
+    const dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+    let exported = 0;
+    let failed = 0;
 
     for (let i = 0; i < bookmarks.length; i++) {
-      const bookmark = bookmarks[i]!
-      onProgress?.(i + 1, bookmarks.length)
+      const bookmark = bookmarks[i]!;
+      onProgress?.(i + 1, bookmarks.length);
 
       try {
-        let targetDir = dirHandle
+        let targetDir = dirHandle;
         if (vaultFolder) {
           for (const part of vaultFolder.split('/').filter(Boolean)) {
-            targetDir = await targetDir.getDirectoryHandle(part, { create: true })
+            targetDir = await targetDir.getDirectoryHandle(part, { create: true });
           }
         }
 
-        const folder = getFolder(bookmark)
-        targetDir = await targetDir.getDirectoryHandle(folder, { create: true })
+        const folder = getFolder(bookmark);
+        targetDir = await targetDir.getDirectoryHandle(folder, { create: true });
 
-        const filename = safeFilename(bookmark)
-        const fileHandle = await targetDir.getFileHandle(filename, { create: true })
-        const writable = await fileHandle.createWritable()
-        await writable.write(generateMarkdown(bookmark))
-        await writable.close()
-        exported++
+        const filename = safeFilename(bookmark);
+        const fileHandle = await targetDir.getFileHandle(filename, { create: true });
+        const writable = await fileHandle.createWritable();
+        await writable.write(generateMarkdown(bookmark));
+        await writable.close();
+        exported++;
       } catch {
-        failed++
+        failed++;
       }
     }
 
-    return { exported, failed }
+    return { exported, failed };
   } catch (e) {
     if (e instanceof DOMException && e.name === 'AbortError') {
-      return { exported: 0, failed: 0 }
+      return { exported: 0, failed: 0 };
     }
-    return { exported: 0, failed: bookmarks.length }
+    return { exported: 0, failed: bookmarks.length };
   }
 }
 
 // Augment Window for File System Access API types
 declare global {
   interface Window {
-    showDirectoryPicker(options?: { mode?: string }): Promise<FileSystemDirectoryHandle>
+    showDirectoryPicker(options?: { mode?: string }): Promise<FileSystemDirectoryHandle>;
   }
   interface FileSystemDirectoryHandle {
-    getDirectoryHandle(name: string, options?: { create?: boolean }): Promise<FileSystemDirectoryHandle>
-    getFileHandle(name: string, options?: { create?: boolean }): Promise<FileSystemFileHandle>
+    getDirectoryHandle(
+      name: string,
+      options?: { create?: boolean },
+    ): Promise<FileSystemDirectoryHandle>;
+    getFileHandle(name: string, options?: { create?: boolean }): Promise<FileSystemFileHandle>;
   }
   interface FileSystemFileHandle {
-    createWritable(): Promise<FileSystemWritableFileStream>
+    createWritable(): Promise<FileSystemWritableFileStream>;
   }
   interface FileSystemWritableFileStream {
-    write(data: string | BufferSource | Blob): Promise<void>
-    close(): Promise<void>
+    write(data: string | BufferSource | Blob): Promise<void>;
+    close(): Promise<void>;
   }
 }

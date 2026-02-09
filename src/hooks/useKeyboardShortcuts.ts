@@ -1,18 +1,18 @@
-import { useEffect } from 'react'
+import { useEffect } from 'react';
 
 interface ShortcutActions {
-  onSearch: () => void
-  onNewBookmark: () => void
-  onNavigateUp: () => void
-  onNavigateDown: () => void
-  onEscape: () => void
+  onSearch: () => void;
+  onNewBookmark: () => void;
+  onNavigateUp: () => void;
+  onNavigateDown: () => void;
+  onEscape: () => void;
 }
 
 export function useKeyboardShortcuts(actions: ShortcutActions) {
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       // Ignore shortcuts when typing in inputs
-      const target = e.target as HTMLElement
+      const target = e.target as HTMLElement;
       if (
         target.tagName === 'INPUT' ||
         target.tagName === 'TEXTAREA' ||
@@ -21,44 +21,44 @@ export function useKeyboardShortcuts(actions: ShortcutActions) {
       ) {
         // Only handle Escape in inputs
         if (e.key === 'Escape') {
-          target.blur()
+          target.blur();
         }
-        return
+        return;
       }
 
       switch (e.key) {
         case '/':
-          e.preventDefault()
-          actions.onSearch()
+          e.preventDefault();
+          actions.onSearch();
           // Focus the first visible search input
           requestAnimationFrame(() => {
-            const input = document.querySelector<HTMLInputElement>('input[type="search"]')
-            input?.focus()
-          })
-          break
+            const input = document.querySelector<HTMLInputElement>('input[type="search"]');
+            input?.focus();
+          });
+          break;
         case 'n':
           if (!e.ctrlKey && !e.metaKey) {
-            e.preventDefault()
-            actions.onNewBookmark()
+            e.preventDefault();
+            actions.onNewBookmark();
           }
-          break
+          break;
         case 'k':
           if (!e.ctrlKey && !e.metaKey) {
-            actions.onNavigateUp()
+            actions.onNavigateUp();
           }
-          break
+          break;
         case 'j':
           if (!e.ctrlKey && !e.metaKey) {
-            actions.onNavigateDown()
+            actions.onNavigateDown();
           }
-          break
+          break;
         case 'Escape':
-          actions.onEscape()
-          break
+          actions.onEscape();
+          break;
       }
     }
 
-    document.addEventListener('keydown', handleKeyDown)
-    return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [actions])
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [actions]);
 }

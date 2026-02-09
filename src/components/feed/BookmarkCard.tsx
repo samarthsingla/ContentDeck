@@ -1,19 +1,19 @@
-import { Heart, Trash2, ExternalLink } from 'lucide-react'
-import { SourceBadge, StatusBadge } from '../ui/Badge'
-import { timeAgo, getDomain, getFaviconUrl, truncate } from '../../lib/utils'
-import { useUI } from '../../context/UIProvider'
-import type { Bookmark, Status } from '../../types'
-import { STATUS_NEXT } from '../../types'
+import { Heart, Trash2, ExternalLink } from 'lucide-react';
+import { SourceBadge, StatusBadge } from '../ui/Badge';
+import { timeAgo, getDomain, getFaviconUrl, truncate } from '../../lib/utils';
+import { useUI } from '../../context/UIProvider';
+import type { Bookmark, Status } from '../../types';
+import { STATUS_NEXT } from '../../types';
 
 interface BookmarkCardProps {
-  bookmark: Bookmark
-  selected?: boolean
-  selectMode?: boolean
-  onCycleStatus: (id: string, newStatus: Status) => void
-  onToggleFavorite: (id: string, favorited: boolean) => void
-  onDelete: (id: string) => void
-  onSelect?: (id: string) => void
-  onClick?: (id: string) => void
+  bookmark: Bookmark;
+  selected?: boolean;
+  selectMode?: boolean;
+  onCycleStatus: (id: string, newStatus: Status) => void;
+  onToggleFavorite: (id: string, favorited: boolean) => void;
+  onDelete: (id: string) => void;
+  onSelect?: (id: string) => void;
+  onClick?: (id: string) => void;
 }
 
 export default function BookmarkCard({
@@ -26,28 +26,28 @@ export default function BookmarkCard({
   onSelect,
   onClick,
 }: BookmarkCardProps) {
-  const { setTag } = useUI()
-  const domain = getDomain(b.url)
-  const readingTime = b.metadata?.reading_time
+  const { setTag } = useUI();
+  const domain = getDomain(b.url);
+  const readingTime = b.metadata?.reading_time;
 
   function handleClick() {
     if (selectMode && onSelect) {
-      onSelect(b.id)
+      onSelect(b.id);
     } else if (onClick) {
-      onClick(b.id)
+      onClick(b.id);
     }
   }
 
   function handleDelete(e: React.MouseEvent) {
-    e.stopPropagation()
+    e.stopPropagation();
     if (confirm('Delete this bookmark?')) {
-      onDelete(b.id)
+      onDelete(b.id);
     }
   }
 
   function handleTagClick(e: React.MouseEvent, tag: string) {
-    e.stopPropagation()
-    setTag(tag)
+    e.stopPropagation();
+    setTag(tag);
   }
 
   return (
@@ -55,9 +55,10 @@ export default function BookmarkCard({
       onClick={handleClick}
       className={`
         group relative flex gap-3 p-3 rounded-xl border transition-colors cursor-pointer
-        ${selected
-          ? 'border-primary-500 bg-primary-600/5 dark:bg-primary-400/5'
-          : 'border-surface-200 dark:border-surface-800 hover:border-surface-300 dark:hover:border-surface-700 bg-white dark:bg-surface-900'
+        ${
+          selected
+            ? 'border-primary-500 bg-primary-600/5 dark:bg-primary-400/5'
+            : 'border-surface-200 dark:border-surface-800 hover:border-surface-300 dark:hover:border-surface-700 bg-white dark:bg-surface-900'
         }
       `}
       aria-label={b.title || b.url}
@@ -65,12 +66,7 @@ export default function BookmarkCard({
       {/* Thumbnail */}
       {b.image && (
         <div className="hidden sm:block flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden bg-surface-100 dark:bg-surface-800">
-          <img
-            src={b.image}
-            alt=""
-            className="w-full h-full object-cover"
-            loading="lazy"
-          />
+          <img src={b.image} alt="" className="w-full h-full object-cover" loading="lazy" />
         </div>
       )}
 
@@ -122,7 +118,10 @@ export default function BookmarkCard({
       {/* Actions (visible on hover / always on mobile) */}
       <div className="flex flex-col items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
         <button
-          onClick={(e) => { e.stopPropagation(); onToggleFavorite(b.id, !b.is_favorited) }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleFavorite(b.id, !b.is_favorited);
+          }}
           className={`p-2 rounded-lg hover:bg-surface-100 dark:hover:bg-surface-800 min-w-[36px] min-h-[36px] flex items-center justify-center ${
             b.is_favorited ? 'text-amber-500' : 'text-surface-400'
           }`}
@@ -149,5 +148,5 @@ export default function BookmarkCard({
         </button>
       </div>
     </article>
-  )
+  );
 }

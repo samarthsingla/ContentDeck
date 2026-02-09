@@ -1,17 +1,17 @@
-import { CheckSquare, X } from 'lucide-react'
-import SearchBar from './SearchBar'
-import SortSelect from './SortSelect'
-import StatusFilters from './StatusFilters'
-import { useUI } from '../../context/UIProvider'
-import type { Bookmark } from '../../types'
+import { CheckSquare, X } from 'lucide-react';
+import SearchBar from './SearchBar';
+import SortSelect from './SortSelect';
+import StatusFilters from './StatusFilters';
+import { useUI } from '../../context/UIProvider';
+import type { Bookmark } from '../../types';
 
 interface FeedToolbarProps {
-  bookmarks: Bookmark[]
-  showSearch: boolean
+  bookmarks: Bookmark[];
+  showSearch: boolean;
 }
 
 export default function FeedToolbar({ bookmarks, showSearch }: FeedToolbarProps) {
-  const { currentTag, setTag, toggleSelectMode, selectMode } = useUI()
+  const { currentTag, setTag, toggleSelectMode, selectMode } = useUI();
 
   return (
     <div className="space-y-3">
@@ -58,5 +58,5 @@ export default function FeedToolbar({ bookmarks, showSearch }: FeedToolbarProps)
         </div>
       )}
     </div>
-  )
+  );
 }

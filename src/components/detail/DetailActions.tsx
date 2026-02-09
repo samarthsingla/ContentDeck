@@ -1,15 +1,20 @@
-import { ExternalLink, Download, Trash2, Edit3 } from 'lucide-react'
-import Button from '../ui/Button'
-import type { Bookmark } from '../../types'
+import { ExternalLink, Download, Trash2, Edit3 } from 'lucide-react';
+import Button from '../ui/Button';
+import type { Bookmark } from '../../types';
 
 interface DetailActionsProps {
-  bookmark: Bookmark
-  onEdit: () => void
-  onExport: () => void
-  onDelete: () => void
+  bookmark: Bookmark;
+  onEdit: () => void;
+  onExport: () => void;
+  onDelete: () => void;
 }
 
-export default function DetailActions({ bookmark: b, onEdit, onExport, onDelete }: DetailActionsProps) {
+export default function DetailActions({
+  bookmark: b,
+  onEdit,
+  onExport,
+  onDelete,
+}: DetailActionsProps) {
   return (
     <div className="flex flex-wrap gap-2 pt-3 border-t border-surface-200 dark:border-surface-800">
       <a
@@ -35,5 +40,5 @@ export default function DetailActions({ bookmark: b, onEdit, onExport, onDelete 
         Delete
       </Button>
     </div>
-  )
+  );
 }

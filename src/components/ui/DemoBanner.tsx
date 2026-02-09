@@ -1,7 +1,7 @@
-import { FlaskConical } from 'lucide-react'
+import { FlaskConical } from 'lucide-react';
 
 interface DemoBannerProps {
-  onConnect: () => void
+  onConnect: () => void;
 }
 
 export default function DemoBanner({ onConnect }: DemoBannerProps) {
@@ -16,5 +16,5 @@ export default function DemoBanner({ onConnect }: DemoBannerProps) {
         Connect Database
       </button>
     </div>
-  )
+  );
 }

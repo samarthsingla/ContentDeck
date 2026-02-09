@@ -1,14 +1,15 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js'
+import { createClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
-let client: SupabaseClient | null = null
+let client: SupabaseClient | null = null;
 
 export function getSupabaseClient(url: string, anonKey: string): SupabaseClient {
   if (!client) {
-    client = createClient(url, anonKey)
+    client = createClient(url, anonKey);
   }
-  return client
+  return client;
 }
 
 export function resetSupabaseClient() {
-  client = null
+  client = null;
 }

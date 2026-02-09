@@ -1,14 +1,27 @@
-import { Inbox, BookOpen, CheckCircle, Star, Plus, Sun, Moon, Settings, BarChart3, LogOut, LayoutGrid, List } from 'lucide-react'
-import { useUI } from '../../context/UIProvider'
-import { useTheme } from '../../hooks/useTheme'
-import type { Status, ViewMode } from '../../types'
+import {
+  Inbox,
+  BookOpen,
+  CheckCircle,
+  Star,
+  Plus,
+  Sun,
+  Moon,
+  Settings,
+  BarChart3,
+  LogOut,
+  LayoutGrid,
+  List,
+} from 'lucide-react';
+import { useUI } from '../../context/UIProvider';
+import { useTheme } from '../../hooks/useTheme';
+import type { Status, ViewMode } from '../../types';
 
 interface SidebarProps {
-  counts: { unread: number; reading: number; done: number; favorited: number }
-  onAdd: () => void
-  onDisconnect: () => void
-  onSettings: () => void
-  onStats: () => void
+  counts: { unread: number; reading: number; done: number; favorited: number };
+  onAdd: () => void;
+  onDisconnect: () => void;
+  onSettings: () => void;
+  onStats: () => void;
 }
 
 const statusNav: { status: Status | 'all'; label: string; icon: React.ElementType }[] = [
@@ -16,13 +29,28 @@ const statusNav: { status: Status | 'all'; label: string; icon: React.ElementTyp
   { status: 'unread', label: 'Unread', icon: Inbox },
   { status: 'reading', label: 'Reading', icon: BookOpen },
   { status: 'done', label: 'Done', icon: CheckCircle },
-]
+];
 
-export default function Sidebar({ counts, onAdd, onDisconnect, onSettings, onStats }: SidebarProps) {
-  const { currentStatus, setStatus, currentView, setView, currentTag, setTag, showFavorites, setFavorites } = useUI()
-  const { toggleTheme, isDark } = useTheme()
+export default function Sidebar({
+  counts,
+  onAdd,
+  onDisconnect,
+  onSettings,
+  onStats,
+}: SidebarProps) {
+  const {
+    currentStatus,
+    setStatus,
+    currentView,
+    setView,
+    currentTag,
+    setTag,
+    showFavorites,
+    setFavorites,
+  } = useUI();
+  const { toggleTheme, isDark } = useTheme();
 
-  const totalCount = counts.unread + counts.reading + counts.done
+  const totalCount = counts.unread + counts.reading + counts.done;
 
   return (
     <aside className="hidden lg:flex flex-col w-64 h-screen bg-white dark:bg-surface-900 border-r border-surface-200 dark:border-surface-800">
@@ -42,17 +70,22 @@ export default function Sidebar({ counts, onAdd, onDisconnect, onSettings, onSta
       <nav className="flex-1 p-2 overflow-y-auto" aria-label="Main navigation">
         <div className="space-y-0.5">
           {statusNav.map(({ status, label, icon: Icon }) => {
-            const count = status === 'all' ? totalCount : counts[status as Status] ?? 0
-            const active = currentStatus === status && !currentTag && !showFavorites
+            const count = status === 'all' ? totalCount : (counts[status] ?? 0);
+            const active = currentStatus === status && !currentTag && !showFavorites;
             return (
               <button
                 key={status}
-                onClick={() => { setStatus(status); setTag(null); setFavorites(false) }}
+                onClick={() => {
+                  setStatus(status);
+                  setTag(null);
+                  setFavorites(false);
+                }}
                 className={`
                   w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors min-h-[44px]
-                  ${active
-                    ? 'bg-primary-600/10 text-primary-600 dark:text-primary-400'
-                    : 'text-surface-600 dark:text-surface-400 hover:bg-surface-100 dark:hover:bg-surface-800'
+                  ${
+                    active
+                      ? 'bg-primary-600/10 text-primary-600 dark:text-primary-400'
+                      : 'text-surface-600 dark:text-surface-400 hover:bg-surface-100 dark:hover:bg-surface-800'
                   }
                 `}
               >
@@ -60,27 +93,30 @@ export default function Sidebar({ counts, onAdd, onDisconnect, onSettings, onSta
                 <span className="flex-1 text-left">{label}</span>
                 <span className="text-xs text-surface-400 dark:text-surface-500">{count}</span>
               </button>
-            )
+            );
           })}
 
           {/* Favorites */}
           <button
             onClick={() => {
-              setFavorites(true)
-              setStatus('all')
-              setTag(null)
+              setFavorites(true);
+              setStatus('all');
+              setTag(null);
             }}
             className={`
               w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors min-h-[44px]
-              ${showFavorites
-                ? 'bg-primary-600/10 text-primary-600 dark:text-primary-400'
-                : 'text-surface-600 dark:text-surface-400 hover:bg-surface-100 dark:hover:bg-surface-800'
+              ${
+                showFavorites
+                  ? 'bg-primary-600/10 text-primary-600 dark:text-primary-400'
+                  : 'text-surface-600 dark:text-surface-400 hover:bg-surface-100 dark:hover:bg-surface-800'
               }
             `}
           >
             <Star size={18} />
             <span className="flex-1 text-left">Favorites</span>
-            <span className="text-xs text-surface-400 dark:text-surface-500">{counts.favorited}</span>
+            <span className="text-xs text-surface-400 dark:text-surface-500">
+              {counts.favorited}
+            </span>
           </button>
         </div>
 
@@ -103,25 +139,31 @@ export default function Sidebar({ counts, onAdd, onDisconnect, onSettings, onSta
 
         {/* View Toggle */}
         <div className="mt-6 px-3">
-          <p className="text-xs font-medium text-surface-400 dark:text-surface-500 uppercase tracking-wider mb-2">View</p>
+          <p className="text-xs font-medium text-surface-400 dark:text-surface-500 uppercase tracking-wider mb-2">
+            View
+          </p>
           <div className="flex gap-1 bg-surface-100 dark:bg-surface-800 rounded-lg p-1">
-            {([['list', List, 'List'], ['areas', LayoutGrid, 'Areas']] as [ViewMode, React.ElementType, string][]).map(
-              ([view, Icon, label]) => (
-                <button
-                  key={view}
-                  onClick={() => setView(view)}
-                  className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-medium transition-colors min-h-[36px]
-                    ${currentView === view
-                      ? 'bg-white dark:bg-surface-700 text-surface-900 dark:text-surface-100 shadow-sm'
-                      : 'text-surface-500 dark:text-surface-400 hover:text-surface-700 dark:hover:text-surface-300'
+            {(
+              [
+                ['list', List, 'List'],
+                ['areas', LayoutGrid, 'Areas'],
+              ] as [ViewMode, React.ElementType, string][]
+            ).map(([view, Icon, label]) => (
+              <button
+                key={view}
+                onClick={() => setView(view)}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-medium transition-colors min-h-[36px]
+                    ${
+                      currentView === view
+                        ? 'bg-white dark:bg-surface-700 text-surface-900 dark:text-surface-100 shadow-sm'
+                        : 'text-surface-500 dark:text-surface-400 hover:text-surface-700 dark:hover:text-surface-300'
                     }`}
-                  aria-label={`${label} view`}
-                >
-                  <Icon size={14} />
-                  {label}
-                </button>
-              )
-            )}
+                aria-label={`${label} view`}
+              >
+                <Icon size={14} />
+                {label}
+              </button>
+            ))}
           </div>
         </div>
       </nav>
@@ -158,5 +200,5 @@ export default function Sidebar({ counts, onAdd, onDisconnect, onSettings, onSta
         </button>
       </div>
     </aside>
-  )
+  );
 }

@@ -1,30 +1,35 @@
-import { Plus, LayoutGrid } from 'lucide-react'
-import AreaCard from './AreaCard'
-import EmptyState from '../ui/EmptyState'
-import Button from '../ui/Button'
-import type { Bookmark, TagArea } from '../../types'
+import { Plus, LayoutGrid } from 'lucide-react';
+import AreaCard from './AreaCard';
+import EmptyState from '../ui/EmptyState';
+import Button from '../ui/Button';
+import type { Bookmark, TagArea } from '../../types';
 
 interface AreasViewProps {
-  areas: TagArea[]
-  bookmarks: Bookmark[]
-  onAreaClick: (areaName: string) => void
-  onEditArea: (area: TagArea) => void
-  onManageAreas: () => void
+  areas: TagArea[];
+  bookmarks: Bookmark[];
+  onAreaClick: (areaName: string) => void;
+  onEditArea: (area: TagArea) => void;
+  onManageAreas: () => void;
 }
 
-export default function AreasView({ areas, bookmarks, onAreaClick, onEditArea, onManageAreas }: AreasViewProps) {
+export default function AreasView({
+  areas,
+  bookmarks,
+  onAreaClick,
+  onEditArea,
+  onManageAreas,
+}: AreasViewProps) {
   // Count bookmarks per area (match area name to bookmark tags)
   function getCount(area: TagArea): number {
-    return bookmarks.filter((b) =>
-      b.tags.some((t) => t.toLowerCase() === area.name.toLowerCase())
-    ).length
+    return bookmarks.filter((b) => b.tags.some((t) => t.toLowerCase() === area.name.toLowerCase()))
+      .length;
   }
 
   // Count untagged bookmarks (no tags or tags don't match any area)
-  const areaNames = new Set(areas.map((a) => a.name.toLowerCase()))
+  const areaNames = new Set(areas.map((a) => a.name.toLowerCase()));
   const untaggedCount = bookmarks.filter(
-    (b) => !b.tags || b.tags.length === 0 || !b.tags.some((t) => areaNames.has(t.toLowerCase()))
-  ).length
+    (b) => !b.tags || b.tags.length === 0 || !b.tags.some((t) => areaNames.has(t.toLowerCase())),
+  ).length;
 
   if (areas.length === 0) {
     return (
@@ -41,7 +46,7 @@ export default function AreasView({ areas, bookmarks, onAreaClick, onEditArea, o
           </Button>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -77,7 +82,9 @@ export default function AreasView({ areas, bookmarks, onAreaClick, onEditArea, o
           >
             <div className="flex items-center gap-2">
               <span className="text-xl">📥</span>
-              <h3 className="text-sm font-semibold text-surface-600 dark:text-surface-400">Untagged</h3>
+              <h3 className="text-sm font-semibold text-surface-600 dark:text-surface-400">
+                Untagged
+              </h3>
             </div>
             <span className="mt-auto text-xs text-surface-400 dark:text-surface-500">
               {untaggedCount} {untaggedCount === 1 ? 'bookmark' : 'bookmarks'}
@@ -86,5 +93,5 @@ export default function AreasView({ areas, bookmarks, onAreaClick, onEditArea, o
         )}
       </div>
     </div>
-  )
+  );
 }

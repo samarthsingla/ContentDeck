@@ -1,19 +1,19 @@
-import { Inbox, BookOpen, CheckCircle, List, LayoutGrid } from 'lucide-react'
-import { useUI } from '../../context/UIProvider'
-import type { Status } from '../../types'
+import { Inbox, BookOpen, CheckCircle, List, LayoutGrid } from 'lucide-react';
+import { useUI } from '../../context/UIProvider';
+import type { Status } from '../../types';
 
 interface MobileNavProps {
-  counts: { unread: number; reading: number; done: number }
+  counts: { unread: number; reading: number; done: number };
 }
 
 const tabs: { status: Status; label: string; icon: React.ElementType }[] = [
   { status: 'unread', label: 'Unread', icon: Inbox },
   { status: 'reading', label: 'Reading', icon: BookOpen },
   { status: 'done', label: 'Done', icon: CheckCircle },
-]
+];
 
 export default function MobileNav({ counts }: MobileNavProps) {
-  const { currentStatus, setStatus, currentView, setView } = useUI()
+  const { currentStatus, setStatus, currentView, setView } = useUI();
 
   return (
     <nav
@@ -23,7 +23,7 @@ export default function MobileNav({ counts }: MobileNavProps) {
     >
       <div className="flex items-center">
         {tabs.map(({ status, label, icon: Icon }) => {
-          const active = currentStatus === status
+          const active = currentStatus === status;
           return (
             <button
               key={status}
@@ -36,11 +36,9 @@ export default function MobileNav({ counts }: MobileNavProps) {
             >
               <Icon size={20} />
               <span className="text-[10px] font-medium">{label}</span>
-              {counts[status] > 0 && (
-                <span className="text-[10px]">{counts[status]}</span>
-              )}
+              {counts[status] > 0 && <span className="text-[10px]">{counts[status]}</span>}
             </button>
-          )
+          );
         })}
 
         {/* View toggle */}
@@ -50,9 +48,11 @@ export default function MobileNav({ counts }: MobileNavProps) {
           aria-label={`Switch to ${currentView === 'list' ? 'areas' : 'list'} view`}
         >
           {currentView === 'list' ? <LayoutGrid size={20} /> : <List size={20} />}
-          <span className="text-[10px] font-medium">{currentView === 'list' ? 'Areas' : 'List'}</span>
+          <span className="text-[10px] font-medium">
+            {currentView === 'list' ? 'Areas' : 'List'}
+          </span>
         </button>
       </div>
     </nav>
-  )
+  );
 }

@@ -1,0 +1,5 @@
+dist/
+public/sw.js
+node_modules/
+v1/
+*.md

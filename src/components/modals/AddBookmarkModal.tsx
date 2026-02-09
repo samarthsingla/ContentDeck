@@ -1,73 +1,79 @@
-import { useState, useEffect } from 'react'
-import Modal from '../ui/Modal'
-import Button from '../ui/Button'
-import { detectSourceType } from '../../lib/utils'
-import { SourceBadge } from '../ui/Badge'
-import type { SourceType } from '../../types'
+import { useState, useEffect } from 'react';
+import Modal from '../ui/Modal';
+import Button from '../ui/Button';
+import { detectSourceType } from '../../lib/utils';
+import { SourceBadge } from '../ui/Badge';
+import type { SourceType } from '../../types';
 
 interface AddBookmarkModalProps {
-  open: boolean
-  onClose: () => void
-  onAdd: (data: { url: string; title?: string; source_type?: string; tags?: string[] }) => void
-  isPending: boolean
-  initialUrl?: string
+  open: boolean;
+  onClose: () => void;
+  onAdd: (data: { url: string; title?: string; source_type?: string; tags?: string[] }) => void;
+  isPending: boolean;
+  initialUrl?: string;
 }
 
-export default function AddBookmarkModal({ open, onClose, onAdd, isPending, initialUrl }: AddBookmarkModalProps) {
-  const [url, setUrl] = useState('')
-  const [title, setTitle] = useState('')
-  const [detectedSource, setDetectedSource] = useState<SourceType | null>(null)
-  const [tagInput, setTagInput] = useState('')
-  const [tags, setTags] = useState<string[]>([])
+export default function AddBookmarkModal({
+  open,
+  onClose,
+  onAdd,
+  isPending,
+  initialUrl,
+}: AddBookmarkModalProps) {
+  const [url, setUrl] = useState('');
+  const [title, setTitle] = useState('');
+  const [detectedSource, setDetectedSource] = useState<SourceType | null>(null);
+  const [tagInput, setTagInput] = useState('');
+  const [tags, setTags] = useState<string[]>([]);
 
   // Pre-fill from share target or prop
   useEffect(() => {
     if (open && initialUrl && !url) {
-      setUrl(initialUrl)
-      setDetectedSource(detectSourceType(initialUrl))
+      setUrl(initialUrl);
+      setDetectedSource(detectSourceType(initialUrl));
     }
-  }, [open, initialUrl]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [open, initialUrl]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleUrlChange(value: string) {
-    setUrl(value)
+    setUrl(value);
     if (value.trim()) {
-      setDetectedSource(detectSourceType(value.trim()))
+      setDetectedSource(detectSourceType(value.trim()));
     } else {
-      setDetectedSource(null)
+      setDetectedSource(null);
     }
   }
 
   function addTag(value: string) {
-    const tag = value.trim().toLowerCase()
+    const tag = value.trim().toLowerCase();
     if (tag && !tags.includes(tag)) {
-      setTags([...tags, tag])
+      setTags([...tags, tag]);
     }
-    setTagInput('')
+    setTagInput('');
   }
 
   function removeTag(tag: string) {
-    setTags(tags.filter((t) => t !== tag))
+    setTags(tags.filter((t) => t !== tag));
   }
 
   function handleTagKeyDown(e: React.KeyboardEvent) {
     if (e.key === 'Enter' || e.key === ',') {
-      e.preventDefault()
-      addTag(tagInput)
+      e.preventDefault();
+      addTag(tagInput);
     }
     if (e.key === 'Backspace' && !tagInput && tags.length > 0) {
-      setTags(tags.slice(0, -1))
+      setTags(tags.slice(0, -1));
     }
   }
 
   function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    if (!url.trim()) return
+    e.preventDefault();
+    if (!url.trim()) return;
 
     // Auto-commit any pending tag text before submitting
-    const finalTags = [...tags]
-    const pending = tagInput.trim().toLowerCase()
+    const finalTags = [...tags];
+    const pending = tagInput.trim().toLowerCase();
     if (pending && !finalTags.includes(pending)) {
-      finalTags.push(pending)
+      finalTags.push(pending);
     }
 
     onAdd({
@@ -75,15 +81,15 @@ export default function AddBookmarkModal({ open, onClose, onAdd, isPending, init
       title: title.trim() || undefined,
       source_type: detectedSource ?? undefined,
       tags: finalTags.length > 0 ? finalTags : undefined,
-    })
+    });
 
     // Reset form
-    setUrl('')
-    setTitle('')
-    setDetectedSource(null)
-    setTags([])
-    setTagInput('')
-    onClose()
+    setUrl('');
+    setTitle('');
+    setDetectedSource(null);
+    setTags([]);
+    setTagInput('');
+    onClose();
   }
 
   return (
@@ -91,7 +97,10 @@ export default function AddBookmarkModal({ open, onClose, onAdd, isPending, init
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* URL */}
         <div>
-          <label htmlFor="add-url" className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">
+          <label
+            htmlFor="add-url"
+            className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1"
+          >
             URL
           </label>
           <input
@@ -113,7 +122,10 @@ export default function AddBookmarkModal({ open, onClose, onAdd, isPending, init
 
         {/* Title */}
         <div>
-          <label htmlFor="add-title" className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">
+          <label
+            htmlFor="add-title"
+            className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1"
+          >
             Title <span className="text-surface-400 font-normal">(optional, auto-fetched)</span>
           </label>
           <input
@@ -128,7 +140,10 @@ export default function AddBookmarkModal({ open, onClose, onAdd, isPending, init
 
         {/* Tags */}
         <div>
-          <label htmlFor="add-tags" className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">
+          <label
+            htmlFor="add-tags"
+            className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1"
+          >
             Tags <span className="text-surface-400 font-normal">(comma or enter to add)</span>
           </label>
           <div className="flex flex-wrap gap-1.5 p-2 rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 min-h-[44px]">
@@ -171,5 +186,5 @@ export default function AddBookmarkModal({ open, onClose, onAdd, isPending, init
         </div>
       </form>
     </Modal>
-  )
+  );
 }

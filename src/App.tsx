@@ -1,39 +1,36 @@
-import { useMemo } from 'react'
-import { useCredentials } from './hooks/useCredentials'
-import { useTheme } from './hooks/useTheme'
-import { SupabaseProvider } from './context/SupabaseProvider'
-import { UIProvider } from './context/UIProvider'
-import { ToastProvider } from './components/ui/Toast'
-import ErrorBoundary from './components/ui/ErrorBoundary'
-import UpdateBanner from './components/ui/UpdateBanner'
-import DemoBanner from './components/ui/DemoBanner'
-import SetupScreen from './components/setup/SetupScreen'
-import Dashboard from './pages/Dashboard'
-import { createMockSupabaseClient } from './lib/mock-supabase'
+import { useMemo } from 'react';
+import { useCredentials } from './hooks/useCredentials';
+import { useTheme } from './hooks/useTheme';
+import { SupabaseProvider } from './context/SupabaseProvider';
+import { UIProvider } from './context/UIProvider';
+import { ToastProvider } from './components/ui/Toast';
+import ErrorBoundary from './components/ui/ErrorBoundary';
+import UpdateBanner from './components/ui/UpdateBanner';
+import DemoBanner from './components/ui/DemoBanner';
+import SetupScreen from './components/setup/SetupScreen';
+import Dashboard from './pages/Dashboard';
+import { createMockSupabaseClient } from './lib/mock-supabase';
 
 function getSharedUrl(): string | null {
-  const params = new URLSearchParams(window.location.search)
+  const params = new URLSearchParams(window.location.search);
   // PWA share target sends ?url= or shared text that may contain a URL
-  return params.get('url') || params.get('text') || null
+  return params.get('url') || params.get('text') || null;
 }
 
 export default function App() {
-  const { credentials, saveCredentials, clearCredentials } = useCredentials()
-  useTheme()
+  const { credentials, saveCredentials, clearCredentials } = useCredentials();
+  useTheme();
 
-  const isDemo = credentials?.url === 'demo'
-  const mockClient = useMemo(
-    () => (isDemo ? createMockSupabaseClient() : undefined),
-    [isDemo],
-  )
-  const sharedUrl = useMemo(getSharedUrl, [])
+  const isDemo = credentials?.url === 'demo';
+  const mockClient = useMemo(() => (isDemo ? createMockSupabaseClient() : undefined), [isDemo]);
+  const sharedUrl = useMemo(getSharedUrl, []);
 
   if (!credentials) {
     return (
       <ToastProvider>
         <SetupScreen onConnect={saveCredentials} />
       </ToastProvider>
-    )
+    );
   }
 
   return (
@@ -48,11 +45,7 @@ export default function App() {
             >
               Skip to main content
             </a>
-            {isDemo ? (
-              <DemoBanner onConnect={clearCredentials} />
-            ) : (
-              <UpdateBanner />
-            )}
+            {isDemo ? <DemoBanner onConnect={clearCredentials} /> : <UpdateBanner />}
             <Dashboard
               credentials={credentials}
               onDisconnect={clearCredentials}
@@ -63,5 +56,5 @@ export default function App() {
         </UIProvider>
       </SupabaseProvider>
     </ErrorBoundary>
-  )
+  );
 }

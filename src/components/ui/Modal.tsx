@@ -1,82 +1,84 @@
-import { useEffect, useRef, useCallback } from 'react'
-import { X } from 'lucide-react'
+import { useEffect, useRef, useCallback } from 'react';
+import { X } from 'lucide-react';
 
 interface ModalProps {
-  open: boolean
-  onClose: () => void
-  title: string
-  children: React.ReactNode
-  size?: 'sm' | 'md' | 'lg'
+  open: boolean;
+  onClose: () => void;
+  title: string;
+  children: React.ReactNode;
+  size?: 'sm' | 'md' | 'lg';
 }
 
 export default function Modal({ open, onClose, title, children, size = 'md' }: ModalProps) {
-  const overlayRef = useRef<HTMLDivElement>(null)
-  const contentRef = useRef<HTMLDivElement>(null)
-  const previousFocusRef = useRef<HTMLElement | null>(null)
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
 
   const sizeClasses = {
     sm: 'max-w-sm',
     md: 'max-w-lg',
     lg: 'max-w-2xl',
-  }
+  };
 
   // Focus trap
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        onClose()
-        return
+        onClose();
+        return;
       }
-      if (e.key !== 'Tab' || !contentRef.current) return
+      if (e.key !== 'Tab' || !contentRef.current) return;
 
       const focusable = contentRef.current.querySelectorAll<HTMLElement>(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-      )
-      const first = focusable[0]
-      const last = focusable[focusable.length - 1]
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+      );
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
 
       if (e.shiftKey) {
         if (document.activeElement === first) {
-          e.preventDefault()
-          last?.focus()
+          e.preventDefault();
+          last?.focus();
         }
       } else {
         if (document.activeElement === last) {
-          e.preventDefault()
-          first?.focus()
+          e.preventDefault();
+          first?.focus();
         }
       }
     },
-    [onClose]
-  )
+    [onClose],
+  );
 
   useEffect(() => {
     if (open) {
-      previousFocusRef.current = document.activeElement as HTMLElement
-      document.addEventListener('keydown', handleKeyDown)
-      document.body.style.overflow = 'hidden'
+      previousFocusRef.current = document.activeElement as HTMLElement;
+      document.addEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'hidden';
       // Focus first focusable element
       requestAnimationFrame(() => {
         const first = contentRef.current?.querySelector<HTMLElement>(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-        )
-        first?.focus()
-      })
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        );
+        first?.focus();
+      });
     }
     return () => {
-      document.removeEventListener('keydown', handleKeyDown)
-      document.body.style.overflow = ''
-      previousFocusRef.current?.focus()
-    }
-  }, [open, handleKeyDown])
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = '';
+      previousFocusRef.current?.focus();
+    };
+  }, [open, handleKeyDown]);
 
-  if (!open) return null
+  if (!open) return null;
 
   return (
     <div
       ref={overlayRef}
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm"
-      onClick={(e) => { if (e.target === overlayRef.current) onClose() }}
+      onClick={(e) => {
+        if (e.target === overlayRef.current) onClose();
+      }}
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-title"
@@ -92,7 +94,10 @@ export default function Modal({ open, onClose, title, children, size = 'md' }: M
         style={{ paddingBottom: 'calc(16px + var(--safe-bottom))' }}
       >
         <div className="sticky top-0 flex items-center justify-between p-4 border-b border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 rounded-t-2xl sm:rounded-t-2xl z-10">
-          <h2 id="modal-title" className="text-lg font-semibold text-surface-900 dark:text-surface-100">
+          <h2
+            id="modal-title"
+            className="text-lg font-semibold text-surface-900 dark:text-surface-100"
+          >
             {title}
           </h2>
           <button
@@ -103,10 +108,8 @@ export default function Modal({ open, onClose, title, children, size = 'md' }: M
             <X size={20} />
           </button>
         </div>
-        <div className="p-4">
-          {children}
-        </div>
+        <div className="p-4">{children}</div>
       </div>
     </div>
-  )
+  );
 }
