@@ -51,6 +51,13 @@ export interface BookmarkTag {
   tag_area_id: string;
 }
 
+export interface UserToken {
+  id: string;
+  name: string;
+  created_at: string;
+  last_used_at: string | null;
+}
+
 export interface StatusHistoryEntry {
   id: string;
   bookmark_id: string;

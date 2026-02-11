@@ -49,6 +49,18 @@ create table bookmark_tags (
   primary key (bookmark_id, tag_area_id)
 );
 
+-- User API tokens (for bookmarklet/iOS Shortcut via edge function)
+create table user_tokens (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) not null,
+  name text not null default 'Default',
+  token_hash text not null,
+  created_at timestamptz default now(),
+  last_used_at timestamptz
+);
+
+create index idx_user_tokens_hash on user_tokens(token_hash);
+
 -- Status history (for streaks/stats)
 create table status_history (
   id uuid primary key default gen_random_uuid(),
@@ -144,4 +156,8 @@ create policy "Users see own bookmark tags" on bookmark_tags
 
 alter table status_history enable row level security;
 create policy "Users see own status history" on status_history
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+alter table user_tokens enable row level security;
+create policy "Users manage own tokens" on user_tokens
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
