@@ -143,6 +143,38 @@ create trigger set_user_token_user
   before insert on user_tokens
   for each row execute function set_user_id();
 
+-- RPC for external bookmark insert (bypasses set_user_id trigger)
+-- Used by save-bookmark edge function where auth.uid() is null
+create or replace function insert_bookmark_via_token(
+  p_user_id uuid,
+  p_url text,
+  p_title text default null
+) returns uuid
+language plpgsql
+security definer
+as $$
+declare
+  v_id uuid;
+  v_source_type text := 'blog';
+begin
+  if p_url ~* 'youtube\.com|youtu\.be|youtube\.app\.goo\.gl' then
+    v_source_type := 'youtube';
+  elsif p_url ~* 'twitter\.com|x\.com|t\.co' then
+    v_source_type := 'twitter';
+  elsif p_url ~* 'linkedin\.com|lnkd\.in' then
+    v_source_type := 'linkedin';
+  elsif p_url ~* 'substack\.com' then
+    v_source_type := 'substack';
+  end if;
+
+  insert into bookmarks (user_id, url, title, source_type, status, is_favorited, notes, tags, metadata, synced)
+  values (p_user_id, p_url, p_title, v_source_type, 'unread', false, '[]'::jsonb, '{}', '{}'::jsonb, false)
+  returning id into v_id;
+
+  return v_id;
+end;
+$$;
+
 -- RLS (user-scoped access)
 alter table bookmarks enable row level security;
 create policy "Users see own bookmarks" on bookmarks
