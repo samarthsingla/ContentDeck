@@ -139,6 +139,9 @@ create trigger set_tag_area_user
 create trigger set_status_history_user
   before insert on status_history
   for each row execute function set_user_id();
+create trigger set_user_token_user
+  before insert on user_tokens
+  for each row execute function set_user_id();
 
 -- RLS (user-scoped access)
 alter table bookmarks enable row level security;

@@ -25,9 +25,15 @@ export function useTokens() {
 
   const createToken = useMutation({
     mutationFn: async (name: string = 'Default') => {
+      const {
+        data: { user },
+      } = await db.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
       const plainToken = generateToken();
       const tokenHash = await hashToken(plainToken);
-      const { error } = await db.from('user_tokens').insert({ name, token_hash: tokenHash });
+      const { error } = await db
+        .from('user_tokens')
+        .insert({ name, token_hash: tokenHash, user_id: user.id });
       if (error) throw error;
       return { plainToken };
     },

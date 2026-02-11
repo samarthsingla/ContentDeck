@@ -16,3 +16,8 @@ ALTER TABLE user_tokens ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Users manage own tokens" ON user_tokens
   FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+-- Auto-set user_id on insert (same pattern as bookmarks/tag_areas/status_history)
+CREATE TRIGGER set_user_token_user
+  BEFORE INSERT ON user_tokens
+  FOR EACH ROW EXECUTE FUNCTION set_user_id();
