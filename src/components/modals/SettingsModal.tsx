@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { ExternalLink, Smartphone, FlaskConical } from 'lucide-react';
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
+import TokenManager from '../settings/TokenManager';
 
 interface SettingsModalProps {
   open: boolean;
@@ -112,6 +113,9 @@ export default function SettingsModal({
             </p>
           </div>
         </section>
+
+        {/* API Tokens (bookmarklet/iOS Shortcut) — hidden in demo mode */}
+        {!isDemo && <TokenManager />}
 
         {/* API Keys */}
         <section>

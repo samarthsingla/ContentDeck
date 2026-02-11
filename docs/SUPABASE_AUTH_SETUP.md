@@ -82,6 +82,31 @@ Redeploy after adding the variables.
 5. Try Google/GitHub sign in — should redirect and log you in
 6. Sign out — should return to AuthScreen
 
+## 5. Edge Function Deployment
+
+The `save-bookmark` edge function enables the bookmarklet and iOS Shortcut to save bookmarks using a personal API token.
+
+### Deploy the edge function
+
+```bash
+npx supabase login
+npx supabase link --project-ref <your-project-ref>
+npx supabase functions deploy save-bookmark
+```
+
+The function uses `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`, which are automatically available in the edge function environment.
+
+### Apply the user_tokens migration
+
+Run `sql/migrations/002_add_user_tokens.sql` in the Supabase SQL Editor.
+
+### Generate a token
+
+1. Open Settings in the app
+2. Under "API Tokens", click "Generate API Token"
+3. Copy the token (it's only shown once)
+4. Use the bookmarklet or iOS Shortcut setup instructions shown after generation
+
 ## Troubleshooting
 
 ### OAuth redirect fails

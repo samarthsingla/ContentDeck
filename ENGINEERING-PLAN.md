@@ -103,7 +103,7 @@ CREATE POLICY "Users see own bookmarks" ON bookmarks
 - Bookmarklet removed — relied on raw anon key embedded in JS
 - iOS Shortcut broken — relied on raw anon key in HTTP headers
 
-### 1.1a Fix Bookmarklet (post-auth)
+### 1.1a Fix Bookmarklet (post-auth) ✅ DONE
 **Why**: Power users on desktop need a one-click save from any page.
 
 - **Approach**: Supabase Edge Function `POST /save-bookmark` that accepts a user API token
@@ -113,7 +113,7 @@ CREATE POLICY "Users see own bookmarks" ON bookmarks
 - Settings UI: "Generate Bookmarklet" → copies personalized bookmarklet code
 - Token revocation in Settings
 
-### 1.1b Fix iOS Shortcut (post-auth)
+### 1.1b Fix iOS Shortcut (post-auth) ✅ DONE
 **Why**: iPhone users need background save from the Share Sheet without opening the app.
 
 - **Approach**: Same edge function as 1.1a (`POST /save-bookmark`)

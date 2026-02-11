@@ -38,14 +38,18 @@ npm run typecheck    # TypeScript type check (no emit)
 
 ```
 src/
-├── components/      # React components (layout, feed, detail, modals, areas, auth, ui)
-├── hooks/           # TanStack Query hooks (useBookmarks, useTagAreas, useStats, useAuth, etc.)
+├── components/      # React components (layout, feed, detail, modals, areas, auth, settings, ui)
+├── hooks/           # TanStack Query hooks (useBookmarks, useTagAreas, useStats, useAuth, useTokens, etc.)
 ├── context/         # SupabaseProvider, UIProvider
-├── lib/             # supabase.ts, metadata.ts, ai.ts, obsidian.ts, utils.ts, mock-supabase.ts, demo-data.ts
-├── types/           # TypeScript interfaces (Bookmark, TagArea, Note, etc.)
+├── lib/             # supabase.ts, metadata.ts, ai.ts, obsidian.ts, tokens.ts, utils.ts, mock-supabase.ts, demo-data.ts
+├── types/           # TypeScript interfaces (Bookmark, TagArea, UserToken, Note, etc.)
 ├── pages/           # Dashboard.tsx (orchestrator)
 ├── App.tsx          # Root: auth check, demo mode detection, share target
 └── main.tsx         # Entry point
+
+supabase/
+└── functions/
+    └── save-bookmark/   # Edge function: token-authenticated bookmark save (bookmarklet + iOS Shortcut)
 ```
 
 ### Key patterns
@@ -60,6 +64,7 @@ src/
 - **PWA Share Target:** `manifest.json` `share_target` + `?url=` query param handling in App.tsx → AddBookmarkModal pre-fill
 - **Service worker:** Network-first for navigation, stale-while-revalidate for assets. Version in `CACHE_NAME` must be bumped manually on deploys.
 - **Loading state:** Inline CSS spinner in `index.html` shown until React mounts (no blank page)
+- **Edge Functions:** `save-bookmark` accepts `{ token, url, title? }`, validates token hash against `user_tokens`, inserts bookmark via service role key (bypasses RLS). Enables bookmarklet + iOS Shortcut.
 
 ## Database (Supabase PostgreSQL)
 
@@ -68,6 +73,7 @@ Schema defined in `sql/setup.sql`. Key tables:
 - `tag_areas` — user_id, name, emoji, color, sort_order
 - `bookmark_tags` — junction table (scoped via bookmark's user_id)
 - `status_history` — user_id, audit trail for streak/stats calculations
+- `user_tokens` — user_id, name, token_hash (SHA-256), last_used_at (for bookmarklet/iOS Shortcut auth)
 
 DB triggers:
 - `detect_source_type()` — auto-classifies URLs using `~*` (case-insensitive regex)
@@ -96,6 +102,7 @@ RLS policies:
 
 - **Supabase Auth** — magic link, Google OAuth, GitHub OAuth
 - **Supabase REST API** — all CRUD (RLS-protected, user-scoped)
+- **Supabase Edge Functions** — `save-bookmark` (token-authenticated external save)
 - **OpenRouter** — AI tagging (free models: Llama 3.3 70B, Gemma 3, Mistral, Qwen)
 - **YouTube oEmbed** — video titles (no key needed)
 - **YouTube Data API v3** — video duration/channel (free 10K units/day)
