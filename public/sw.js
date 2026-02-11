@@ -1,4 +1,4 @@
-const CACHE_NAME = 'contentdeck-v2.2.0'
+const CACHE_NAME = 'contentdeck-v3.0.0'
 
 self.addEventListener('install', () => {
   // Don't skip waiting — let the app decide when to activate

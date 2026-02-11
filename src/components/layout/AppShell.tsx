@@ -1,22 +1,22 @@
-import Sidebar from './Sidebar'
-import MobileHeader from './MobileHeader'
-import MobileNav from './MobileNav'
+import Sidebar from './Sidebar';
+import MobileHeader from './MobileHeader';
+import MobileNav from './MobileNav';
 
 interface AppShellProps {
-  counts: { unread: number; reading: number; done: number; favorited: number }
-  onAdd: () => void
-  onDisconnect: () => void
-  onToggleSearch: () => void
-  onSettings: () => void
-  onStats: () => void
-  showSearch: boolean
-  children: React.ReactNode
+  counts: { unread: number; reading: number; done: number; favorited: number };
+  onAdd: () => void;
+  onSignOut: () => void;
+  onToggleSearch: () => void;
+  onSettings: () => void;
+  onStats: () => void;
+  showSearch: boolean;
+  children: React.ReactNode;
 }
 
 export default function AppShell({
   counts,
   onAdd,
-  onDisconnect,
+  onSignOut,
   onToggleSearch,
   onSettings,
   onStats,
@@ -26,15 +26,30 @@ export default function AppShell({
   return (
     <div className="flex flex-1 min-w-0">
       {/* Desktop Sidebar */}
-      <Sidebar counts={counts} onAdd={onAdd} onDisconnect={onDisconnect} onSettings={onSettings} onStats={onStats} />
+      <Sidebar
+        counts={counts}
+        onAdd={onAdd}
+        onSignOut={onSignOut}
+        onSettings={onSettings}
+        onStats={onStats}
+      />
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Mobile Header */}
-        <MobileHeader onAdd={onAdd} onToggleSearch={onToggleSearch} onSettings={onSettings} showSearch={showSearch} />
+        <MobileHeader
+          onAdd={onAdd}
+          onToggleSearch={onToggleSearch}
+          onSettings={onSettings}
+          showSearch={showSearch}
+        />
 
         {/* Content Area */}
-        <main id="main-content" className="flex-1 overflow-y-auto" style={{ paddingBottom: 'calc(72px + var(--safe-bottom))' }}>
+        <main
+          id="main-content"
+          className="flex-1 overflow-y-auto"
+          style={{ paddingBottom: 'calc(72px + var(--safe-bottom))' }}
+        >
           {children}
         </main>
 
@@ -42,5 +57,5 @@ export default function AppShell({
         <MobileNav counts={counts} />
       </div>
     </div>
-  )
+  );
 }

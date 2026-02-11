@@ -1,12 +1,12 @@
-import NoteCard from './NoteCard'
-import NoteComposer from './NoteComposer'
-import type { Note, NoteType } from '../../types'
+import NoteCard from './NoteCard';
+import NoteComposer from './NoteComposer';
+import type { Note, NoteType } from '../../types';
 
 interface NotesTabProps {
-  notes: Note[]
-  onAddNote: (type: NoteType, content: string) => void
-  onDeleteNote: (index: number) => void
-  isPending: boolean
+  notes: Note[];
+  onAddNote: (type: NoteType, content: string) => void;
+  onDeleteNote: (index: number) => void;
+  isPending: boolean;
 }
 
 export default function NotesTab({ notes, onAddNote, onDeleteNote, isPending }: NotesTabProps) {
@@ -22,7 +22,7 @@ export default function NotesTab({ notes, onAddNote, onDeleteNote, isPending }: 
             Notes ({notes.length})
           </h4>
           {[...notes].reverse().map((note, reversedIndex) => {
-            const originalIndex = notes.length - 1 - reversedIndex
+            const originalIndex = notes.length - 1 - reversedIndex;
             return (
               <NoteCard
                 key={`${note.created_at}-${reversedIndex}`}
@@ -31,7 +31,7 @@ export default function NotesTab({ notes, onAddNote, onDeleteNote, isPending }: 
                 createdAt={note.created_at}
                 onDelete={() => onDeleteNote(originalIndex)}
               />
-            )
+            );
           })}
         </div>
       ) : (
@@ -40,5 +40,5 @@ export default function NotesTab({ notes, onAddNote, onDeleteNote, isPending }: 
         </p>
       )}
     </div>
-  )
+  );
 }

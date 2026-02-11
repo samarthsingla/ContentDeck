@@ -1,11 +1,11 @@
 interface ProgressBarProps {
-  current: number
-  total: number
-  label?: string
+  current: number;
+  total: number;
+  label?: string;
 }
 
 export default function ProgressBar({ current, total, label }: ProgressBarProps) {
-  const pct = total > 0 ? Math.round((current / total) * 100) : 0
+  const pct = total > 0 ? Math.round((current / total) * 100) : 0;
 
   return (
     <div className="flex items-center gap-3 px-4 py-2 bg-primary-600/10 border-b border-primary-500/20">
@@ -26,5 +26,5 @@ export default function ProgressBar({ current, total, label }: ProgressBarProps)
         {label ?? `${current}/${total}`}
       </span>
     </div>
-  )
+  );
 }

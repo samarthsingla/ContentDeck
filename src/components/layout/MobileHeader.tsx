@@ -1,15 +1,15 @@
-import { Search, Sun, Moon, Plus, Settings } from 'lucide-react'
-import { useTheme } from '../../hooks/useTheme'
+import { Search, Sun, Moon, Plus, Settings } from 'lucide-react';
+import { useTheme } from '../../hooks/useTheme';
 
 interface MobileHeaderProps {
-  onAdd: () => void
-  onToggleSearch: () => void
-  onSettings: () => void
-  showSearch: boolean
+  onAdd: () => void;
+  onToggleSearch: () => void;
+  onSettings: () => void;
+  showSearch: boolean;
 }
 
 export default function MobileHeader({ onAdd, onToggleSearch, onSettings }: MobileHeaderProps) {
-  const { toggleTheme, isDark } = useTheme()
+  const { toggleTheme, isDark } = useTheme();
 
   return (
     <header
@@ -37,7 +37,11 @@ export default function MobileHeader({ onAdd, onToggleSearch, onSettings }: Mobi
           className="p-2.5 rounded-lg hover:bg-surface-100 dark:hover:bg-surface-800 min-w-[44px] min-h-[44px] flex items-center justify-center"
           aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
         >
-          {isDark ? <Sun size={20} className="text-surface-400" /> : <Moon size={20} className="text-surface-600" />}
+          {isDark ? (
+            <Sun size={20} className="text-surface-400" />
+          ) : (
+            <Moon size={20} className="text-surface-600" />
+          )}
         </button>
         <button
           onClick={onAdd}
@@ -48,5 +52,5 @@ export default function MobileHeader({ onAdd, onToggleSearch, onSettings }: Mobi
         </button>
       </div>
     </header>
-  )
+  );
 }

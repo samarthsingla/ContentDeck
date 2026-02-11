@@ -1,22 +1,25 @@
-import { X, Trash2, CheckCircle, BookOpen, Inbox } from 'lucide-react'
-import Button from '../ui/Button'
-import type { Status } from '../../types'
+import { X, Trash2, CheckCircle, BookOpen, Inbox } from 'lucide-react';
+import Button from '../ui/Button';
+import type { Status } from '../../types';
 
 interface BulkActionBarProps {
-  selectedCount: number
-  onChangeStatus: (status: Status) => void
-  onDelete: () => void
-  onCancel: () => void
+  selectedCount: number;
+  onChangeStatus: (status: Status) => void;
+  onDelete: () => void;
+  onCancel: () => void;
 }
 
-export default function BulkActionBar({ selectedCount, onChangeStatus, onDelete, onCancel }: BulkActionBarProps) {
-  if (selectedCount === 0) return null
+export default function BulkActionBar({
+  selectedCount,
+  onChangeStatus,
+  onDelete,
+  onCancel,
+}: BulkActionBarProps) {
+  if (selectedCount === 0) return null;
 
   return (
     <div className="fixed bottom-[calc(56px+var(--safe-bottom))] lg:bottom-4 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 px-4 py-3 rounded-xl bg-surface-900 dark:bg-surface-100 text-white dark:text-surface-900 shadow-xl">
-      <span className="text-sm font-medium mr-2">
-        {selectedCount} selected
-      </span>
+      <span className="text-sm font-medium mr-2">{selectedCount} selected</span>
 
       <button
         onClick={() => onChangeStatus('unread')}
@@ -58,5 +61,5 @@ export default function BulkActionBar({ selectedCount, onChangeStatus, onDelete,
         <X size={16} />
       </Button>
     </div>
-  )
+  );
 }

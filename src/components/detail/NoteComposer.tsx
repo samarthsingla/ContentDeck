@@ -1,10 +1,10 @@
-import { useState, useRef, useEffect } from 'react'
-import Button from '../ui/Button'
-import type { NoteType } from '../../types'
+import { useState, useRef, useEffect } from 'react';
+import Button from '../ui/Button';
+import type { NoteType } from '../../types';
 
 interface NoteComposerProps {
-  onAddNote: (type: NoteType, content: string) => void
-  isPending: boolean
+  onAddNote: (type: NoteType, content: string) => void;
+  isPending: boolean;
 }
 
 const NOTE_TYPES: { type: NoteType; emoji: string; label: string }[] = [
@@ -12,33 +12,33 @@ const NOTE_TYPES: { type: NoteType; emoji: string; label: string }[] = [
   { type: 'question', emoji: '❓', label: 'Question' },
   { type: 'highlight', emoji: '🖍️', label: 'Highlight' },
   { type: 'note', emoji: '📝', label: 'Note' },
-]
+];
 
 export default function NoteComposer({ onAddNote, isPending }: NoteComposerProps) {
-  const [type, setType] = useState<NoteType>('note')
-  const [content, setContent] = useState('')
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const [type, setType] = useState<NoteType>('note');
+  const [content, setContent] = useState('');
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Auto-resize textarea
   useEffect(() => {
-    const el = textareaRef.current
+    const el = textareaRef.current;
     if (el) {
-      el.style.height = 'auto'
-      el.style.height = `${el.scrollHeight}px`
+      el.style.height = 'auto';
+      el.style.height = `${el.scrollHeight}px`;
     }
-  }, [content])
+  }, [content]);
 
   function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    if (!content.trim()) return
-    onAddNote(type, content.trim())
-    setContent('')
+    e.preventDefault();
+    if (!content.trim()) return;
+    onAddNote(type, content.trim());
+    setContent('');
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-      e.preventDefault()
-      handleSubmit(e)
+      e.preventDefault();
+      handleSubmit(e);
     }
   }
 
@@ -82,5 +82,5 @@ export default function NoteComposer({ onAddNote, isPending }: NoteComposerProps
         </Button>
       </div>
     </form>
-  )
+  );
 }

@@ -1,69 +1,75 @@
-import { useState, useEffect } from 'react'
-import Modal from '../ui/Modal'
-import Button from '../ui/Button'
-import { SourceBadge } from '../ui/Badge'
-import type { Bookmark, SourceType, Status } from '../../types'
-import { SOURCE_LIST, SOURCE_LABELS, STATUS_LIST } from '../../types'
+import { useState, useEffect } from 'react';
+import Modal from '../ui/Modal';
+import Button from '../ui/Button';
+import { SourceBadge } from '../ui/Badge';
+import type { Bookmark, SourceType, Status } from '../../types';
+import { SOURCE_LIST, SOURCE_LABELS, STATUS_LIST } from '../../types';
 
 interface EditBookmarkModalProps {
-  open: boolean
-  bookmark: Bookmark | null
-  onClose: () => void
-  onSave: (id: string, updates: Partial<Bookmark>) => void
-  isPending: boolean
+  open: boolean;
+  bookmark: Bookmark | null;
+  onClose: () => void;
+  onSave: (id: string, updates: Partial<Bookmark>) => void;
+  isPending: boolean;
 }
 
-export default function EditBookmarkModal({ open, bookmark, onClose, onSave, isPending }: EditBookmarkModalProps) {
-  const [url, setUrl] = useState('')
-  const [title, setTitle] = useState('')
-  const [sourceType, setSourceType] = useState<SourceType>('blog')
-  const [status, setStatus] = useState<Status>('unread')
-  const [tagInput, setTagInput] = useState('')
-  const [tags, setTags] = useState<string[]>([])
+export default function EditBookmarkModal({
+  open,
+  bookmark,
+  onClose,
+  onSave,
+  isPending,
+}: EditBookmarkModalProps) {
+  const [url, setUrl] = useState('');
+  const [title, setTitle] = useState('');
+  const [sourceType, setSourceType] = useState<SourceType>('blog');
+  const [status, setStatus] = useState<Status>('unread');
+  const [tagInput, setTagInput] = useState('');
+  const [tags, setTags] = useState<string[]>([]);
 
   // Sync form state when bookmark changes
   useEffect(() => {
     if (bookmark) {
-      setUrl(bookmark.url)
-      setTitle(bookmark.title ?? '')
-      setSourceType(bookmark.source_type)
-      setStatus(bookmark.status)
-      setTags(bookmark.tags ?? [])
-      setTagInput('')
+      setUrl(bookmark.url);
+      setTitle(bookmark.title ?? '');
+      setSourceType(bookmark.source_type);
+      setStatus(bookmark.status);
+      setTags(bookmark.tags ?? []);
+      setTagInput('');
     }
-  }, [bookmark])
+  }, [bookmark]);
 
   function addTag(value: string) {
-    const tag = value.trim().toLowerCase()
+    const tag = value.trim().toLowerCase();
     if (tag && !tags.includes(tag)) {
-      setTags([...tags, tag])
+      setTags([...tags, tag]);
     }
-    setTagInput('')
+    setTagInput('');
   }
 
   function removeTag(tag: string) {
-    setTags(tags.filter((t) => t !== tag))
+    setTags(tags.filter((t) => t !== tag));
   }
 
   function handleTagKeyDown(e: React.KeyboardEvent) {
     if (e.key === 'Enter' || e.key === ',') {
-      e.preventDefault()
-      addTag(tagInput)
+      e.preventDefault();
+      addTag(tagInput);
     }
     if (e.key === 'Backspace' && !tagInput && tags.length > 0) {
-      setTags(tags.slice(0, -1))
+      setTags(tags.slice(0, -1));
     }
   }
 
   function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    if (!bookmark || !url.trim()) return
+    e.preventDefault();
+    if (!bookmark || !url.trim()) return;
 
     // Auto-commit pending tag text
-    const finalTags = [...tags]
-    const pending = tagInput.trim().toLowerCase()
+    const finalTags = [...tags];
+    const pending = tagInput.trim().toLowerCase();
     if (pending && !finalTags.includes(pending)) {
-      finalTags.push(pending)
+      finalTags.push(pending);
     }
 
     onSave(bookmark.id, {
@@ -72,18 +78,21 @@ export default function EditBookmarkModal({ open, bookmark, onClose, onSave, isP
       source_type: sourceType,
       status,
       tags: finalTags,
-    })
-    onClose()
+    });
+    onClose();
   }
 
-  if (!bookmark) return null
+  if (!bookmark) return null;
 
   return (
     <Modal open={open} onClose={onClose} title="Edit Bookmark">
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* URL */}
         <div>
-          <label htmlFor="edit-url" className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">
+          <label
+            htmlFor="edit-url"
+            className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1"
+          >
             URL
           </label>
           <input
@@ -98,7 +107,10 @@ export default function EditBookmarkModal({ open, bookmark, onClose, onSave, isP
 
         {/* Title */}
         <div>
-          <label htmlFor="edit-title" className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">
+          <label
+            htmlFor="edit-title"
+            className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1"
+          >
             Title
           </label>
           <input
@@ -114,7 +126,10 @@ export default function EditBookmarkModal({ open, bookmark, onClose, onSave, isP
         {/* Source Type + Status row */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label htmlFor="edit-source" className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">
+            <label
+              htmlFor="edit-source"
+              className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1"
+            >
               Source
             </label>
             <div className="relative">
@@ -125,7 +140,9 @@ export default function EditBookmarkModal({ open, bookmark, onClose, onSave, isP
                 className="w-full px-3 py-2.5 rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100 min-h-[44px] appearance-none"
               >
                 {SOURCE_LIST.map((s) => (
-                  <option key={s} value={s}>{SOURCE_LABELS[s]}</option>
+                  <option key={s} value={s}>
+                    {SOURCE_LABELS[s]}
+                  </option>
                 ))}
               </select>
               <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
@@ -134,7 +151,10 @@ export default function EditBookmarkModal({ open, bookmark, onClose, onSave, isP
             </div>
           </div>
           <div>
-            <label htmlFor="edit-status" className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">
+            <label
+              htmlFor="edit-status"
+              className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1"
+            >
               Status
             </label>
             <select
@@ -144,7 +164,9 @@ export default function EditBookmarkModal({ open, bookmark, onClose, onSave, isP
               className="w-full px-3 py-2.5 rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100 min-h-[44px]"
             >
               {STATUS_LIST.map((s) => (
-                <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
+                <option key={s} value={s}>
+                  {s.charAt(0).toUpperCase() + s.slice(1)}
+                </option>
               ))}
             </select>
           </div>
@@ -152,7 +174,10 @@ export default function EditBookmarkModal({ open, bookmark, onClose, onSave, isP
 
         {/* Tags */}
         <div>
-          <label htmlFor="edit-tags" className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">
+          <label
+            htmlFor="edit-tags"
+            className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1"
+          >
             Tags <span className="text-surface-400 font-normal">(comma or enter to add)</span>
           </label>
           <div className="flex flex-wrap gap-1.5 p-2 rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 min-h-[44px]">
@@ -195,5 +220,5 @@ export default function EditBookmarkModal({ open, bookmark, onClose, onSave, isP
         </div>
       </form>
     </Modal>
-  )
+  );
 }

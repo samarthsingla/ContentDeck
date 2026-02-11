@@ -1,21 +1,21 @@
-import { useEffect, useRef, useCallback } from 'react'
-import { X } from 'lucide-react'
-import MetadataHeader from './MetadataHeader'
-import NotesTab from './NotesTab'
-import DetailActions from './DetailActions'
-import type { Bookmark, Status, NoteType } from '../../types'
+import { useEffect, useRef, useCallback } from 'react';
+import { X } from 'lucide-react';
+import MetadataHeader from './MetadataHeader';
+import NotesTab from './NotesTab';
+import DetailActions from './DetailActions';
+import type { Bookmark, Status, NoteType } from '../../types';
 
 interface DetailPanelProps {
-  bookmark: Bookmark | null
-  onClose: () => void
-  onCycleStatus: (id: string, newStatus: Status) => void
-  onToggleFavorite: (id: string, favorited: boolean) => void
-  onAddNote: (bookmarkId: string, type: NoteType, content: string) => void
-  onDeleteNote: (bookmarkId: string, noteIndex: number) => void
-  onEdit: (bookmark: Bookmark) => void
-  onExport: (bookmark: Bookmark) => void
-  onDelete: (id: string) => void
-  isNotePending: boolean
+  bookmark: Bookmark | null;
+  onClose: () => void;
+  onCycleStatus: (id: string, newStatus: Status) => void;
+  onToggleFavorite: (id: string, favorited: boolean) => void;
+  onAddNote: (bookmarkId: string, type: NoteType, content: string) => void;
+  onDeleteNote: (bookmarkId: string, noteIndex: number) => void;
+  onEdit: (bookmark: Bookmark) => void;
+  onExport: (bookmark: Bookmark) => void;
+  onDelete: (id: string) => void;
+  isNotePending: boolean;
 }
 
 export default function DetailPanel({
@@ -30,29 +30,29 @@ export default function DetailPanel({
   onDelete,
   isNotePending,
 }: DetailPanelProps) {
-  const panelRef = useRef<HTMLDivElement>(null)
-  const overlayRef = useRef<HTMLDivElement>(null)
+  const panelRef = useRef<HTMLDivElement>(null);
+  const overlayRef = useRef<HTMLDivElement>(null);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape') onClose();
     },
-    [onClose]
-  )
+    [onClose],
+  );
 
   useEffect(() => {
     if (bookmark) {
-      document.addEventListener('keydown', handleKeyDown)
-      return () => document.removeEventListener('keydown', handleKeyDown)
+      document.addEventListener('keydown', handleKeyDown);
+      return () => document.removeEventListener('keydown', handleKeyDown);
     }
-  }, [bookmark, handleKeyDown])
+  }, [bookmark, handleKeyDown]);
 
-  if (!bookmark) return null
+  if (!bookmark) return null;
 
   function handleDelete() {
     if (confirm('Delete this bookmark?')) {
-      onDelete(bookmark!.id)
-      onClose()
+      onDelete(bookmark!.id);
+      onClose();
     }
   }
 
@@ -62,7 +62,9 @@ export default function DetailPanel({
       <div
         ref={overlayRef}
         className="lg:hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
-        onClick={(e) => { if (e.target === overlayRef.current) onClose() }}
+        onClick={(e) => {
+          if (e.target === overlayRef.current) onClose();
+        }}
         role="dialog"
         aria-modal="true"
         aria-label="Bookmark details"
@@ -100,7 +102,10 @@ export default function DetailPanel({
             />
             <DetailActions
               bookmark={bookmark}
-              onEdit={() => { onClose(); onEdit(bookmark) }}
+              onEdit={() => {
+                onClose();
+                onEdit(bookmark);
+              }}
               onExport={() => onExport(bookmark)}
               onDelete={handleDelete}
             />
@@ -138,12 +143,15 @@ export default function DetailPanel({
           />
           <DetailActions
             bookmark={bookmark}
-            onEdit={() => { onClose(); onEdit(bookmark) }}
+            onEdit={() => {
+              onClose();
+              onEdit(bookmark);
+            }}
             onExport={() => onExport(bookmark)}
             onDelete={handleDelete}
           />
         </div>
       </aside>
     </>
-  )
+  );
 }

@@ -1,9 +1,11 @@
--- ContentDeck v2.0 Database Schema
+-- ContentDeck v3.0 Database Schema
 -- Run this in Supabase SQL Editor for a fresh setup
+-- Requires: Supabase Auth enabled with at least one provider
 
 -- Bookmarks table
 create table bookmarks (
   id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id),
   url text not null,
   title text,
   image text,
@@ -24,17 +26,21 @@ create table bookmarks (
 create index idx_bookmarks_source on bookmarks(source_type);
 create index idx_bookmarks_status on bookmarks(status);
 create index idx_bookmarks_created on bookmarks(created_at desc);
+create index idx_bookmarks_user on bookmarks(user_id);
 
 -- Tag areas
 create table tag_areas (
   id uuid primary key default gen_random_uuid(),
-  name text unique not null,
+  user_id uuid references auth.users(id),
+  name text not null,
   description text,
   color text,
   emoji text,
   sort_order int default 0,
   created_at timestamptz default now()
 );
+
+create index idx_tag_areas_user on tag_areas(user_id);
 
 -- Junction table
 create table bookmark_tags (
@@ -46,11 +52,14 @@ create table bookmark_tags (
 -- Status history (for streaks/stats)
 create table status_history (
   id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id),
   bookmark_id uuid references bookmarks(id) on delete cascade,
   old_status text,
   new_status text,
   changed_at timestamptz default now()
 );
+
+create index idx_status_history_user on status_history(user_id);
 
 -- Auto-detect source type trigger (case-insensitive)
 create or replace function detect_source_type()
@@ -82,8 +91,8 @@ create or replace function track_status_change()
 returns trigger as $$
 begin
   if OLD.status is distinct from NEW.status then
-    insert into status_history (bookmark_id, old_status, new_status)
-    values (NEW.id, OLD.status, NEW.status);
+    insert into status_history (bookmark_id, user_id, old_status, new_status)
+    values (NEW.id, NEW.user_id, OLD.status, NEW.status);
     NEW.status_changed_at := now();
     if NEW.status = 'reading' and OLD.status = 'unread' then
       NEW.started_reading_at := now();
@@ -100,12 +109,39 @@ create trigger on_status_change
   before update on bookmarks
   for each row execute function track_status_change();
 
--- RLS (open access since no auth)
+-- Auto-set user_id on insert
+create or replace function set_user_id()
+returns trigger as $$
+begin
+  NEW.user_id := auth.uid();
+  return NEW;
+end;
+$$ language plpgsql security definer;
+
+create trigger set_bookmark_user
+  before insert on bookmarks
+  for each row execute function set_user_id();
+create trigger set_tag_area_user
+  before insert on tag_areas
+  for each row execute function set_user_id();
+create trigger set_status_history_user
+  before insert on status_history
+  for each row execute function set_user_id();
+
+-- RLS (user-scoped access)
 alter table bookmarks enable row level security;
-create policy "Allow all" on bookmarks for all using (true) with check (true);
+create policy "Users see own bookmarks" on bookmarks
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
 alter table tag_areas enable row level security;
-create policy "Allow all" on tag_areas for all using (true) with check (true);
+create policy "Users see own tag areas" on tag_areas
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
 alter table bookmark_tags enable row level security;
-create policy "Allow all" on bookmark_tags for all using (true) with check (true);
+create policy "Users see own bookmark tags" on bookmark_tags
+  for all using (bookmark_id in (select id from bookmarks where user_id = auth.uid()))
+  with check (bookmark_id in (select id from bookmarks where user_id = auth.uid()));
+
 alter table status_history enable row level security;
-create policy "Allow all" on status_history for all using (true) with check (true);
+create policy "Users see own status history" on status_history
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);

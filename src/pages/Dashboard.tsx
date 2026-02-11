@@ -1,256 +1,265 @@
-import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
-import AppShell from '../components/layout/AppShell'
-import SourceTabs from '../components/feed/SourceTabs'
-import FeedToolbar from '../components/feed/FeedToolbar'
-import BookmarkList from '../components/feed/BookmarkList'
-import AreasView from '../components/areas/AreasView'
-import AreaManager from '../components/areas/AreaManager'
-import DetailPanel from '../components/detail/DetailPanel'
-import AddBookmarkModal from '../components/modals/AddBookmarkModal'
-import EditBookmarkModal from '../components/modals/EditBookmarkModal'
-import SettingsModal from '../components/modals/SettingsModal'
-import StatsModal from '../components/modals/StatsModal'
-import BulkActionBar from '../components/modals/BulkActionBar'
-import { useBookmarks } from '../hooks/useBookmarks'
-import { useTagAreas } from '../hooks/useTagAreas'
-import { useStats } from '../hooks/useStats'
-import { useUI } from '../context/UIProvider'
-import { useToast } from '../components/ui/Toast'
-import ProgressBar from '../components/ui/ProgressBar'
-import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
-import { exportToObsidianUri, exportToClipboard } from '../lib/obsidian'
-import { fetchMetadata } from '../lib/metadata'
-import { suggestTags } from '../lib/ai'
-import type { Bookmark, Status, NoteType, TagArea, Credentials } from '../types'
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import AppShell from '../components/layout/AppShell';
+import SourceTabs from '../components/feed/SourceTabs';
+import FeedToolbar from '../components/feed/FeedToolbar';
+import BookmarkList from '../components/feed/BookmarkList';
+import AreasView from '../components/areas/AreasView';
+import AreaManager from '../components/areas/AreaManager';
+import DetailPanel from '../components/detail/DetailPanel';
+import AddBookmarkModal from '../components/modals/AddBookmarkModal';
+import EditBookmarkModal from '../components/modals/EditBookmarkModal';
+import SettingsModal from '../components/modals/SettingsModal';
+import StatsModal from '../components/modals/StatsModal';
+import BulkActionBar from '../components/modals/BulkActionBar';
+import { useBookmarks } from '../hooks/useBookmarks';
+import { useTagAreas } from '../hooks/useTagAreas';
+import { useStats } from '../hooks/useStats';
+import { useUI } from '../context/UIProvider';
+import { useSupabase } from '../context/SupabaseProvider';
+import { useToast } from '../components/ui/Toast';
+import ProgressBar from '../components/ui/ProgressBar';
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+import { exportToObsidianUri, exportToClipboard } from '../lib/obsidian';
+import { fetchMetadata } from '../lib/metadata';
+import { suggestTags } from '../lib/ai';
+import type { Bookmark, Status, NoteType, TagArea } from '../types';
 
 interface DashboardProps {
-  credentials: Credentials
-  onDisconnect: () => void
-  isDemo?: boolean
-  sharedUrl?: string | null
+  userEmail: string | null;
+  onSignOut: () => void;
+  isDemo?: boolean;
+  sharedUrl?: string | null;
 }
 
-export default function Dashboard({ credentials, onDisconnect, isDemo, sharedUrl }: DashboardProps) {
+export default function Dashboard({ userEmail, onSignOut, isDemo, sharedUrl }: DashboardProps) {
   const {
-    bookmarks, isLoading,
-    addBookmark, updateBookmark, deleteBookmark,
-    bulkUpdateStatus, bulkDelete,
-    cycleStatus, toggleFavorite,
-    addNote, deleteNote, markSynced,
-  } = useBookmarks()
-  const { areas, createArea, updateArea, deleteArea, reorderAreas } = useTagAreas()
-  const { stats, isLoading: statsLoading } = useStats(bookmarks)
-  const { currentStatus, currentView, selectMode, selectedIds, clearSelection, setTag, setView } = useUI()
-  const toast = useToast()
-  const queryClient = useQueryClient()
+    bookmarks,
+    isLoading,
+    addBookmark,
+    updateBookmark,
+    deleteBookmark,
+    bulkUpdateStatus,
+    bulkDelete,
+    cycleStatus,
+    toggleFavorite,
+    addNote,
+    deleteNote,
+    markSynced,
+  } = useBookmarks();
+  const { areas, createArea, updateArea, deleteArea, reorderAreas } = useTagAreas();
+  const { stats, isLoading: statsLoading } = useStats(bookmarks);
+  const { currentStatus, currentView, selectMode, selectedIds, clearSelection, setTag, setView } =
+    useUI();
+  const toast = useToast();
+  const queryClient = useQueryClient();
+  const db = useSupabase();
 
-  const [showAddModal, setShowAddModal] = useState(false)
-  const [showSearch, setShowSearch] = useState(false)
-  const [showSettings, setShowSettings] = useState(false)
-  const [showStats, setShowStats] = useState(false)
-  const [showAreaManager, setShowAreaManager] = useState(false)
-  const [editingArea, setEditingArea] = useState<TagArea | null>(null)
-  const [editingBookmark, setEditingBookmark] = useState<Bookmark | null>(null)
-  const [selectedBookmark, setSelectedBookmark] = useState<Bookmark | null>(null)
-  const [metaProgress, setMetaProgress] = useState<{ current: number; total: number } | null>(null)
-  const metaFetchedRef = useRef(false)
-  const aiTaggedRef = useRef(false)
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [showStats, setShowStats] = useState(false);
+  const [showAreaManager, setShowAreaManager] = useState(false);
+  const [editingArea, setEditingArea] = useState<TagArea | null>(null);
+  const [editingBookmark, setEditingBookmark] = useState<Bookmark | null>(null);
+  const [selectedBookmark, setSelectedBookmark] = useState<Bookmark | null>(null);
+  const [metaProgress, setMetaProgress] = useState<{ current: number; total: number } | null>(null);
+  const metaFetchedRef = useRef(false);
+  const aiTaggedRef = useRef(false);
 
   // Keyboard shortcuts
-  useKeyboardShortcuts(useMemo(() => ({
-    onSearch: () => setShowSearch(true),
-    onNewBookmark: () => setShowAddModal(true),
-    onNavigateUp: () => {/* j/k navigation handled at list level */},
-    onNavigateDown: () => {/* j/k navigation handled at list level */},
-    onEscape: () => {
-      if (selectedBookmark) setSelectedBookmark(null)
-      else if (editingBookmark) setEditingBookmark(null)
-      else if (showSearch) setShowSearch(false)
-    },
-  }), [selectedBookmark, editingBookmark, showSearch]))
+  useKeyboardShortcuts(
+    useMemo(
+      () => ({
+        onSearch: () => setShowSearch(true),
+        onNewBookmark: () => setShowAddModal(true),
+        onNavigateUp: () => {
+          /* j/k navigation handled at list level */
+        },
+        onNavigateDown: () => {
+          /* j/k navigation handled at list level */
+        },
+        onEscape: () => {
+          if (selectedBookmark) setSelectedBookmark(null);
+          else if (editingBookmark) setEditingBookmark(null);
+          else if (showSearch) setShowSearch(false);
+        },
+      }),
+      [selectedBookmark, editingBookmark, showSearch],
+    ),
+  );
 
   // Refs to access current values without triggering effect re-runs
-  const bookmarksRef = useRef(bookmarks)
-  bookmarksRef.current = bookmarks
-  const toastRef = useRef(toast)
-  toastRef.current = toast
+  const bookmarksRef = useRef(bookmarks);
+  bookmarksRef.current = bookmarks;
+  const toastRef = useRef(toast);
+  toastRef.current = toast;
 
   // Auto-fetch missing metadata on first load (skip in demo)
   useEffect(() => {
-    if (isDemo || isLoading || metaFetchedRef.current) return
-    const currentBookmarks = bookmarksRef.current
-    if (currentBookmarks.length === 0) return
-    metaFetchedRef.current = true
+    if (isDemo || isLoading || metaFetchedRef.current) return;
+    const currentBookmarks = bookmarksRef.current;
+    if (currentBookmarks.length === 0) return;
+    metaFetchedRef.current = true;
 
-    const missing = currentBookmarks.filter((b) => !b.title && !b.image)
-    if (missing.length === 0) return
+    const missing = currentBookmarks.filter((b) => !b.title && !b.image);
+    if (missing.length === 0) return;
 
-    let cancelled = false
+    let cancelled = false;
     async function fetchAll() {
-      setMetaProgress({ current: 0, total: missing.length })
+      setMetaProgress({ current: 0, total: missing.length });
       for (let i = 0; i < missing.length; i++) {
-        if (cancelled) break
-        const b = missing[i]!
+        if (cancelled) break;
+        const b = missing[i]!;
         try {
-          const result = await fetchMetadata(b.url, b.source_type)
+          const result = await fetchMetadata(b.url, b.source_type);
           if (result.title || result.image) {
-            const updates: Record<string, unknown> = {}
-            if (result.title) updates.title = result.title
-            if (result.image) updates.image = result.image
-            if (result.metadata) updates.metadata = { ...b.metadata, ...result.metadata }
-            void fetch(`${credentials.url}/rest/v1/bookmarks?id=eq.${b.id}`, {
-              method: 'PATCH',
-              headers: {
-                'apikey': credentials.key,
-                'Authorization': `Bearer ${credentials.key}`,
-                'Content-Type': 'application/json',
-                'Prefer': 'return=minimal',
-              },
-              body: JSON.stringify(updates),
-            })
+            const updates: Record<string, unknown> = {};
+            if (result.title) updates.title = result.title;
+            if (result.image) updates.image = result.image;
+            if (result.metadata) updates.metadata = { ...b.metadata, ...result.metadata };
+            void db.from('bookmarks').update(updates).eq('id', b.id);
           }
-        } catch { /* skip */ }
-        setMetaProgress({ current: i + 1, total: missing.length })
+        } catch {
+          /* skip */
+        }
+        setMetaProgress({ current: i + 1, total: missing.length });
       }
-      setMetaProgress(null)
+      setMetaProgress(null);
       // Invalidate to pick up metadata updates
-      void queryClient.invalidateQueries({ queryKey: ['bookmarks'] })
+      void queryClient.invalidateQueries({ queryKey: ['bookmarks'] });
     }
-    fetchAll()
-    return () => { cancelled = true }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isDemo, isLoading, credentials])
+    void fetchAll();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDemo, isLoading]);
 
   // Auto-tag untagged bookmarks via AI on load (skip in demo)
   useEffect(() => {
-    if (isDemo || isLoading || aiTaggedRef.current) return
-    const currentBookmarks = bookmarksRef.current
-    if (currentBookmarks.length === 0) return
-    const apiKey = localStorage.getItem('openrouter_key')
-    if (!apiKey) return
-    aiTaggedRef.current = true
+    if (isDemo || isLoading || aiTaggedRef.current) return;
+    const currentBookmarks = bookmarksRef.current;
+    if (currentBookmarks.length === 0) return;
+    const apiKey = localStorage.getItem('openrouter_key');
+    if (!apiKey) return;
+    aiTaggedRef.current = true;
 
-    const untagged = currentBookmarks.filter((b) => !b.tags || b.tags.length === 0)
-    if (untagged.length === 0) return
+    const untagged = currentBookmarks.filter((b) => !b.tags || b.tags.length === 0);
+    if (untagged.length === 0) return;
 
-    const allTags = [...new Set(currentBookmarks.flatMap((b) => b.tags))]
+    const allTags = [...new Set(currentBookmarks.flatMap((b) => b.tags))];
 
-    let cancelled = false
+    let cancelled = false;
     async function tagAll() {
       for (const b of untagged) {
-        if (cancelled) break
+        if (cancelled) break;
         try {
-          const { tags } = await suggestTags(b, [...allTags])
-          if (tags.length === 0) continue
-          await fetch(`${credentials.url}/rest/v1/bookmarks?id=eq.${b.id}`, {
-            method: 'PATCH',
-            headers: {
-              'apikey': credentials.key,
-              'Authorization': `Bearer ${credentials.key}`,
-              'Content-Type': 'application/json',
-              'Prefer': 'return=minimal',
-            },
-            body: JSON.stringify({ tags }),
-          })
+          const { tags } = await suggestTags(b, [...allTags]);
+          if (tags.length === 0) continue;
+          await db.from('bookmarks').update({ tags }).eq('id', b.id);
           for (const t of tags) {
-            if (!allTags.includes(t)) allTags.push(t)
+            if (!allTags.includes(t)) allTags.push(t);
           }
-          toastRef.current.info(`AI tagged "${b.title || 'bookmark'}": ${tags.join(', ')}`)
-        } catch { /* skip */ }
+          toastRef.current.info(`AI tagged "${b.title || 'bookmark'}": ${tags.join(', ')}`);
+        } catch {
+          /* skip */
+        }
       }
       if (!cancelled) {
-        void queryClient.invalidateQueries({ queryKey: ['bookmarks'] })
+        void queryClient.invalidateQueries({ queryKey: ['bookmarks'] });
       }
     }
-    tagAll()
-    return () => { cancelled = true }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isDemo, isLoading, credentials])
+    void tagAll();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDemo, isLoading]);
 
   // Open add modal with shared URL (PWA share target)
   useEffect(() => {
     if (sharedUrl && !isLoading) {
-      setShowAddModal(true)
+      setShowAddModal(true);
       // Clean query params from URL bar
       if (window.history.replaceState) {
-        window.history.replaceState({}, '', window.location.pathname)
+        window.history.replaceState({}, '', window.location.pathname);
       }
     }
-  }, [sharedUrl, isLoading])
+  }, [sharedUrl, isLoading]);
 
   // Compute counts
-  const counts = useMemo(() => ({
-    unread: bookmarks.filter((b) => b.status === 'unread').length,
-    reading: bookmarks.filter((b) => b.status === 'reading').length,
-    done: bookmarks.filter((b) => b.status === 'done').length,
-    favorited: bookmarks.filter((b) => b.is_favorited).length,
-  }), [bookmarks])
+  const counts = useMemo(
+    () => ({
+      unread: bookmarks.filter((b) => b.status === 'unread').length,
+      reading: bookmarks.filter((b) => b.status === 'reading').length,
+      done: bookmarks.filter((b) => b.status === 'done').length,
+      favorited: bookmarks.filter((b) => b.is_favorited).length,
+    }),
+    [bookmarks],
+  );
 
   // Status-filtered bookmarks for source tabs
   const statusFiltered = useMemo(() => {
-    if (currentStatus === 'all') return bookmarks
-    return bookmarks.filter((b) => b.status === currentStatus)
-  }, [bookmarks, currentStatus])
+    if (currentStatus === 'all') return bookmarks;
+    return bookmarks.filter((b) => b.status === currentStatus);
+  }, [bookmarks, currentStatus]);
 
   // Keep selectedBookmark in sync with bookmarks data
   const activeBookmark = useMemo(() => {
-    if (!selectedBookmark) return null
-    return bookmarks.find((b) => b.id === selectedBookmark.id) ?? null
-  }, [selectedBookmark, bookmarks])
+    if (!selectedBookmark) return null;
+    return bookmarks.find((b) => b.id === selectedBookmark.id) ?? null;
+  }, [selectedBookmark, bookmarks]);
 
   const handleCycleStatus = useCallback(
     (id: string, newStatus: Status) => cycleStatus.mutate({ id, newStatus }),
-    [cycleStatus]
-  )
+    [cycleStatus],
+  );
 
   const handleToggleFavorite = useCallback(
     (id: string, is_favorited: boolean) => toggleFavorite.mutate({ id, is_favorited }),
-    [toggleFavorite]
-  )
+    [toggleFavorite],
+  );
 
-  const handleDelete = useCallback(
-    (id: string) => deleteBookmark.mutate(id),
-    [deleteBookmark]
-  )
+  const handleDelete = useCallback((id: string) => deleteBookmark.mutate(id), [deleteBookmark]);
 
   const handleBookmarkClick = useCallback(
     (id: string) => {
-      const bm = bookmarks.find((b) => b.id === id)
-      if (bm) setSelectedBookmark(bm)
+      const bm = bookmarks.find((b) => b.id === id);
+      if (bm) setSelectedBookmark(bm);
     },
-    [bookmarks]
-  )
+    [bookmarks],
+  );
 
   const handleAddNote = useCallback(
     (bookmarkId: string, type: NoteType, content: string) => {
-      addNote.mutate({ bookmarkId, type, content })
+      addNote.mutate({ bookmarkId, type, content });
     },
-    [addNote]
-  )
+    [addNote],
+  );
 
   const handleDeleteNote = useCallback(
     (bookmarkId: string, noteIndex: number) => {
-      deleteNote.mutate({ bookmarkId, noteIndex })
+      deleteNote.mutate({ bookmarkId, noteIndex });
     },
-    [deleteNote]
-  )
+    [deleteNote],
+  );
 
   async function handleExport(bookmark: Bookmark) {
-    const vaultName = localStorage.getItem('obsidian_vault') ?? ''
+    const vaultName = localStorage.getItem('obsidian_vault') ?? '';
     if (vaultName) {
       // One-click: open Obsidian directly via URI scheme → Inbox/{Source}/title.md
-      const success = exportToObsidianUri(bookmark, vaultName)
+      const success = exportToObsidianUri(bookmark, vaultName);
       if (success) {
-        markSynced.mutate(bookmark.id)
-        toast.success(`Exporting to Inbox/${bookmark.source_type}...`)
+        markSynced.mutate(bookmark.id);
+        toast.success(`Exporting to Inbox/${bookmark.source_type}...`);
       }
     } else {
       // No vault configured — copy markdown to clipboard
-      const success = await exportToClipboard(bookmark)
+      const success = await exportToClipboard(bookmark);
       if (success) {
-        markSynced.mutate(bookmark.id)
-        toast.info('Markdown copied — add vault name in Settings for one-click export')
+        markSynced.mutate(bookmark.id);
+        toast.info('Markdown copied — add vault name in Settings for one-click export');
       }
     }
   }
@@ -258,32 +267,32 @@ export default function Dashboard({ credentials, onDisconnect, isDemo, sharedUrl
   // Area interactions
   function handleAreaClick(areaName: string) {
     if (areaName === '__untagged__') {
-      setTag('__untagged__')
+      setTag('__untagged__');
     } else {
-      setTag(areaName)
+      setTag(areaName);
     }
-    setView('list')
+    setView('list');
   }
 
   function handleEditArea(area: TagArea) {
-    setEditingArea(area)
-    setShowAreaManager(true)
+    setEditingArea(area);
+    setShowAreaManager(true);
   }
 
   // Bulk operations
   function handleBulkStatus(status: Status) {
-    const ids = Array.from(selectedIds)
-    if (ids.length === 0) return
-    bulkUpdateStatus.mutate({ ids, status })
-    clearSelection()
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    bulkUpdateStatus.mutate({ ids, status });
+    clearSelection();
   }
 
   function handleBulkDelete() {
-    const ids = Array.from(selectedIds)
-    if (ids.length === 0) return
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
     if (confirm(`Delete ${ids.length} bookmarks?`)) {
-      bulkDelete.mutate(ids)
-      clearSelection()
+      bulkDelete.mutate(ids);
+      clearSelection();
     }
   }
 
@@ -293,7 +302,7 @@ export default function Dashboard({ credentials, onDisconnect, isDemo, sharedUrl
         <AppShell
           counts={counts}
           onAdd={() => setShowAddModal(true)}
-          onDisconnect={onDisconnect}
+          onSignOut={onSignOut}
           onToggleSearch={() => setShowSearch((s) => !s)}
           onSettings={() => setShowSettings(true)}
           onStats={() => setShowStats(true)}
@@ -313,7 +322,10 @@ export default function Dashboard({ credentials, onDisconnect, isDemo, sharedUrl
                 bookmarks={statusFiltered}
                 onAreaClick={handleAreaClick}
                 onEditArea={handleEditArea}
-                onManageAreas={() => { setEditingArea(null); setShowAreaManager(true) }}
+                onManageAreas={() => {
+                  setEditingArea(null);
+                  setShowAreaManager(true);
+                }}
               />
             ) : (
               <>
@@ -343,7 +355,10 @@ export default function Dashboard({ credentials, onDisconnect, isDemo, sharedUrl
             onDeleteNote={handleDeleteNote}
             onEdit={(bm) => setEditingBookmark(bm)}
             onExport={handleExport}
-            onDelete={(id) => { handleDelete(id); setSelectedBookmark(null) }}
+            onDelete={(id) => {
+              handleDelete(id);
+              setSelectedBookmark(null);
+            }}
             isNotePending={addNote.isPending}
           />
         )}
@@ -369,8 +384,8 @@ export default function Dashboard({ credentials, onDisconnect, isDemo, sharedUrl
       <SettingsModal
         open={showSettings}
         onClose={() => setShowSettings(false)}
-        credentials={credentials}
-        onDisconnect={onDisconnect}
+        userEmail={userEmail}
+        onSignOut={onSignOut}
         isDemo={isDemo}
       />
 
@@ -383,7 +398,10 @@ export default function Dashboard({ credentials, onDisconnect, isDemo, sharedUrl
 
       <AreaManager
         open={showAreaManager}
-        onClose={() => { setShowAreaManager(false); setEditingArea(null) }}
+        onClose={() => {
+          setShowAreaManager(false);
+          setEditingArea(null);
+        }}
         areas={areas}
         editingArea={editingArea}
         onCreate={(data) => createArea.mutate(data)}
@@ -402,5 +420,5 @@ export default function Dashboard({ credentials, onDisconnect, isDemo, sharedUrl
         />
       )}
     </>
-  )
+  );
 }

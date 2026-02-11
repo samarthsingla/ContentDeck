@@ -1,17 +1,21 @@
-import { Heart, ExternalLink, Clock, FileText } from 'lucide-react'
-import { SourceBadge, StatusBadge } from '../ui/Badge'
-import { getDomain, getFaviconUrl, timeAgo, formatDate } from '../../lib/utils'
-import type { Bookmark, Status } from '../../types'
-import { STATUS_NEXT } from '../../types'
+import { Heart, ExternalLink, Clock, FileText } from 'lucide-react';
+import { SourceBadge, StatusBadge } from '../ui/Badge';
+import { getDomain, getFaviconUrl, timeAgo, formatDate } from '../../lib/utils';
+import type { Bookmark, Status } from '../../types';
+import { STATUS_NEXT } from '../../types';
 
 interface MetadataHeaderProps {
-  bookmark: Bookmark
-  onCycleStatus: (id: string, newStatus: Status) => void
-  onToggleFavorite: (id: string, favorited: boolean) => void
+  bookmark: Bookmark;
+  onCycleStatus: (id: string, newStatus: Status) => void;
+  onToggleFavorite: (id: string, favorited: boolean) => void;
 }
 
-export default function MetadataHeader({ bookmark: b, onCycleStatus, onToggleFavorite }: MetadataHeaderProps) {
-  const domain = getDomain(b.url)
+export default function MetadataHeader({
+  bookmark: b,
+  onCycleStatus,
+  onToggleFavorite,
+}: MetadataHeaderProps) {
+  const domain = getDomain(b.url);
 
   return (
     <div className="space-y-3">
@@ -44,10 +48,7 @@ export default function MetadataHeader({ bookmark: b, onCycleStatus, onToggleFav
       {/* Badges + Actions row */}
       <div className="flex items-center gap-2 flex-wrap">
         <SourceBadge source={b.source_type} />
-        <StatusBadge
-          status={b.status}
-          onClick={() => onCycleStatus(b.id, STATUS_NEXT[b.status])}
-        />
+        <StatusBadge status={b.status} onClick={() => onCycleStatus(b.id, STATUS_NEXT[b.status])} />
         <button
           onClick={() => onToggleFavorite(b.id, !b.is_favorited)}
           className={`p-1.5 rounded-lg transition-colors min-w-[32px] min-h-[32px] flex items-center justify-center ${
@@ -62,7 +63,19 @@ export default function MetadataHeader({ bookmark: b, onCycleStatus, onToggleFav
 
         {b.synced && (
           <span className="text-xs text-green-600 dark:text-green-400 font-medium flex items-center gap-1">
-            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M20 6 9 17l-5-5" />
+            </svg>
             Synced
           </span>
         )}
@@ -107,5 +120,5 @@ export default function MetadataHeader({ bookmark: b, onCycleStatus, onToggleFav
         </p>
       )}
     </div>
-  )
+  );
 }
