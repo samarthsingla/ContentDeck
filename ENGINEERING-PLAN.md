@@ -93,10 +93,59 @@ CREATE POLICY "Users see own bookmarks" ON bookmarks
   FOR ALL USING (auth.uid() = user_id);
 ```
 
-**Migration strategy:**
-- New `SetupScreen` flow: Sign up / Sign in / Try Demo
-- Existing anon-key users: show migration banner → sign up → transfer data via edge function
-- Backward compatible: anon-key mode still works for self-hosters
+**What shipped:**
+- AuthScreen with magic link + Google + GitHub OAuth, demo mode preserved
+- RLS policies, `set_user_id()` trigger, env-var singleton Supabase client
+- Legacy credential flow removed (useCredentials, SetupScreen, bookmarklet code)
+
+**What broke (intentional clean break):**
+- Existing data invisible — old rows with `user_id = NULL` don't match RLS
+- Bookmarklet removed — relied on raw anon key embedded in JS
+- iOS Shortcut broken — relied on raw anon key in HTTP headers
+
+### 1.1a Fix Bookmarklet (post-auth)
+**Why**: Power users on desktop need a one-click save from any page.
+
+- **Approach**: Supabase Edge Function `POST /save-bookmark` that accepts a user API token
+- User generates a personal API token in Settings (stored in `user_tokens` table)
+- Bookmarklet sends URL + title + token to the edge function
+- Edge function validates token → inserts bookmark with correct `user_id`
+- Settings UI: "Generate Bookmarklet" → copies personalized bookmarklet code
+- Token revocation in Settings
+
+### 1.1b Fix iOS Shortcut (post-auth)
+**Why**: iPhone users need background save from the Share Sheet without opening the app.
+
+- **Approach**: Same edge function as 1.1a (`POST /save-bookmark`)
+- iOS Shortcut sends URL + token via "Get Contents of URL" action
+- Settings UI: "iOS Shortcut Setup" → shows token + copy-paste instructions
+- Same `user_tokens` table and validation as bookmarklet
+- Edge function is shared — one implementation covers both use cases
+
+**Shared implementation (1.1a + 1.1b):**
+```sql
+-- User API tokens table
+CREATE TABLE user_tokens (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) NOT NULL,
+  name TEXT NOT NULL,
+  token_hash TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  last_used_at TIMESTAMPTZ
+);
+CREATE INDEX idx_user_tokens_hash ON user_tokens(token_hash);
+
+-- RLS
+ALTER TABLE user_tokens ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users see own tokens" ON user_tokens
+  FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+```
+
+**Edge function** (`supabase/functions/save-bookmark/index.ts`):
+- Accepts `{ url, title?, token }` in POST body
+- Looks up `token_hash` → gets `user_id`
+- Inserts into `bookmarks` with that `user_id` (bypasses RLS via service role)
+- Returns `201` with bookmark ID or `401` on bad token
 
 ### 1.2 Content Extraction Pipeline
 **Why**: Enables full-text search, summaries, reader mode, and offline reading.
@@ -491,10 +540,11 @@ Every PR must pass before merge:
                             │
          ┌──────────────────┼──────────────────┐
          │                  │                  │
-         │  Auth (1.1)      │  AI Summary(2.1) │
-         │  Import (1.4)    │  Extension (3.1) │
-         │  Search (1.3)    │  Chat (2.5)      │
-         │  Testing (1.6)   │  Public API (3.3)│
+         │  Auth (1.1) ✅    │  AI Summary(2.1) │
+         │  Fixes (1.1a/b)  │  Extension (3.1) │
+         │  Import (1.4)    │  Chat (2.5)      │
+         │  Search (1.3)    │  Public API (3.3)│
+         │  Testing (1.6)   │                  │
          │                  │                  │
 LOW ─────┼──────────────────┼──────────────────┼───── HIGH
 EFFORT   │                  │                  │    EFFORT
