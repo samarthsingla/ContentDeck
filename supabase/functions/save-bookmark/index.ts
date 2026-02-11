@@ -21,41 +21,52 @@ async function hashToken(token: string): Promise<string> {
     .join('');
 }
 
-/** Parse body from JSON or form-encoded (iOS Shortcuts may send either) */
-async function parseBody(
+/** Extract fields from query params, JSON body, or form-encoded body (in priority order) */
+async function extractFields(
   req: Request,
-): Promise<{ token?: string; url?: string; title?: string }> {
-  const contentType = req.headers.get('content-type') ?? '';
+): Promise<{ token: string; url: string; title: string }> {
+  const reqUrl = new URL(req.url);
 
-  if (contentType.includes('application/json')) {
-    return await req.json();
-  }
+  // 1. Check query parameters first (most reliable for iOS Shortcuts)
+  let token = reqUrl.searchParams.get('token') ?? '';
+  let url = reqUrl.searchParams.get('url') ?? '';
+  let title = reqUrl.searchParams.get('title') ?? '';
 
-  if (contentType.includes('application/x-www-form-urlencoded')) {
-    const text = await req.text();
-    const params = new URLSearchParams(text);
-    return {
-      token: params.get('token') ?? undefined,
-      url: params.get('url') ?? undefined,
-      title: params.get('title') ?? undefined,
-    };
-  }
+  // 2. If query params missing, try parsing the body
+  if (!token || !url) {
+    try {
+      const contentType = req.headers.get('content-type') ?? '';
+      let body: Record<string, unknown> = {};
 
-  // Fallback: try JSON first, then form-encoded
-  const text = await req.text();
-  try {
-    return JSON.parse(text);
-  } catch {
-    const params = new URLSearchParams(text);
-    if (params.get('token') || params.get('url')) {
-      return {
-        token: params.get('token') ?? undefined,
-        url: params.get('url') ?? undefined,
-        title: params.get('title') ?? undefined,
-      };
+      if (contentType.includes('application/json')) {
+        body = await req.json();
+      } else if (contentType.includes('application/x-www-form-urlencoded')) {
+        const text = await req.text();
+        const params = new URLSearchParams(text);
+        body = Object.fromEntries(params.entries());
+      } else {
+        // Fallback: try JSON, then form-encoded
+        const text = await req.text();
+        try {
+          body = JSON.parse(text);
+        } catch {
+          const params = new URLSearchParams(text);
+          if (params.get('token') || params.get('url')) {
+            body = Object.fromEntries(params.entries());
+          }
+        }
+      }
+
+      // Merge: query params take priority, body fills gaps
+      token = token || String(body.token ?? '');
+      url = url || String(body.url ?? '');
+      title = title || String(body.title ?? '');
+    } catch {
+      // Body parse failed — use whatever query params we have
     }
-    return {};
   }
+
+  return { token: token.trim(), url: url.trim(), title: title.trim() };
 }
 
 Deno.serve(async (req) => {
@@ -68,18 +79,8 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: 'Method not allowed' }, 405);
   }
 
-  // Parse body (supports JSON and form-encoded)
-  let body: { token?: string; url?: string; title?: string };
-  try {
-    body = await parseBody(req);
-  } catch {
-    return jsonResponse({ error: 'Invalid request body' }, 400);
-  }
-
-  // Coerce to strings and trim (iOS Shortcuts can send unexpected types)
-  const token = String(body.token ?? '').trim();
-  const url = String(body.url ?? '').trim();
-  const title = String(body.title ?? '').trim();
+  // Extract fields from query params or body
+  const { token, url, title } = await extractFields(req);
 
   if (!token || !url) {
     return jsonResponse({ error: 'Missing required fields: token, url' }, 400);

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Key, Copy, Trash2, AlertTriangle, Check, Bookmark, Smartphone } from 'lucide-react';
 import Button from '../ui/Button';
 import { useTokens } from '../../hooks/useTokens';
-import { getEdgeFunctionUrl, generateBookmarklet, generateShortcutConfig } from '../../lib/tokens';
+import { getEdgeFunctionUrl, generateBookmarklet, generateShortcutUrl } from '../../lib/tokens';
 
 export default function TokenManager() {
   const { tokens, isLoading, createToken, deleteToken } = useTokens();
@@ -23,7 +23,7 @@ export default function TokenManager() {
   }
 
   const bookmarkletCode = newToken ? generateBookmarklet(functionUrl, newToken) : '';
-  const shortcutConfig = newToken ? generateShortcutConfig(functionUrl, newToken) : null;
+  const shortcutBaseUrl = newToken ? generateShortcutUrl(functionUrl, newToken) : '';
 
   return (
     <section>
@@ -98,43 +98,57 @@ export default function TokenManager() {
           </div>
 
           {/* iOS Shortcut */}
-          {shortcutConfig && (
+          {shortcutBaseUrl && (
             <div className="rounded-lg bg-white dark:bg-surface-800 p-3 space-y-2 border border-surface-200 dark:border-surface-700">
               <div className="flex items-center gap-2 text-xs font-medium text-surface-700 dark:text-surface-300">
                 <Smartphone size={14} />
                 iOS Shortcut
               </div>
-              <ol className="text-xs text-surface-500 dark:text-surface-400 space-y-1 list-decimal list-inside">
-                <li>Open the Shortcuts app → New Shortcut</li>
+              <ol className="text-xs text-surface-500 dark:text-surface-400 space-y-1.5 list-decimal list-inside">
                 <li>
-                  Add action: <strong>Get Contents of URL</strong>
+                  Open <strong>Shortcuts</strong> → tap <strong>+</strong> → name it "Save to
+                  ContentDeck"
                 </li>
                 <li>
-                  Method: <strong>POST</strong>, Request Body: <strong>JSON</strong>
+                  Tap the name → enable <strong>Show in Share Sheet</strong> → select{' '}
+                  <strong>URLs</strong> only → tap Done
                 </li>
                 <li>
-                  Add keys: <code className="font-mono">token</code>,{' '}
-                  <code className="font-mono">url</code>, <code className="font-mono">title</code>
+                  Add action: <strong>Text</strong> → paste the URL below
                 </li>
-                <li>Set token value to your token (copied above)</li>
-                <li>Set url and title to the Shortcut Input variables</li>
+                <li>
+                  After the Text, add: <strong>Combine Text</strong> → combine the Text with{' '}
+                  <strong>Shortcut Input</strong> (no separator)
+                </li>
+                <li>
+                  Add: <strong>Get Contents of URL</strong> → set its URL to{' '}
+                  <strong>Combined Text</strong> → Method: <strong>POST</strong>
+                </li>
               </ol>
-              <div className="flex items-center gap-2 mt-2">
-                <span className="text-xs text-surface-500 dark:text-surface-400">URL:</span>
-                <code className="text-xs font-mono break-all text-surface-700 dark:text-surface-300">
-                  {shortcutConfig.url}
-                </code>
-                <button
-                  onClick={() => copyToClipboard(shortcutConfig.url, 'shortcut-url')}
-                  className="p-1 rounded hover:bg-surface-100 dark:hover:bg-surface-700 min-w-[44px] min-h-[44px] flex items-center justify-center"
-                  aria-label="Copy shortcut URL"
-                >
-                  {copied === 'shortcut-url' ? (
-                    <Check size={12} className="text-green-600" />
-                  ) : (
-                    <Copy size={12} className="text-surface-500" />
-                  )}
-                </button>
+              <div className="mt-2 space-y-1">
+                <span className="text-xs text-surface-500 dark:text-surface-400">
+                  Text to paste (includes your token):
+                </span>
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 text-xs font-mono break-all text-surface-700 dark:text-surface-300 bg-surface-50 dark:bg-surface-900 rounded px-2 py-1.5 border border-surface-200 dark:border-surface-700">
+                    {shortcutBaseUrl}
+                  </code>
+                  <button
+                    onClick={() => copyToClipboard(shortcutBaseUrl, 'shortcut-url')}
+                    className="p-1 rounded hover:bg-surface-100 dark:hover:bg-surface-700 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                    aria-label="Copy shortcut URL"
+                  >
+                    {copied === 'shortcut-url' ? (
+                      <Check size={12} className="text-green-600" />
+                    ) : (
+                      <Copy size={12} className="text-surface-500" />
+                    )}
+                  </button>
+                </div>
+                <p className="text-xs text-surface-400 dark:text-surface-500 italic">
+                  The shared URL gets appended to this, so the final request is:
+                  ...&url=https://shared-page.com
+                </p>
               </div>
             </div>
           )}

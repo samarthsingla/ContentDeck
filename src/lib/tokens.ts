@@ -48,13 +48,7 @@ export function generateBookmarklet(functionUrl: string, token: string): string 
   return `javascript:${encodeURIComponent(code)}`;
 }
 
-/** Generate iOS Shortcut configuration info */
-export function generateShortcutConfig(
-  functionUrl: string,
-  token: string,
-): { url: string; body: string } {
-  return {
-    url: functionUrl,
-    body: JSON.stringify({ token, url: '{{URL}}', title: '{{Title}}' }, null, 2),
-  };
+/** Generate iOS Shortcut base URL with token baked in as query param */
+export function generateShortcutUrl(functionUrl: string, token: string): string {
+  return `${functionUrl}?token=${encodeURIComponent(token)}&url=`;
 }
