@@ -54,7 +54,7 @@ export default function TokenManager() {
             <button
               onClick={() => copyToClipboard(newToken, 'token')}
               className="p-2 rounded-lg hover:bg-surface-100 dark:hover:bg-surface-800 min-w-[44px] min-h-[44px] flex items-center justify-center"
-              title="Copy token"
+              aria-label="Copy token"
             >
               {copied === 'token' ? (
                 <Check size={16} className="text-green-600" />
@@ -127,7 +127,7 @@ export default function TokenManager() {
                 <button
                   onClick={() => copyToClipboard(shortcutConfig.url, 'shortcut-url')}
                   className="p-1 rounded hover:bg-surface-100 dark:hover:bg-surface-700 min-w-[44px] min-h-[44px] flex items-center justify-center"
-                  title="Copy URL"
+                  aria-label="Copy shortcut URL"
                 >
                   {copied === 'shortcut-url' ? (
                     <Check size={12} className="text-green-600" />
@@ -172,7 +172,7 @@ export default function TokenManager() {
               <button
                 onClick={() => deleteToken.mutate(token.id)}
                 className="p-2 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 min-w-[44px] min-h-[44px] flex items-center justify-center"
-                title="Revoke token"
+                aria-label="Revoke token"
               >
                 <Trash2 size={14} />
               </button>

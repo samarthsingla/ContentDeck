@@ -20,6 +20,9 @@ nul
 # Vercel
 .vercel
 
+# Supabase CLI
+supabase/.temp/
+
 # Claude Code
 .claude/*
 !.claude/skills/

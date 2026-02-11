@@ -6,7 +6,7 @@ A personal content bookmarking PWA — save articles, videos, tweets, and more f
 
 ## Try It
 
-Visit [contentdeck.vercel.app](https://contentdeck.vercel.app) and click **Try Demo** — no account or setup required. Explore with sample data, then connect your own Supabase database when ready.
+Visit [contentdeck.vercel.app](https://contentdeck.vercel.app) and click **Try Demo** — no account or setup required. Explore with sample data, then sign in with email, Google, or GitHub to save your own bookmarks.
 
 ## Features
 
@@ -14,7 +14,7 @@ Visit [contentdeck.vercel.app](https://contentdeck.vercel.app) and click **Try D
 - **Multi-source bookmarking** — YouTube, Twitter/X, LinkedIn, Substack, Blogs, Books
 - **Auto source detection** — paste a URL and it's categorized automatically
 - **Auto metadata fetching** — titles, thumbnails, reading time via YouTube oEmbed, Twitter oEmbed, Microlink
-- **Save from anywhere** — iOS Shortcut, PC bookmarklet, or dashboard
+- **Save from anywhere** — PWA share target, iOS Shortcut, PC bookmarklet, or dashboard
 
 ### Organize
 - **Status tracking** — cycle bookmarks through `unread -> reading -> done`
@@ -42,7 +42,7 @@ Visit [contentdeck.vercel.app](https://contentdeck.vercel.app) and click **Try D
 |----------|--------|
 | **Android** | Install PWA → share any URL → pick ContentDeck |
 | **iPhone/iPad** | Install PWA (Safari → Share → Add to Home Screen) or iOS Shortcut |
-| **PC Browser** | Bookmarklet (drag from Settings) |
+| **PC Browser** | Bookmarklet (generate in Settings → API Tokens) |
 | **Dashboard** | Manual add with + button |
 
 The PWA Share Target works on Android Chrome and iOS Safari 16.4+. Install ContentDeck to your home screen, then share URLs from any app — ContentDeck appears in the system share sheet and opens with the URL pre-filled.
@@ -53,8 +53,9 @@ The PWA Share Target works on Android Chrome and iOS Safari 16.4+. Install Conte
 - **Styling:** Tailwind CSS v4 (dark/light mode)
 - **State:** TanStack Query (server) + React Context (UI)
 - **Icons:** Lucide React
-- **Backend:** [Supabase](https://supabase.com) (PostgreSQL + REST API)
-- **AI:** [OpenRouter](https://openrouter.ai) (Gemini 2.0 Flash)
+- **Auth:** Supabase Auth (magic link + Google OAuth + GitHub OAuth)
+- **Backend:** [Supabase](https://supabase.com) (PostgreSQL + REST API + RLS + Edge Functions)
+- **AI:** [OpenRouter](https://openrouter.ai) (free models: Llama 3.3 70B, Gemma 3, Mistral, Qwen)
 - **Metadata:** YouTube oEmbed, Twitter oEmbed, [Microlink](https://microlink.io)
 - **Hosting:** [Vercel](https://vercel.com)
 
@@ -64,76 +65,106 @@ The PWA Share Target works on Android Chrome and iOS Safari 16.4+. Install Conte
 
 1. Create a free project at [supabase.com](https://supabase.com)
 2. Go to **SQL Editor** and run `sql/setup.sql`
-3. Copy your **Project URL** and **anon key** from Settings > API
+3. Enable auth providers (magic link, Google, GitHub) — see `docs/SUPABASE_AUTH_SETUP.md`
 
-### 2. Install & Run
+### 2. Environment Variables
+
+Create `.env.local` in the project root:
+
+```
+VITE_SUPABASE_URL=https://<your-project-ref>.supabase.co
+VITE_SUPABASE_ANON_KEY=<your-anon-key>
+```
+
+Find these in Supabase Dashboard → Settings → API.
+
+### 3. Install & Run
 
 ```bash
 npm install
 npm run dev
 ```
 
-### 3. Deploy
+### 4. Deploy
+
+Push to GitHub and connect Vercel for auto-deploy, or:
 
 ```bash
 npm run build
+npx vercel --prod
 ```
 
-Push to GitHub and connect Vercel for auto-deploy, or `npx vercel --prod`.
+Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` to Vercel environment variables.
 
-### 4. Connect
+### 5. Deploy Edge Function
 
-Open the deployed URL. You can **Try Demo** to explore with sample data, or paste your Supabase credentials to connect.
+The `save-bookmark` edge function enables the bookmarklet and iOS Shortcut:
 
-### 5. Optional Integrations
+```bash
+npx supabase login
+npx supabase link --project-ref <your-project-ref>
+npx supabase functions deploy save-bookmark --no-verify-jwt
+```
+
+### 6. Optional Integrations
 
 #### AI Tagging (OpenRouter)
 1. Get a free API key at [openrouter.ai](https://openrouter.ai)
-2. Settings > AI API Key > paste key
+2. Settings → AI API Key → paste key
 3. New bookmarks get auto-tagged; existing untagged bookmarks are tagged on load
 
 #### Obsidian Export
-1. Settings > Obsidian Vault Folder > enter your folder name
+1. Settings → Obsidian Vault Folder → enter your folder name
 2. Click "Export" on any bookmark's detail panel
 3. Chrome/Edge: picks folder via File System API. Other browsers: copies markdown to clipboard.
 
-### 6. iOS Shortcut
+### 7. Bookmarklet & iOS Shortcut
 
-1. Open **Shortcuts** > tap **+**
-2. Tap **info (i)** > enable **Show in Share Sheet** > select **URLs**
-3. Add: **Get URLs from Input**
-4. Add: **Get Contents of URL** > Show More:
-   - URL: `<supabase-url>/rest/v1/bookmarks`
-   - Method: `POST`
-   - Headers: `apikey`, `Authorization` (Bearer + key), `Content-Type` (application/json), `Prefer` (return=minimal)
-   - Body: JSON > key `url` > value: **URLs** variable
-5. Name it "Bookmark" > Done
+Both require an API token generated in Settings → API Tokens.
 
-### 7. PC Bookmarklet
+#### PC Bookmarklet
+1. Settings → API Tokens → Generate API Token
+2. Drag **+ ContentDeck** to your bookmarks bar
+3. Click the bookmarklet on any page to save it
 
-Dashboard > Settings > drag **+ ContentDeck** to your bookmarks bar.
+#### iOS Shortcut
+1. Settings → API Tokens → Generate API Token → copy token and URL
+2. Open **Shortcuts** app → tap **+** → name it "Save to ContentDeck"
+3. Tap shortcut name → Privacy → enable **Show in Share Sheet** → select **URLs**
+4. Add action: **URL** → paste the edge function URL
+5. Add action: **Get Contents of URL** → tap **Show More**:
+   - Method: **POST**
+   - Request Body: **JSON**
+   - Add keys: `token` (paste your token), `url` (tap **Shortcut Input**), `title` (tap **Shortcut Input**)
+6. Share any URL → pick "Save to ContentDeck"
 
 ## Project Structure
 
 ```
 src/
-  components/     React components (layout, feed, detail, modals, areas, ui)
-  hooks/          TanStack Query hooks (useBookmarks, useTagAreas, useStats)
+  components/     React components (layout, feed, detail, modals, areas, settings, auth, ui)
+  hooks/          TanStack Query hooks (useBookmarks, useTagAreas, useStats, useAuth, useTokens)
   context/        SupabaseProvider, UIProvider
-  lib/            supabase, metadata, ai, obsidian, utils, mock-supabase, demo-data
+  lib/            supabase, metadata, ai, obsidian, tokens, utils, mock-supabase, demo-data
   types/          TypeScript interfaces
   pages/          Dashboard (orchestrator)
-  App.tsx          Root: setup/demo/dashboard routing, share target handling
-  main.tsx         Entry point
+  App.tsx         Root: auth check, demo mode detection, share target
+  main.tsx        Entry point
+
+supabase/
+  functions/
+    save-bookmark/  Edge function: token-authenticated bookmark save
 
 public/
   sw.js           Service worker (network-first navigation, stale-while-revalidate assets)
   manifest.json   PWA manifest + share target
   icon.svg        App icon
 
-vercel.json       SPA rewrites, cache headers for static assets
 sql/
-  setup.sql       Database schema (bookmarks, tag_areas, status_history, triggers)
+  setup.sql       Database schema (bookmarks, tag_areas, user_tokens, triggers, RPC functions)
+  migrations/     Incremental migrations
+
+vercel.json       SPA rewrites, cache headers for static assets
 ```
 
 ## Keyboard Shortcuts

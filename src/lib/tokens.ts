@@ -23,20 +23,27 @@ export function getEdgeFunctionUrl(): string {
   return `${supabaseUrl}/functions/v1/save-bookmark`;
 }
 
+/** Escape a string for safe interpolation into a JS single-quoted string */
+function jsStringEscape(s: string): string {
+  return s.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+}
+
 /** Generate a bookmarklet javascript: URL */
 export function generateBookmarklet(functionUrl: string, token: string): string {
+  const safeUrl = jsStringEscape(functionUrl);
+  const safeToken = jsStringEscape(token);
   // Minified bookmarklet — sends current page URL + title to the edge function
   const code = `
 (function(){
   var x=new XMLHttpRequest();
-  x.open('POST','${functionUrl}');
+  x.open('POST','${safeUrl}');
   x.setRequestHeader('Content-Type','application/json');
   x.onload=function(){
     if(x.status===201){alert('Saved to ContentDeck!')}
     else{alert('Error: '+x.responseText)}
   };
   x.onerror=function(){alert('Network error')};
-  x.send(JSON.stringify({token:'${token}',url:location.href,title:document.title}));
+  x.send(JSON.stringify({token:'${safeToken}',url:location.href,title:document.title}));
 })()`.replace(/\n\s*/g, '');
   return `javascript:${encodeURIComponent(code)}`;
 }

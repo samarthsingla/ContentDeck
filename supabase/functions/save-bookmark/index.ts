@@ -85,9 +85,12 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: 'Missing required fields: token, url' }, 400);
   }
 
-  // Validate URL format
+  // Validate URL format and scheme (only http/https allowed)
   try {
-    new URL(url);
+    const parsed = new URL(url);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return jsonResponse({ error: 'Invalid URL scheme — only http and https allowed' }, 400);
+    }
   } catch {
     return jsonResponse({ error: 'Invalid URL' }, 400);
   }
