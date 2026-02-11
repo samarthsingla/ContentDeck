@@ -103,24 +103,32 @@ CREATE POLICY "Users see own bookmarks" ON bookmarks
 - Bookmarklet removed — relied on raw anon key embedded in JS
 - iOS Shortcut broken — relied on raw anon key in HTTP headers
 
-### 1.1a Fix Bookmarklet (post-auth) ✅ DONE
+### 1.1a Fix Bookmarklet (post-auth) ✅ DONE — VERIFIED WORKING
 **Why**: Power users on desktop need a one-click save from any page.
 
 - **Approach**: Supabase Edge Function `POST /save-bookmark` that accepts a user API token
 - User generates a personal API token in Settings (stored in `user_tokens` table)
-- Bookmarklet sends URL + title + token to the edge function
-- Edge function validates token → inserts bookmark with correct `user_id`
-- Settings UI: "Generate Bookmarklet" → copies personalized bookmarklet code
+- Bookmarklet sends URL + title + token to the edge function via JSON body
+- Edge function validates token hash → inserts bookmark with correct `user_id`
+- Settings UI: "Generate Bookmarklet" → draggable link + copy code button
 - Token revocation in Settings
 
-### 1.1b Fix iOS Shortcut (post-auth) ✅ DONE
+**Bugs fixed during implementation:**
+1. `createToken` mutation needed explicit `user_id` from `db.auth.getUser()`
+2. Edge function needed `--no-verify-jwt` deployment (custom token auth, not Supabase JWT)
+3. `set_user_id()` trigger overwrote explicit `user_id` with `auth.uid()` (NULL for service role) — fixed with `COALESCE(NEW.user_id, auth.uid())`
+4. Token/URL injection in bookmarklet JS — fixed with `jsStringEscape()`
+
+### 1.1b Fix iOS Shortcut (post-auth) ⚠️ NEEDS VERIFICATION
 **Why**: iPhone users need background save from the Share Sheet without opening the app.
 
-- **Approach**: Same edge function as 1.1a (`POST /save-bookmark`)
-- iOS Shortcut sends URL + token via "Get Contents of URL" action
-- Settings UI: "iOS Shortcut Setup" → shows token + copy-paste instructions
-- Same `user_tokens` table and validation as bookmarklet
-- Edge function is shared — one implementation covers both use cases
+- **Approach**: Same edge function as 1.1a, but uses **query parameters** instead of JSON body
+- iOS Shortcuts JSON body builder is unreliable — query param approach is more robust
+- Token baked into base URL: `...save-bookmark?token=TOKEN&url=`
+- Shortcut concatenates shared URL to the end via Text + Combine Text actions
+- Edge function `extractFields()` checks query params first, JSON/form body as fallback
+
+**Status**: Edge function deployed and tested via curl (query params work). Frontend updated with new instructions. **Needs real-device iOS Shortcut testing.**
 
 **Shared implementation (1.1a + 1.1b):**
 ```sql
@@ -142,10 +150,13 @@ CREATE POLICY "Users see own tokens" ON user_tokens
 ```
 
 **Edge function** (`supabase/functions/save-bookmark/index.ts`):
-- Accepts `{ url, title?, token }` in POST body
+- Accepts fields via query params (priority) OR JSON/form body (fallback)
+- `extractFields()` — query params → JSON → form-encoded → fallback
+- Validates URL scheme (http/https only)
 - Looks up `token_hash` → gets `user_id`
-- Inserts into `bookmarks` with that `user_id` (bypasses RLS via service role)
+- Inserts into `bookmarks` with explicit `user_id` (COALESCE trigger preserves it)
 - Returns `201` with bookmark ID or `401` on bad token
+- Deployed with `--no-verify-jwt` (custom token auth)
 
 ### 1.2 Content Extraction Pipeline
 **Why**: Enables full-text search, summaries, reader mode, and offline reading.
