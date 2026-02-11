@@ -71,7 +71,7 @@ CLI Tool ──────────┘     ├→ Supabase Storage (article 
 
 > Goal: Real users, real data, real reliability. The "production-grade" release.
 
-### 1.1 Supabase Auth
+### 1.1 Supabase Auth ✅ DONE (v3.0)
 **Why first**: Every feature after this depends on user identity.
 
 - Email + magic link authentication (free, no password management)
@@ -528,4 +528,4 @@ Each development session should follow this pattern:
 ---
 
 *This plan is a living document. Update it as priorities shift and features ship.*
-*Last updated: 2026-02-08 — v2.2 shipped, planning v3.0.*
+*Last updated: 2026-02-11 — v3.0 auth shipped. v2.2 → v3.0 migration complete.*

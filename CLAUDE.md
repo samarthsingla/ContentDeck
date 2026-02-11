@@ -6,17 +6,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ContentDeck — a personal content bookmarking PWA dashboard for the Capture → Consume → Reflect → Export workflow. Bridges web browsing and Obsidian knowledge management.
 
-**Status: v2.2 — React + Vite + Tailwind + TypeScript. Demo mode, PWA share target, shipping audit complete.**
+**Status: v3.0 — React + Vite + Tailwind + TypeScript. Supabase Auth, demo mode, PWA share target.**
 
 See `AUDIT.md` for the full audit trail (39/47 v1 issues resolved, 14 v2.0 bugs fixed, 8 v2.2 shipping fixes).
 
-## v2 Tech Stack
+## Tech Stack
 
 - **Framework:** React 18 + TypeScript + Vite
 - **Styling:** Tailwind CSS v4 (dark/light mode via `class` strategy)
 - **State:** TanStack Query (server state) + React Context (UI state)
 - **Icons:** Lucide React
-- **Backend:** Supabase (PostgreSQL + REST API) — no auth, anon key approach
+- **Auth:** Supabase Auth (magic link + Google OAuth + GitHub OAuth)
+- **Backend:** Supabase (PostgreSQL + REST API + RLS per user)
 - **AI:** OpenRouter (client-side, user-provided API key, free models)
 - **Hosting:** Vercel (auto-deploy from `main` branch, `vercel.json` for SPA rewrites + cache headers)
 
@@ -33,27 +34,29 @@ npm run format:check # Prettier check (CI-friendly)
 npm run typecheck    # TypeScript type check (no emit)
 ```
 
-## Architecture (v2)
+## Architecture
 
 ```
 src/
-├── components/      # React components (layout, feed, detail, modals, areas, ui)
-├── hooks/           # TanStack Query hooks (useBookmarks, useTagAreas, useStats, etc.)
+├── components/      # React components (layout, feed, detail, modals, areas, auth, ui)
+├── hooks/           # TanStack Query hooks (useBookmarks, useTagAreas, useStats, useAuth, etc.)
 ├── context/         # SupabaseProvider, UIProvider
 ├── lib/             # supabase.ts, metadata.ts, ai.ts, obsidian.ts, utils.ts, mock-supabase.ts, demo-data.ts
 ├── types/           # TypeScript interfaces (Bookmark, TagArea, Note, etc.)
 ├── pages/           # Dashboard.tsx (orchestrator)
-├── App.tsx          # Root: setup screen vs dashboard, demo mode detection, share target
+├── App.tsx          # Root: auth check, demo mode detection, share target
 └── main.tsx         # Entry point
 ```
 
 ### Key patterns
 
+- **Supabase Auth:** `useAuth` hook manages session via `supabase.auth`. OAuth callback detected automatically via `onAuthStateChange`. No separate callback page.
+- **Supabase client:** Singleton created from env vars (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`). SupabaseProvider passes it via context; mock client used for demo mode.
 - **All data mutations** use TanStack Query with optimistic updates + automatic rollback on error
 - **Source type colors** defined once in `tailwind.config.ts` (not duplicated in CSS)
 - **Reusable `Modal` component** has focus trapping, ARIA attributes, ESC handling built in
 - **Accessibility first:** `focus-visible:ring-2` on all interactives, proper `<label>` elements, `motion-safe:`/`motion-reduce:` variants
-- **Demo mode:** credentials `{ url: 'demo', key: 'demo' }` → mock Supabase client operates on in-memory arrays, zero hook changes needed
+- **Demo mode:** `localStorage.getItem('contentdeck_demo') === 'true'` → mock Supabase client operates on in-memory arrays, zero hook changes needed
 - **PWA Share Target:** `manifest.json` `share_target` + `?url=` query param handling in App.tsx → AddBookmarkModal pre-fill
 - **Service worker:** Network-first for navigation, stale-while-revalidate for assets. Version in `CACHE_NAME` must be bumped manually on deploys.
 - **Loading state:** Inline CSS spinner in `index.html` shown until React mounts (no blank page)
@@ -61,14 +64,20 @@ src/
 ## Database (Supabase PostgreSQL)
 
 Schema defined in `sql/setup.sql`. Key tables:
-- `bookmarks` — url, title, source_type, status (unread/reading/done), is_favorited, notes (JSONB array), metadata (JSONB), synced
-- `tag_areas` — name, emoji, color, sort_order
-- `bookmark_tags` — junction table
-- `status_history` — audit trail for streak/stats calculations
+- `bookmarks` — user_id, url, title, source_type, status (unread/reading/done), is_favorited, notes (JSONB array), metadata (JSONB), synced
+- `tag_areas` — user_id, name, emoji, color, sort_order
+- `bookmark_tags` — junction table (scoped via bookmark's user_id)
+- `status_history` — user_id, audit trail for streak/stats calculations
 
 DB triggers:
 - `detect_source_type()` — auto-classifies URLs using `~*` (case-insensitive regex)
 - `track_status_change()` — logs status transitions, sets `started_reading_at`/`finished_at`
+- `set_user_id()` — auto-sets `user_id` to `auth.uid()` on insert (bookmarks, tag_areas, status_history)
+
+RLS policies:
+- All tables have row-level security enabled
+- Users can only read/write their own data (`auth.uid() = user_id`)
+- `bookmark_tags` scoped via subquery on `bookmarks.user_id`
 
 ## Important rules
 
@@ -76,18 +85,17 @@ DB triggers:
 - **YouTube URL detection** must handle `youtube.com`, `youtu.be`, AND `youtube.app.goo.gl`
 - **Twitter URL detection** must handle `twitter.com`, `x.com`, AND `t.co`
 - **LinkedIn URL detection** must handle `linkedin.com` AND `lnkd.in`
-- **No secrets in code.** Supabase keys and API keys entered at runtime, stored in localStorage
-- **Credentials** stored in both localStorage and 400-day cookies (fallback for iOS)
+- **No secrets in code.** Supabase URL and anon key in env vars. OpenRouter/YouTube API keys entered at runtime, stored in localStorage.
 - **Tab counts** should reflect current status filter
 - **Dates:** Always use local timezone (`toLocaleDateString()`), never `toISOString().slice()` for display
 - **Touch targets:** Minimum 44x44px on all interactive elements
-- **Demo mode** is detected by `credentials.url === 'demo'` — metadata fetch and AI tagging are skipped
+- **Demo mode** is detected by `localStorage.getItem('contentdeck_demo') === 'true'` — metadata fetch and AI tagging are skipped
 - **No Knowledge Graph** — dropped in v2 (Obsidian handles this)
-- **No Chrome Extension** — deprecated in v2
 
 ## External APIs (all free tier)
 
-- **Supabase REST API** — all CRUD (also used by iOS Shortcut and bookmarklet)
+- **Supabase Auth** — magic link, Google OAuth, GitHub OAuth
+- **Supabase REST API** — all CRUD (RLS-protected, user-scoped)
 - **OpenRouter** — AI tagging (free models: Llama 3.3 70B, Gemma 3, Mistral, Qwen)
 - **YouTube oEmbed** — video titles (no key needed)
 - **YouTube Data API v3** — video duration/channel (free 10K units/day)
