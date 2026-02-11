@@ -59,11 +59,6 @@ export interface StatusHistoryEntry {
   changed_at: string;
 }
 
-export interface Credentials {
-  url: string;
-  key: string;
-}
-
 export const STATUS_NEXT: Record<Status, Status> = {
   unread: 'reading',
   reading: 'done',

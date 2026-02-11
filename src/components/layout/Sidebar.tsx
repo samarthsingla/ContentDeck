@@ -19,7 +19,7 @@ import type { Status, ViewMode } from '../../types';
 interface SidebarProps {
   counts: { unread: number; reading: number; done: number; favorited: number };
   onAdd: () => void;
-  onDisconnect: () => void;
+  onSignOut: () => void;
   onSettings: () => void;
   onStats: () => void;
 }
@@ -31,13 +31,7 @@ const statusNav: { status: Status | 'all'; label: string; icon: React.ElementTyp
   { status: 'done', label: 'Done', icon: CheckCircle },
 ];
 
-export default function Sidebar({
-  counts,
-  onAdd,
-  onDisconnect,
-  onSettings,
-  onStats,
-}: SidebarProps) {
+export default function Sidebar({ counts, onAdd, onSignOut, onSettings, onStats }: SidebarProps) {
   const {
     currentStatus,
     setStatus,
@@ -192,11 +186,11 @@ export default function Sidebar({
           Settings
         </button>
         <button
-          onClick={onDisconnect}
+          onClick={onSignOut}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors min-h-[44px]"
         >
           <LogOut size={18} />
-          Disconnect
+          Sign Out
         </button>
       </div>
     </aside>

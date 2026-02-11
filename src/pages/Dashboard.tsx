@@ -16,27 +16,23 @@ import { useBookmarks } from '../hooks/useBookmarks';
 import { useTagAreas } from '../hooks/useTagAreas';
 import { useStats } from '../hooks/useStats';
 import { useUI } from '../context/UIProvider';
+import { useSupabase } from '../context/SupabaseProvider';
 import { useToast } from '../components/ui/Toast';
 import ProgressBar from '../components/ui/ProgressBar';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { exportToObsidianUri, exportToClipboard } from '../lib/obsidian';
 import { fetchMetadata } from '../lib/metadata';
 import { suggestTags } from '../lib/ai';
-import type { Bookmark, Status, NoteType, TagArea, Credentials } from '../types';
+import type { Bookmark, Status, NoteType, TagArea } from '../types';
 
 interface DashboardProps {
-  credentials: Credentials;
-  onDisconnect: () => void;
+  userEmail: string | null;
+  onSignOut: () => void;
   isDemo?: boolean;
   sharedUrl?: string | null;
 }
 
-export default function Dashboard({
-  credentials,
-  onDisconnect,
-  isDemo,
-  sharedUrl,
-}: DashboardProps) {
+export default function Dashboard({ userEmail, onSignOut, isDemo, sharedUrl }: DashboardProps) {
   const {
     bookmarks,
     isLoading,
@@ -57,6 +53,7 @@ export default function Dashboard({
     useUI();
   const toast = useToast();
   const queryClient = useQueryClient();
+  const db = useSupabase();
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
@@ -121,16 +118,7 @@ export default function Dashboard({
             if (result.title) updates.title = result.title;
             if (result.image) updates.image = result.image;
             if (result.metadata) updates.metadata = { ...b.metadata, ...result.metadata };
-            void fetch(`${credentials.url}/rest/v1/bookmarks?id=eq.${b.id}`, {
-              method: 'PATCH',
-              headers: {
-                apikey: credentials.key,
-                Authorization: `Bearer ${credentials.key}`,
-                'Content-Type': 'application/json',
-                Prefer: 'return=minimal',
-              },
-              body: JSON.stringify(updates),
-            });
+            void db.from('bookmarks').update(updates).eq('id', b.id);
           }
         } catch {
           /* skip */
@@ -146,7 +134,7 @@ export default function Dashboard({
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isDemo, isLoading, credentials]);
+  }, [isDemo, isLoading]);
 
   // Auto-tag untagged bookmarks via AI on load (skip in demo)
   useEffect(() => {
@@ -169,16 +157,7 @@ export default function Dashboard({
         try {
           const { tags } = await suggestTags(b, [...allTags]);
           if (tags.length === 0) continue;
-          await fetch(`${credentials.url}/rest/v1/bookmarks?id=eq.${b.id}`, {
-            method: 'PATCH',
-            headers: {
-              apikey: credentials.key,
-              Authorization: `Bearer ${credentials.key}`,
-              'Content-Type': 'application/json',
-              Prefer: 'return=minimal',
-            },
-            body: JSON.stringify({ tags }),
-          });
+          await db.from('bookmarks').update({ tags }).eq('id', b.id);
           for (const t of tags) {
             if (!allTags.includes(t)) allTags.push(t);
           }
@@ -196,7 +175,7 @@ export default function Dashboard({
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isDemo, isLoading, credentials]);
+  }, [isDemo, isLoading]);
 
   // Open add modal with shared URL (PWA share target)
   useEffect(() => {
@@ -323,7 +302,7 @@ export default function Dashboard({
         <AppShell
           counts={counts}
           onAdd={() => setShowAddModal(true)}
-          onDisconnect={onDisconnect}
+          onSignOut={onSignOut}
           onToggleSearch={() => setShowSearch((s) => !s)}
           onSettings={() => setShowSettings(true)}
           onStats={() => setShowStats(true)}
@@ -405,8 +384,8 @@ export default function Dashboard({
       <SettingsModal
         open={showSettings}
         onClose={() => setShowSettings(false)}
-        credentials={credentials}
-        onDisconnect={onDisconnect}
+        userEmail={userEmail}
+        onSignOut={onSignOut}
         isDemo={isDemo}
       />
 

@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
-import { useCredentials } from './hooks/useCredentials';
+import { useMemo, useCallback } from 'react';
+import { useAuth } from './hooks/useAuth';
 import { useTheme } from './hooks/useTheme';
 import { SupabaseProvider } from './context/SupabaseProvider';
 import { UIProvider } from './context/UIProvider';
@@ -7,35 +7,69 @@ import { ToastProvider } from './components/ui/Toast';
 import ErrorBoundary from './components/ui/ErrorBoundary';
 import UpdateBanner from './components/ui/UpdateBanner';
 import DemoBanner from './components/ui/DemoBanner';
-import SetupScreen from './components/setup/SetupScreen';
+import AuthScreen from './components/auth/AuthScreen';
 import Dashboard from './pages/Dashboard';
 import { createMockSupabaseClient } from './lib/mock-supabase';
 
+const DEMO_KEY = 'contentdeck_demo';
+
 function getSharedUrl(): string | null {
   const params = new URLSearchParams(window.location.search);
-  // PWA share target sends ?url= or shared text that may contain a URL
   return params.get('url') || params.get('text') || null;
 }
 
 export default function App() {
-  const { credentials, saveCredentials, clearCredentials } = useCredentials();
+  const { user, loading, signInWithMagicLink, signInWithGoogle, signInWithGitHub, signOut } =
+    useAuth();
   useTheme();
 
-  const isDemo = credentials?.url === 'demo';
+  const isDemo = localStorage.getItem(DEMO_KEY) === 'true';
   const mockClient = useMemo(() => (isDemo ? createMockSupabaseClient() : undefined), [isDemo]);
   const sharedUrl = useMemo(getSharedUrl, []);
 
-  if (!credentials) {
+  const handleDemo = useCallback(() => {
+    localStorage.setItem(DEMO_KEY, 'true');
+    window.location.reload();
+  }, []);
+
+  const handleExitDemo = useCallback(() => {
+    localStorage.removeItem(DEMO_KEY);
+    window.location.reload();
+  }, []);
+
+  const handleSignOut = useCallback(async () => {
+    localStorage.removeItem(DEMO_KEY);
+    await signOut();
+  }, [signOut]);
+
+  const userEmail = user?.email ?? null;
+
+  // Loading state
+  if (loading && !isDemo) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-surface-50 dark:bg-surface-950">
+        <div className="w-8 h-8 border-4 border-primary-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  // Auth screen (not logged in, not demo)
+  if (!isDemo && !user) {
     return (
       <ToastProvider>
-        <SetupScreen onConnect={saveCredentials} />
+        <AuthScreen
+          onDemo={handleDemo}
+          onMagicLink={signInWithMagicLink}
+          onGoogle={signInWithGoogle}
+          onGitHub={signInWithGitHub}
+        />
       </ToastProvider>
     );
   }
 
   return (
     <ErrorBoundary>
-      <SupabaseProvider url={credentials.url} anonKey={credentials.key} client={mockClient}>
+      <SupabaseProvider client={mockClient}>
         <UIProvider>
           <ToastProvider>
             {/* Skip nav link for accessibility */}
@@ -45,10 +79,10 @@ export default function App() {
             >
               Skip to main content
             </a>
-            {isDemo ? <DemoBanner onConnect={clearCredentials} /> : <UpdateBanner />}
+            {isDemo ? <DemoBanner onSignIn={handleExitDemo} /> : <UpdateBanner />}
             <Dashboard
-              credentials={credentials}
-              onDisconnect={clearCredentials}
+              userEmail={userEmail}
+              onSignOut={isDemo ? handleExitDemo : handleSignOut}
               isDemo={isDemo}
               sharedUrl={sharedUrl}
             />

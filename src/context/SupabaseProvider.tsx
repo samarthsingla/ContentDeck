@@ -1,24 +1,17 @@
-import { createContext, useContext, useMemo } from 'react';
+import { createContext, useContext } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { getSupabaseClient } from '../lib/supabase';
+import { supabase } from '../lib/supabase';
 
 const SupabaseContext = createContext<SupabaseClient | null>(null);
 
 export function SupabaseProvider({
-  url,
-  anonKey,
   client: externalClient,
   children,
 }: {
-  url: string;
-  anonKey: string;
   client?: SupabaseClient;
   children: React.ReactNode;
 }) {
-  const client = useMemo(
-    () => externalClient ?? getSupabaseClient(url, anonKey),
-    [externalClient, url, anonKey],
-  );
+  const client = externalClient ?? supabase;
 
   return <SupabaseContext.Provider value={client}>{children}</SupabaseContext.Provider>;
 }
