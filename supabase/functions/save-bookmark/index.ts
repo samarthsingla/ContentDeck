@@ -112,16 +112,24 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: 'Invalid token' }, 401);
   }
 
-  // Insert bookmark via raw SQL to bypass set_user_id() trigger
-  // The trigger would overwrite user_id with auth.uid() which is null for service role
-  const { data: insertData, error: insertError } = await adminClient.rpc(
-    'insert_bookmark_via_token',
-    {
-      p_user_id: tokenRow.user_id,
-      p_url: url,
-      p_title: title || null,
-    },
-  );
+  // Insert bookmark with explicit user_id
+  // The set_user_id() trigger uses COALESCE(NEW.user_id, auth.uid())
+  // so it preserves our explicit user_id instead of overwriting with null
+  const { data: bookmark, error: insertError } = await adminClient
+    .from('bookmarks')
+    .insert({
+      user_id: tokenRow.user_id,
+      url,
+      title: title || null,
+      status: 'unread',
+      is_favorited: false,
+      notes: [],
+      tags: [],
+      metadata: {},
+      synced: false,
+    })
+    .select('id')
+    .single();
 
   if (insertError) {
     return jsonResponse({ error: 'Failed to save bookmark', detail: insertError.message }, 500);
@@ -133,5 +141,5 @@ Deno.serve(async (req) => {
     .update({ last_used_at: new Date().toISOString() })
     .eq('id', tokenRow.id);
 
-  return jsonResponse({ id: insertData, status: 'saved' }, 201);
+  return jsonResponse({ id: bookmark.id, status: 'saved' }, 201);
 });

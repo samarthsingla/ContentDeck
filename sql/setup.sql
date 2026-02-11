@@ -121,11 +121,11 @@ create trigger on_status_change
   before update on bookmarks
   for each row execute function track_status_change();
 
--- Auto-set user_id on insert
+-- Auto-set user_id on insert (COALESCE preserves explicit user_id from edge functions)
 create or replace function set_user_id()
 returns trigger as $$
 begin
-  NEW.user_id := auth.uid();
+  NEW.user_id := coalesce(NEW.user_id, auth.uid());
   return NEW;
 end;
 $$ language plpgsql security definer;
