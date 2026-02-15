@@ -32,8 +32,8 @@ async function extractFields(
   let url = reqUrl.searchParams.get('url') ?? '';
   let title = reqUrl.searchParams.get('title') ?? '';
 
-  // 2. If query params missing, try parsing the body
-  if (!token || !url) {
+  // 2. If query params missing and it's a POST, try parsing the body
+  if ((!token || !url) && req.method === 'POST') {
     try {
       const contentType = req.headers.get('content-type') ?? '';
       let body: Record<string, unknown> = {};
@@ -75,7 +75,7 @@ Deno.serve(async (req) => {
     return new Response(null, { status: 200, headers: corsHeaders });
   }
 
-  if (req.method !== 'POST') {
+  if (req.method !== 'POST' && req.method !== 'GET') {
     return jsonResponse({ error: 'Method not allowed' }, 405);
   }
 

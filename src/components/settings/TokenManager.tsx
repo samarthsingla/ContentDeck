@@ -26,18 +26,20 @@ export default function TokenManager() {
   const shortcutBaseUrl = newToken ? generateShortcutUrl(functionUrl, newToken) : '';
 
   return (
-    <section>
-      <h3 className="text-sm font-semibold text-surface-900 dark:text-surface-100 mb-2 flex items-center gap-2">
-        <Key size={16} />
-        API Tokens
-      </h3>
-      <p className="text-xs text-surface-500 dark:text-surface-400 mb-3">
-        Generate a token to save bookmarks from a desktop bookmarklet or iOS Shortcut.
-      </p>
+    <section className="space-y-4">
+      <div>
+        <h3 className="text-sm font-semibold text-surface-900 dark:text-surface-100 mb-2 flex items-center gap-2">
+          <Key size={16} />
+          API Tokens
+        </h3>
+        <p className="text-xs text-surface-500 dark:text-surface-400 mb-3">
+          Generate a token to save bookmarks from a desktop bookmarklet or iOS Shortcut.
+        </p>
+      </div>
 
       {/* Just-created token alert */}
       {newToken && (
-        <div className="mb-4 rounded-lg border border-amber-300 dark:border-amber-600 bg-amber-50 dark:bg-amber-950/30 p-3 space-y-3">
+        <div className="rounded-lg border border-amber-300 dark:border-amber-600 bg-amber-50 dark:bg-amber-950/30 p-3 space-y-3">
           <div className="flex items-start gap-2">
             <AlertTriangle
               size={16}
@@ -63,96 +65,6 @@ export default function TokenManager() {
               )}
             </button>
           </div>
-
-          {/* Bookmarklet */}
-          <div className="rounded-lg bg-white dark:bg-surface-800 p-3 space-y-2 border border-surface-200 dark:border-surface-700">
-            <div className="flex items-center gap-2 text-xs font-medium text-surface-700 dark:text-surface-300">
-              <Bookmark size={14} />
-              Bookmarklet
-            </div>
-            <p className="text-xs text-surface-500 dark:text-surface-400">
-              Drag this link to your bookmarks bar:
-            </p>
-            <a
-              href={bookmarkletCode}
-              className="inline-block px-3 py-1.5 rounded bg-primary-600 text-white text-xs font-medium hover:bg-primary-700 no-underline"
-              onClick={(e) => e.preventDefault()}
-              title="Drag to bookmarks bar"
-            >
-              + ContentDeck
-            </a>
-            <button
-              onClick={() => copyToClipboard(bookmarkletCode, 'bookmarklet')}
-              className="ml-2 text-xs text-primary-600 dark:text-primary-400 hover:underline inline-flex items-center gap-1 min-h-[44px]"
-            >
-              {copied === 'bookmarklet' ? (
-                <>
-                  <Check size={12} /> Copied!
-                </>
-              ) : (
-                <>
-                  <Copy size={12} /> Copy code
-                </>
-              )}
-            </button>
-          </div>
-
-          {/* iOS Shortcut */}
-          {shortcutBaseUrl && (
-            <div className="rounded-lg bg-white dark:bg-surface-800 p-3 space-y-2 border border-surface-200 dark:border-surface-700">
-              <div className="flex items-center gap-2 text-xs font-medium text-surface-700 dark:text-surface-300">
-                <Smartphone size={14} />
-                iOS Shortcut
-              </div>
-              <ol className="text-xs text-surface-500 dark:text-surface-400 space-y-1.5 list-decimal list-inside">
-                <li>
-                  Open <strong>Shortcuts</strong> → tap <strong>+</strong> → name it "Save to
-                  ContentDeck"
-                </li>
-                <li>
-                  Tap the name → enable <strong>Show in Share Sheet</strong> → select{' '}
-                  <strong>URLs</strong> only → tap Done
-                </li>
-                <li>
-                  Add action: <strong>Text</strong> → paste the URL below
-                </li>
-                <li>
-                  After the Text, add: <strong>Combine Text</strong> → combine the Text with{' '}
-                  <strong>Shortcut Input</strong> (no separator)
-                </li>
-                <li>
-                  Add: <strong>Get Contents of URL</strong> → set its URL to{' '}
-                  <strong>Combined Text</strong> → Method: <strong>POST</strong>
-                </li>
-              </ol>
-              <div className="mt-2 space-y-1">
-                <span className="text-xs text-surface-500 dark:text-surface-400">
-                  Text to paste (includes your token):
-                </span>
-                <div className="flex items-center gap-2">
-                  <code className="flex-1 text-xs font-mono break-all text-surface-700 dark:text-surface-300 bg-surface-50 dark:bg-surface-900 rounded px-2 py-1.5 border border-surface-200 dark:border-surface-700">
-                    {shortcutBaseUrl}
-                  </code>
-                  <button
-                    onClick={() => copyToClipboard(shortcutBaseUrl, 'shortcut-url')}
-                    className="p-1 rounded hover:bg-surface-100 dark:hover:bg-surface-700 min-w-[44px] min-h-[44px] flex items-center justify-center"
-                    aria-label="Copy shortcut URL"
-                  >
-                    {copied === 'shortcut-url' ? (
-                      <Check size={12} className="text-green-600" />
-                    ) : (
-                      <Copy size={12} className="text-surface-500" />
-                    )}
-                  </button>
-                </div>
-                <p className="text-xs text-surface-400 dark:text-surface-500 italic">
-                  The shared URL gets appended to this, so the final request is:
-                  ...&url=https://shared-page.com
-                </p>
-              </div>
-            </div>
-          )}
-
           <button
             onClick={() => setNewToken(null)}
             className="text-xs text-surface-400 hover:text-surface-600 dark:hover:text-surface-300 min-h-[44px]"
@@ -164,7 +76,7 @@ export default function TokenManager() {
 
       {/* Token list */}
       {tokens.length > 0 && (
-        <div className="space-y-2 mb-3">
+        <div className="space-y-2">
           {tokens.map((token) => (
             <div
               key={token.id}
@@ -207,6 +119,140 @@ export default function TokenManager() {
           {createToken.isPending ? 'Generating...' : 'Generate API Token'}
         </Button>
       )}
+
+      {/* ── Bookmarklet Setup (always visible) ── */}
+      <div className="rounded-lg bg-white dark:bg-surface-800 p-3 space-y-2 border border-surface-200 dark:border-surface-700">
+        <div className="flex items-center gap-2 text-xs font-medium text-surface-700 dark:text-surface-300">
+          <Bookmark size={14} />
+          Desktop Bookmarklet
+        </div>
+        <p className="text-xs text-surface-500 dark:text-surface-400">
+          Save any page with one click from your browser's bookmarks bar.
+        </p>
+        {newToken ? (
+          <div className="space-y-2">
+            <p className="text-xs text-surface-500 dark:text-surface-400">
+              Drag this button to your bookmarks bar:
+            </p>
+            <a
+              href={bookmarkletCode}
+              className="inline-block px-3 py-1.5 rounded bg-primary-600 text-white text-xs font-medium hover:bg-primary-700 no-underline"
+              onClick={(e) => e.preventDefault()}
+              title="Drag to bookmarks bar"
+            >
+              + ContentDeck
+            </a>
+            <button
+              onClick={() => copyToClipboard(bookmarkletCode, 'bookmarklet')}
+              className="ml-2 text-xs text-primary-600 dark:text-primary-400 hover:underline inline-flex items-center gap-1 min-h-[44px]"
+            >
+              {copied === 'bookmarklet' ? (
+                <>
+                  <Check size={12} /> Copied!
+                </>
+              ) : (
+                <>
+                  <Copy size={12} /> Copy code
+                </>
+              )}
+            </button>
+          </div>
+        ) : (
+          <p className="text-xs text-surface-400 dark:text-surface-500 italic">
+            Generate a token above to get your bookmarklet link.
+          </p>
+        )}
+      </div>
+
+      {/* ── iOS Shortcut Setup (always visible) ── */}
+      <div className="rounded-lg bg-white dark:bg-surface-800 p-3 space-y-3 border border-surface-200 dark:border-surface-700">
+        <div className="flex items-center gap-2 text-xs font-medium text-surface-700 dark:text-surface-300">
+          <Smartphone size={14} />
+          iOS Shortcut
+        </div>
+        <p className="text-xs text-surface-500 dark:text-surface-400">
+          Save links from any app on your iPhone or iPad via the Share Sheet.
+        </p>
+
+        {/* Token-specific URL */}
+        {shortcutBaseUrl && (
+          <div className="space-y-1 rounded-md bg-surface-50 dark:bg-surface-900 p-2 border border-surface-200 dark:border-surface-700">
+            <span className="text-xs font-medium text-surface-600 dark:text-surface-300">
+              Your shortcut URL (copy this first):
+            </span>
+            <div className="flex items-center gap-2">
+              <code className="flex-1 text-xs font-mono break-all text-surface-700 dark:text-surface-300 bg-white dark:bg-surface-800 rounded px-2 py-1.5 border border-surface-200 dark:border-surface-700">
+                {shortcutBaseUrl}
+              </code>
+              <button
+                onClick={() => copyToClipboard(shortcutBaseUrl, 'shortcut-url')}
+                className="p-1 rounded hover:bg-surface-100 dark:hover:bg-surface-700 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                aria-label="Copy shortcut URL"
+              >
+                {copied === 'shortcut-url' ? (
+                  <Check size={12} className="text-green-600" />
+                ) : (
+                  <Copy size={12} className="text-surface-500" />
+                )}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {!newToken && tokens.length === 0 && (
+          <p className="text-xs text-surface-400 dark:text-surface-500 italic">
+            Generate a token above to get your shortcut URL.
+          </p>
+        )}
+
+        {!newToken && tokens.length > 0 && (
+          <p className="text-xs text-surface-400 dark:text-surface-500 italic">
+            Generate a new token to see your shortcut URL (shown once at creation).
+          </p>
+        )}
+
+        {/* Step-by-step instructions (always visible) */}
+        <div className="space-y-2">
+          <p className="text-xs font-medium text-surface-600 dark:text-surface-300">Setup steps:</p>
+          <ol className="text-xs text-surface-500 dark:text-surface-400 space-y-2 list-decimal list-inside">
+            <li>
+              Open the <strong>Shortcuts</strong> app on your iPhone/iPad and tap <strong>+</strong>{' '}
+              (top right) to create a new shortcut.
+            </li>
+            <li>
+              Tap <strong>"New Shortcut"</strong> at the top to rename it. Type{' '}
+              <strong>"Save to ContentDeck"</strong>.
+            </li>
+            <li>
+              Tap the shortcut name again (or the <strong>ⓘ</strong> icon) → turn on{' '}
+              <strong>"Show in Share Sheet"</strong>. Under Share Sheet Types, deselect "Any" and
+              select only <strong>"URLs"</strong>. Tap <strong>Done</strong>.
+            </li>
+            <li>
+              Tap <strong>"Add Action"</strong>, search for <strong>"Text"</strong>, and add it.
+            </li>
+            <li>
+              In the Text field, paste your shortcut URL from above. Then tap at the{' '}
+              <strong>very end</strong> of the pasted text (after <code>&url=</code>). From the
+              variable suggestions above the keyboard, tap <strong>"Shortcut Input"</strong> — it
+              will appear as a blue tag/pill at the end.
+            </li>
+            <li>
+              Tap <strong>"Add Action"</strong> again, search for{' '}
+              <strong>"Get Contents of URL"</strong>, and add it.
+            </li>
+            <li>
+              In the "Get Contents of URL" action, tap the URL/input field and select the{' '}
+              <strong>"Text"</strong> from step 4. Leave the method as <strong>GET</strong>{' '}
+              (default).
+            </li>
+            <li>
+              <strong>Done!</strong> Open Safari or any app, tap <strong>Share</strong> →{' '}
+              <strong>"Save to ContentDeck"</strong>. The link will appear in your dashboard.
+            </li>
+          </ol>
+        </div>
+      </div>
     </section>
   );
 }
