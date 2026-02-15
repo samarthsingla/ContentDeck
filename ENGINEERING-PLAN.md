@@ -119,16 +119,19 @@ CREATE POLICY "Users see own bookmarks" ON bookmarks
 3. `set_user_id()` trigger overwrote explicit `user_id` with `auth.uid()` (NULL for service role) — fixed with `COALESCE(NEW.user_id, auth.uid())`
 4. Token/URL injection in bookmarklet JS — fixed with `jsStringEscape()`
 
-### 1.1b Fix iOS Shortcut (post-auth) ⚠️ NEEDS VERIFICATION
+### 1.1b Fix iOS Shortcut (post-auth) ✅ DONE — VERIFIED WORKING
 **Why**: iPhone users need background save from the Share Sheet without opening the app.
 
 - **Approach**: Same edge function as 1.1a, but uses **query parameters** instead of JSON body
 - iOS Shortcuts JSON body builder is unreliable — query param approach is more robust
 - Token baked into base URL: `...save-bookmark?token=TOKEN&url=`
-- Shortcut concatenates shared URL to the end via Text + Combine Text actions
-- Edge function `extractFields()` checks query params first, JSON/form body as fallback
+- Shortcut uses 2 actions: Text (base URL + Shortcut Input variable) → Get Contents of URL (GET)
+- Edge function accepts both GET and POST, `extractFields()` checks query params first
 
-**Status**: Edge function deployed and tested via curl (query params work). Frontend updated with new instructions. **Needs real-device iOS Shortcut testing.**
+**Bugs fixed during implementation:**
+1. iOS Shortcuts JSON body builder unreliable — switched to query parameter approach
+2. Edge function rejected GET requests (iOS Shortcuts default) — added GET support
+3. Instructions only visible during token generation — made always-visible with 8 detailed steps
 
 **Shared implementation (1.1a + 1.1b):**
 ```sql
