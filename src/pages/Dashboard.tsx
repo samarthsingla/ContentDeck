@@ -104,32 +104,44 @@ export default function Dashboard({ userEmail, onSignOut, isDemo, sharedUrl }: D
     if (currentBookmarks.length === 0) return;
     metaFetchedRef.current = true;
 
-    const missing = currentBookmarks.filter((b) => !b.title || !b.image);
+    // Only fetch for bookmarks with no title — the primary missing-metadata signal.
+    // Bookmarks with title but no image are fine (Twitter posts rarely have images).
+    const missing = currentBookmarks.filter((b) => !b.title);
     if (missing.length === 0) return;
 
     let cancelled = false;
     async function fetchAll() {
       setMetaProgress({ current: 0, total: missing.length });
-      for (let i = 0; i < missing.length; i++) {
+
+      // Process in batches of 3 to avoid overwhelming APIs
+      const BATCH_SIZE = 3;
+      for (let i = 0; i < missing.length; i += BATCH_SIZE) {
         if (cancelled) break;
-        const b = missing[i]!;
-        try {
-          const result = await fetchMetadata(b.url, b.source_type);
-          const updates: Record<string, unknown> = {};
-          if (result.title && !b.title) updates.title = result.title;
-          if (result.image && !b.image) updates.image = result.image;
-          if (result.excerpt && !b.excerpt) updates.excerpt = result.excerpt;
-          if (result.metadata) updates.metadata = { ...b.metadata, ...result.metadata };
-          if (Object.keys(updates).length > 0) {
-            void db.from('bookmarks').update(updates).eq('id', b.id);
-          }
-        } catch {
-          /* skip */
-        }
-        setMetaProgress({ current: i + 1, total: missing.length });
+        const batch = missing.slice(i, i + BATCH_SIZE);
+        await Promise.allSettled(
+          batch.map(async (b) => {
+            try {
+              const result = await fetchMetadata(b.url, b.source_type);
+              const updates: Record<string, unknown> = {};
+              if (result.title) updates.title = result.title;
+              if (result.image && !b.image) updates.image = result.image;
+              if (result.excerpt && !b.excerpt) updates.excerpt = result.excerpt;
+              if (result.metadata) updates.metadata = { ...b.metadata, ...result.metadata };
+              if (Object.keys(updates).length > 0) {
+                void db.from('bookmarks').update(updates).eq('id', b.id);
+              }
+            } catch {
+              /* skip */
+            }
+          }),
+        );
+        setMetaProgress({
+          current: Math.min(i + BATCH_SIZE, missing.length),
+          total: missing.length,
+        });
       }
       setMetaProgress(null);
-      // Invalidate to pick up metadata updates
+      // Single invalidation after all fetches complete
       void queryClient.invalidateQueries({ queryKey: ['bookmarks'] });
     }
     void fetchAll();

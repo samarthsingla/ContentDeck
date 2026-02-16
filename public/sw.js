@@ -1,4 +1,4 @@
-const CACHE_NAME = 'contentdeck-v3.0.1'
+const CACHE_NAME = 'contentdeck-v3.0.2'
 
 self.addEventListener('install', () => {
   // Don't skip waiting — let the app decide when to activate
@@ -24,7 +24,7 @@ self.addEventListener('fetch', (event) => {
   const url = event.request.url
 
   // Always go to network for API calls; return graceful error if offline
-  if (url.includes('supabase') || url.includes('openrouter.ai') || url.includes('microlink.io') || url.includes('oembed')) {
+  if (url.includes('supabase') || url.includes('openrouter.ai') || url.includes('microlink.io') || url.includes('oembed') || url.includes('googleapis.com')) {
     event.respondWith(
       fetch(event.request).catch(
         () => new Response(JSON.stringify({ error: 'offline' }), {
