@@ -65,7 +65,7 @@ The PWA Share Target works on Android Chrome and iOS Safari 16.4+. Install Conte
 
 1. Create a free project at [supabase.com](https://supabase.com)
 2. Go to **SQL Editor** and run `sql/setup.sql`
-3. Enable auth providers (magic link, Google, GitHub) — see `docs/SUPABASE_AUTH_SETUP.md`
+3. Enable auth providers (magic link, Google, GitHub) — see `docs/guides/supabase-auth-setup.md`
 
 ### 2. Environment Variables
 

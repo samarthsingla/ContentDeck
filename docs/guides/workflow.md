@@ -45,7 +45,7 @@ Three principles guide everything:
 These are genuinely ahead of many solo developers:
 
 - **Version control from day one** — every change tracked in git
-- **Documentation culture** — CLAUDE.md, AUDIT.md, README, ENGINEERING-PLAN, MEMORY.md
+- **Documentation culture** — CLAUDE.md, docs/INDEX.md, README, structured docs/ directory
 - **Audit-before-shipping mentality** — you check your work
 - **Phased engineering plan** — you think about the future, not just today
 - **PWA-first distribution** — real-world deployment from v1
@@ -121,7 +121,7 @@ Adopt practices in tiers. Each tier should feel habitual before moving to the ne
 ### Starting a Session
 
 1. **Read this file.** Remind yourself of the current practices and what you're working toward.
-2. **Check ENGINEERING-PLAN.md.** Know what's next on the roadmap.
+2. **Check `docs/INDEX.md`.** Know what's next on the roadmap.
 3. **Decide your scope.** One feature, one fix, or one chore per session. Don't try to do everything.
 4. **Use `/feature`** to start. It creates a branch, plans the work, and gets your approval before coding.
 
@@ -398,7 +398,7 @@ One commit = one logical change. If your commit message needs "and" in it, it's 
 Always read existing code before modifying it. Understand the patterns. Follow them. Don't invent new ones unless the existing ones are genuinely wrong.
 
 **5. Document decisions, not just code.**
-When you choose approach A over approach B, write down why. Your CLAUDE.md, AUDIT.md, and this file are where decisions live.
+When you choose approach A over approach B, write down why. Your CLAUDE.md, `docs/reference/audit.md`, and this file are where decisions live.
 
 ### v3.0
 
@@ -450,8 +450,8 @@ Big features ship behind flags. Roll out to 10% of users, verify, then 100%. If 
 
 ### Before Starting Work
 
-- [ ] Read WORKFLOW.md (this file)
-- [ ] Check ENGINEERING-PLAN.md for current priorities
+- [ ] Read this file (`docs/guides/workflow.md`)
+- [ ] Check `docs/INDEX.md` for current priorities
 - [ ] Decide scope: one feature, one fix, or one chore
 - [ ] Use `/feature` to create branch and plan
 
@@ -492,12 +492,13 @@ Big features ship behind flags. Roll out to 10% of users, verify, then 100%. If 
 
 | Document | Purpose | When to Update |
 |----------|---------|----------------|
-| **WORKFLOW.md** (this file) | Your development reference | When practices change |
+| **docs/guides/workflow.md** (this file) | Your development reference | When practices change |
 | **CLAUDE.md** | AI assistant context | When architecture/patterns change |
-| **ENGINEERING-PLAN.md** | Feature roadmap | When features ship or priorities shift |
-| **AUDIT.md** | Bug tracking trail | When bugs are found/fixed |
+| **docs/INDEX.md** | Session entry point + navigation hub | Each session |
+| **docs/plan/phase-*.md** | Feature roadmap by phase | When features ship or priorities shift |
+| **docs/log/*.md** | Implementation records | When features are shipped |
+| **docs/reference/audit.md** | Bug tracking trail | When bugs are found/fixed |
 | **README.md** | User-facing docs | When features or setup change |
-| **CHANGELOG.md** | Version history | Each release (v3.0+) |
 
 ---
 

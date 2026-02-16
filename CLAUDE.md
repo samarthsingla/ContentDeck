@@ -8,7 +8,20 @@ ContentDeck — a personal content bookmarking PWA dashboard for the Capture →
 
 **Status: v3.0 — React + Vite + Tailwind + TypeScript. Supabase Auth, demo mode, PWA share target.**
 
-See `AUDIT.md` for the full audit trail (39/47 v1 issues resolved, 14 v2.0 bugs fixed, 8 v2.2 shipping fixes).
+See `docs/reference/audit.md` for the full audit trail (39/47 v1 issues resolved, 14 v2.0 bugs fixed, 8 v2.2 shipping fixes).
+
+## Documentation
+
+All project docs live in `docs/`. Start each session by reading `docs/INDEX.md`.
+
+| Directory | Purpose |
+|-----------|---------|
+| `docs/plan/` | Feature roadmap chunked by phase |
+| `docs/log/` | Implementation records for shipped features |
+| `docs/guides/` | Development workflow and setup guides |
+| `docs/reference/` | Audit trail, integrations, lookup tables |
+
+**Current phase:** Phase 1 (Foundation) — see `docs/plan/phase-1.md`
 
 ## Tech Stack
 

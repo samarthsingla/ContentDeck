@@ -28,5 +28,4 @@ supabase/.temp/
 !.claude/skills/
 
 # Local dev files
-INTEGRATIONS.md
 rename-project.bat
