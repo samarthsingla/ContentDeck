@@ -3,7 +3,7 @@
 > Start here. This file orients each session.
 
 **Version:** v3.0 | **Status:** Supabase Auth shipped, bookmarklet + iOS Shortcut verified working
-**Next up:** Content extraction pipeline (1.2) → full-text search (1.3)
+**Next up:** Content extraction pipeline (1.2b) — [plan ready](plan/phase-1.2b-extraction.md) → full-text search (1.3)
 **Active phase:** [Phase 1 — Foundation](plan/phase-1.md)
 
 ---
@@ -13,6 +13,7 @@
 | If you're... | Read these |
 |---|---|
 | Starting a new feature | [plan/phase-1.md](plan/phase-1.md) + [guides/workflow.md](guides/workflow.md) |
+| Implementing 1.2b extraction | [plan/phase-1.2b-extraction.md](plan/phase-1.2b-extraction.md) |
 | Understanding the vision | [plan/vision.md](plan/vision.md) |
 | Debugging something that used to work | [log/](log/) — find the relevant implementation log |
 | Setting up Supabase Auth | [guides/supabase-auth-setup.md](guides/supabase-auth-setup.md) |
