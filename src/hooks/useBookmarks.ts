@@ -302,12 +302,12 @@ export function useBookmarks() {
   });
 
   async function autoFetchMetadata(bookmark: Bookmark) {
-    if (bookmark.title && bookmark.image) return;
     try {
       const result = await fetchMetadata(bookmark.url, bookmark.source_type);
       const updates: Record<string, unknown> = {};
       if (result.title && !bookmark.title) updates.title = result.title;
       if (result.image && !bookmark.image) updates.image = result.image;
+      if (result.excerpt && !bookmark.excerpt) updates.excerpt = result.excerpt;
       if (result.metadata) {
         updates.metadata = { ...bookmark.metadata, ...result.metadata };
       }

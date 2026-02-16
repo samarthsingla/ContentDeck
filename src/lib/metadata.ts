@@ -3,11 +3,82 @@ import type { BookmarkMetadata } from '../types';
 interface MetadataResult {
   title?: string;
   image?: string;
+  excerpt?: string;
   metadata?: BookmarkMetadata;
 }
 
-/** Fetch metadata for a YouTube URL */
+/** Extract YouTube video ID from various URL formats */
+function extractYouTubeId(url: string): string | null {
+  const patterns = [
+    /youtube\.com\/watch\?v=([^&]+)/,
+    /youtu\.be\/([^?]+)/,
+    /youtube\.com\/embed\/([^?]+)/,
+    /youtube\.com\/v\/([^?]+)/,
+    /youtube\.com\/shorts\/([^?]+)/,
+  ];
+  for (const p of patterns) {
+    const m = url.match(p);
+    if (m?.[1]) return m[1];
+  }
+  return null;
+}
+
+/** Parse ISO 8601 duration (PT1H2M3S) to human-readable (1:02:03 or 5:30) */
+function parseYouTubeDuration(iso: string): string | null {
+  const match = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+  if (!match) return null;
+  const h = parseInt(match[1] || '0');
+  const m = parseInt(match[2] || '0');
+  const s = parseInt(match[3] || '0');
+  if (h > 0) return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+/** Fetch metadata for a YouTube URL — Data API v3 (with key) → oEmbed fallback */
 async function fetchYouTubeMetadata(url: string): Promise<MetadataResult> {
+  const videoId = extractYouTubeId(url);
+  const ytKey = localStorage.getItem('youtube_api_key');
+
+  // Try YouTube Data API v3 first (requires API key)
+  if (videoId && ytKey) {
+    try {
+      const apiUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${videoId}&key=${ytKey}`;
+      const resp = await fetch(apiUrl);
+      if (resp.ok) {
+        const data = (await resp.json()) as {
+          items?: Array<{
+            snippet: {
+              title: string;
+              channelTitle: string;
+              description?: string;
+              thumbnails: Record<string, { url: string }>;
+            };
+            contentDetails: { duration: string };
+          }>;
+        };
+        const item = data.items?.[0];
+        if (item) {
+          const thumb =
+            item.snippet.thumbnails.maxres?.url ??
+            item.snippet.thumbnails.high?.url ??
+            item.snippet.thumbnails.medium?.url;
+          return {
+            title: item.snippet.title,
+            image: thumb,
+            excerpt: item.snippet.description ? item.snippet.description.slice(0, 300) : undefined,
+            metadata: {
+              channel: item.snippet.channelTitle,
+              duration: parseYouTubeDuration(item.contentDetails.duration) ?? undefined,
+            },
+          };
+        }
+      }
+    } catch {
+      // Fall through to oEmbed
+    }
+  }
+
+  // Fallback: oEmbed (no key needed, but no duration)
   try {
     const oembedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`;
     const resp = await fetch(oembedUrl);
@@ -27,19 +98,38 @@ async function fetchYouTubeMetadata(url: string): Promise<MetadataResult> {
   }
 }
 
-/** Fetch metadata for a Twitter/X URL */
+/** Fetch metadata for a Twitter/X URL — oEmbed → Microlink fallback */
 async function fetchTwitterMetadata(url: string): Promise<MetadataResult> {
+  // Try Twitter oEmbed first
   try {
     const oembedUrl = `https://publish.twitter.com/oembed?url=${encodeURIComponent(url)}`;
     const resp = await fetch(oembedUrl);
-    if (!resp.ok) return {};
-    const data = (await resp.json()) as { author_name?: string };
-    return {
-      title: data.author_name ? `${data.author_name}'s post` : undefined,
-    };
+    if (resp.ok) {
+      const data = (await resp.json()) as { author_name?: string; html?: string };
+      if (data.author_name) {
+        // Extract tweet text from oEmbed HTML (blockquote content)
+        const textMatch = data.html?.match(/<blockquote[^>]*><p[^>]*>(.*?)<\/p>/s);
+        const tweetText = textMatch?.[1]
+          ?.replace(/<[^>]+>/g, '')
+          ?.replace(/&amp;/g, '&')
+          ?.replace(/&lt;/g, '<')
+          ?.replace(/&gt;/g, '>')
+          ?.trim();
+
+        return {
+          title: tweetText
+            ? `${data.author_name}: ${tweetText.slice(0, 120)}${tweetText.length > 120 ? '...' : ''}`
+            : `${data.author_name}'s post`,
+          excerpt: tweetText || undefined,
+        };
+      }
+    }
   } catch {
-    return {};
+    // Fall through to Microlink
   }
+
+  // Fallback: Microlink (handles X.com well)
+  return fetchMicrolinkMetadata(url);
 }
 
 /** Fetch metadata via Microlink (generic fallback, 50 req/day free) */
@@ -51,6 +141,7 @@ async function fetchMicrolinkMetadata(url: string): Promise<MetadataResult> {
     const json = (await resp.json()) as {
       data?: {
         title?: string;
+        description?: string;
         image?: { url?: string };
         readability?: { words?: number; minutes?: number };
       };
@@ -59,6 +150,7 @@ async function fetchMicrolinkMetadata(url: string): Promise<MetadataResult> {
     return {
       title: json.data.title,
       image: json.data.image?.url,
+      excerpt: json.data.description || undefined,
       metadata: {
         word_count: json.data.readability?.words,
         reading_time: json.data.readability?.minutes,

@@ -1,4 +1,4 @@
-import { Heart, Trash2, ExternalLink } from 'lucide-react';
+import { Heart, Trash2, ExternalLink, Clock, FileText } from 'lucide-react';
 import { SourceBadge, StatusBadge } from '../ui/Badge';
 import { timeAgo, getDomain, getFaviconUrl, truncate } from '../../lib/utils';
 import { useUI } from '../../context/UIProvider';
@@ -89,11 +89,26 @@ export default function BookmarkCard({
           {b.title || truncate(b.url, 60)}
         </h3>
 
-        {/* Domain + reading time */}
+        {/* Domain + metadata */}
         <div className="flex items-center gap-2 text-xs text-surface-500 dark:text-surface-400">
           <img src={getFaviconUrl(b.url)} alt="" className="w-3.5 h-3.5" loading="lazy" />
           <span>{domain}</span>
-          {readingTime && <span>&middot; {readingTime} min read</span>}
+          {b.metadata?.duration && (
+            <span className="flex items-center gap-0.5">
+              &middot; <Clock size={11} /> {b.metadata.duration}
+            </span>
+          )}
+          {b.metadata?.channel && <span>&middot; {b.metadata.channel}</span>}
+          {readingTime && (
+            <span className="flex items-center gap-0.5">
+              &middot; <Clock size={11} /> {readingTime} min read
+            </span>
+          )}
+          {!readingTime && b.metadata?.word_count && (
+            <span className="flex items-center gap-0.5">
+              &middot; <FileText size={11} /> {b.metadata.word_count.toLocaleString()} words
+            </span>
+          )}
         </div>
 
         {/* Tags */}
