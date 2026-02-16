@@ -2,7 +2,7 @@
 
 > Goal: Real users, real data, real reliability. The "production-grade" release.
 
-**Completed:** 1.1 Supabase Auth, 1.1a Bookmarklet, 1.1b iOS Shortcut — see `docs/log/`
+**Completed:** 1.1 Supabase Auth, 1.1a Bookmarklet, 1.1b iOS Shortcut, 1.2a Metadata fix — see `docs/log/`
 
 ---
 

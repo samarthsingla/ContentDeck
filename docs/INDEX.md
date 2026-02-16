@@ -39,7 +39,8 @@ docs/
 │   ├── v2-migration.md             # v1→v2 React migration plan + record
 │   ├── v3.0-auth.md                # 1.1 Supabase Auth
 │   ├── v3.0-bookmarklet.md         # 1.1a Bookmarklet fix
-│   └── v3.0-ios-shortcut.md        # 1.1b iOS Shortcut fix
+│   ├── v3.0-ios-shortcut.md        # 1.1b iOS Shortcut fix
+│   └── v3.0-metadata-fix.md       # 1.2a Metadata quality fix
 ├── guides/                         # How-to references
 │   ├── workflow.md                 # Development practices, session workflow
 │   └── supabase-auth-setup.md      # Supabase Auth provider configuration
@@ -57,4 +58,5 @@ docs/
 | v3.0 | Supabase Auth (magic link + Google + GitHub OAuth) | [log/v3.0-auth.md](log/v3.0-auth.md) |
 | v3.0 | Bookmarklet (edge function + API token) | [log/v3.0-bookmarklet.md](log/v3.0-bookmarklet.md) |
 | v3.0 | iOS Shortcut (query-param GET) | [log/v3.0-ios-shortcut.md](log/v3.0-ios-shortcut.md) |
+| v3.0 | Metadata quality fix (YouTube Data API, Twitter, excerpts) | [log/v3.0-metadata-fix.md](log/v3.0-metadata-fix.md) |
 | v2.0 | React + Vite + Tailwind migration | [log/v2-migration.md](log/v2-migration.md) |
