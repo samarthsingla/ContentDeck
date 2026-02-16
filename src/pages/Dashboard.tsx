@@ -46,6 +46,7 @@ export default function Dashboard({ userEmail, onSignOut, isDemo, sharedUrl }: D
     addNote,
     deleteNote,
     markSynced,
+    refreshMetadata,
   } = useBookmarks();
   const { areas, createArea, updateArea, deleteArea, reorderAreas } = useTagAreas();
   const { stats, isLoading: statsLoading } = useStats(bookmarks);
@@ -64,6 +65,7 @@ export default function Dashboard({ userEmail, onSignOut, isDemo, sharedUrl }: D
   const [editingBookmark, setEditingBookmark] = useState<Bookmark | null>(null);
   const [selectedBookmark, setSelectedBookmark] = useState<Bookmark | null>(null);
   const [metaProgress, setMetaProgress] = useState<{ current: number; total: number } | null>(null);
+  const [isRefreshingMeta, setIsRefreshingMeta] = useState(false);
   const metaFetchedRef = useRef(false);
   const aiTaggedRef = useRef(false);
 
@@ -102,7 +104,7 @@ export default function Dashboard({ userEmail, onSignOut, isDemo, sharedUrl }: D
     if (currentBookmarks.length === 0) return;
     metaFetchedRef.current = true;
 
-    const missing = currentBookmarks.filter((b) => !b.title && !b.image);
+    const missing = currentBookmarks.filter((b) => !b.title || !b.image);
     if (missing.length === 0) return;
 
     let cancelled = false;
@@ -113,11 +115,12 @@ export default function Dashboard({ userEmail, onSignOut, isDemo, sharedUrl }: D
         const b = missing[i]!;
         try {
           const result = await fetchMetadata(b.url, b.source_type);
-          if (result.title || result.image) {
-            const updates: Record<string, unknown> = {};
-            if (result.title) updates.title = result.title;
-            if (result.image) updates.image = result.image;
-            if (result.metadata) updates.metadata = { ...b.metadata, ...result.metadata };
+          const updates: Record<string, unknown> = {};
+          if (result.title && !b.title) updates.title = result.title;
+          if (result.image && !b.image) updates.image = result.image;
+          if (result.excerpt && !b.excerpt) updates.excerpt = result.excerpt;
+          if (result.metadata) updates.metadata = { ...b.metadata, ...result.metadata };
+          if (Object.keys(updates).length > 0) {
             void db.from('bookmarks').update(updates).eq('id', b.id);
           }
         } catch {
@@ -245,6 +248,18 @@ export default function Dashboard({ userEmail, onSignOut, isDemo, sharedUrl }: D
     [deleteNote],
   );
 
+  async function handleRefreshMetadata(bookmark: Bookmark) {
+    setIsRefreshingMeta(true);
+    try {
+      await refreshMetadata(bookmark);
+      toast.success('Metadata refreshed');
+    } catch {
+      toast.error('Could not fetch metadata');
+    } finally {
+      setIsRefreshingMeta(false);
+    }
+  }
+
   async function handleExport(bookmark: Bookmark) {
     const vaultName = localStorage.getItem('obsidian_vault') ?? '';
     if (vaultName) {
@@ -359,7 +374,9 @@ export default function Dashboard({ userEmail, onSignOut, isDemo, sharedUrl }: D
               handleDelete(id);
               setSelectedBookmark(null);
             }}
+            onRefreshMetadata={handleRefreshMetadata}
             isNotePending={addNote.isPending}
+            isRefreshing={isRefreshingMeta}
           />
         )}
       </div>

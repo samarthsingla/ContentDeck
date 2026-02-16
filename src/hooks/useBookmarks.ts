@@ -4,9 +4,31 @@ import { useToast } from '../components/ui/Toast';
 import { fetchMetadata } from '../lib/metadata';
 import { suggestTags } from '../lib/ai';
 import { detectSourceType } from '../lib/utils';
-import type { Bookmark, Status, NoteType, Note } from '../types';
+import type { Bookmark, Status, NoteType, Note, BookmarkMetadata } from '../types';
 
 const QUERY_KEY = ['bookmarks'] as const;
+
+interface MetadataResult {
+  title?: string;
+  image?: string;
+  excerpt?: string;
+  metadata?: BookmarkMetadata;
+}
+
+/** Build DB update object from metadata result — only fills empty fields */
+function buildMetadataUpdates(
+  bookmark: Bookmark,
+  result: MetadataResult,
+): Record<string, unknown> | null {
+  const updates: Record<string, unknown> = {};
+  if (result.title && !bookmark.title) updates.title = result.title;
+  if (result.image && !bookmark.image) updates.image = result.image;
+  if (result.excerpt && !bookmark.excerpt) updates.excerpt = result.excerpt;
+  if (result.metadata) {
+    updates.metadata = { ...bookmark.metadata, ...result.metadata };
+  }
+  return Object.keys(updates).length > 0 ? updates : null;
+}
 
 /** Normalize bookmark data from Supabase — ensures arrays/objects are never null */
 function normalizeBookmark(b: Bookmark): Bookmark {
@@ -304,14 +326,8 @@ export function useBookmarks() {
   async function autoFetchMetadata(bookmark: Bookmark) {
     try {
       const result = await fetchMetadata(bookmark.url, bookmark.source_type);
-      const updates: Record<string, unknown> = {};
-      if (result.title && !bookmark.title) updates.title = result.title;
-      if (result.image && !bookmark.image) updates.image = result.image;
-      if (result.excerpt && !bookmark.excerpt) updates.excerpt = result.excerpt;
-      if (result.metadata) {
-        updates.metadata = { ...bookmark.metadata, ...result.metadata };
-      }
-      if (Object.keys(updates).length === 0) return;
+      const updates = buildMetadataUpdates(bookmark, result);
+      if (!updates) return;
 
       const { error } = await db.from('bookmarks').update(updates).eq('id', bookmark.id);
       if (!error) {
@@ -322,6 +338,27 @@ export function useBookmarks() {
     } catch {
       // Silent fail for metadata — non-critical
     }
+  }
+
+  /** Refresh metadata for any bookmark — force re-fetches even if fields exist */
+  async function refreshMetadata(bookmark: Bookmark) {
+    const result = await fetchMetadata(bookmark.url, bookmark.source_type);
+    const updates: Record<string, unknown> = {};
+    if (result.title) updates.title = result.title;
+    if (result.image) updates.image = result.image;
+    if (result.excerpt) updates.excerpt = result.excerpt;
+    if (result.metadata) {
+      updates.metadata = { ...bookmark.metadata, ...result.metadata };
+    }
+    if (Object.keys(updates).length === 0) {
+      throw new Error('No metadata found');
+    }
+
+    const { error } = await db.from('bookmarks').update(updates).eq('id', bookmark.id);
+    if (error) throw error;
+    queryClient.setQueryData<Bookmark[]>(QUERY_KEY, (old) =>
+      old?.map((b) => (b.id === bookmark.id ? { ...b, ...updates } : b)),
+    );
   }
 
   async function autoSuggestTags(bookmark: Bookmark) {
@@ -360,6 +397,7 @@ export function useBookmarks() {
     addNote,
     deleteNote,
     markSynced,
+    refreshMetadata,
   };
 }
 

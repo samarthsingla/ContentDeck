@@ -15,7 +15,9 @@ interface DetailPanelProps {
   onEdit: (bookmark: Bookmark) => void;
   onExport: (bookmark: Bookmark) => void;
   onDelete: (id: string) => void;
+  onRefreshMetadata: (bookmark: Bookmark) => void;
   isNotePending: boolean;
+  isRefreshing?: boolean;
 }
 
 export default function DetailPanel({
@@ -28,7 +30,9 @@ export default function DetailPanel({
   onEdit,
   onExport,
   onDelete,
+  onRefreshMetadata,
   isNotePending,
+  isRefreshing,
 }: DetailPanelProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
@@ -93,6 +97,8 @@ export default function DetailPanel({
               bookmark={bookmark}
               onCycleStatus={onCycleStatus}
               onToggleFavorite={onToggleFavorite}
+              onRefreshMetadata={onRefreshMetadata}
+              isRefreshing={isRefreshing}
             />
             <NotesTab
               notes={bookmark.notes}
@@ -134,6 +140,8 @@ export default function DetailPanel({
             bookmark={bookmark}
             onCycleStatus={onCycleStatus}
             onToggleFavorite={onToggleFavorite}
+            onRefreshMetadata={onRefreshMetadata}
+            isRefreshing={isRefreshing}
           />
           <NotesTab
             notes={bookmark.notes}

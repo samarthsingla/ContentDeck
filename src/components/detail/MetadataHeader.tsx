@@ -1,4 +1,4 @@
-import { Heart, ExternalLink, Clock, FileText } from 'lucide-react';
+import { Heart, ExternalLink, Clock, FileText, RefreshCw } from 'lucide-react';
 import { SourceBadge, StatusBadge } from '../ui/Badge';
 import { getDomain, getFaviconUrl, timeAgo, formatDate } from '../../lib/utils';
 import type { Bookmark, Status } from '../../types';
@@ -8,12 +8,16 @@ interface MetadataHeaderProps {
   bookmark: Bookmark;
   onCycleStatus: (id: string, newStatus: Status) => void;
   onToggleFavorite: (id: string, favorited: boolean) => void;
+  onRefreshMetadata: (bookmark: Bookmark) => void;
+  isRefreshing?: boolean;
 }
 
 export default function MetadataHeader({
   bookmark: b,
   onCycleStatus,
   onToggleFavorite,
+  onRefreshMetadata,
+  isRefreshing,
 }: MetadataHeaderProps) {
   const domain = getDomain(b.url);
 
@@ -35,14 +39,25 @@ export default function MetadataHeader({
       <div className="flex items-center gap-2 text-sm text-surface-500 dark:text-surface-400">
         <img src={getFaviconUrl(b.url)} alt="" className="w-4 h-4" loading="lazy" />
         <span>{domain}</span>
-        <a
-          href={b.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="ml-auto inline-flex items-center gap-1 text-primary-600 dark:text-primary-400 hover:underline text-xs font-medium"
-        >
-          Open <ExternalLink size={12} />
-        </a>
+        <div className="ml-auto flex items-center gap-2">
+          <button
+            onClick={() => onRefreshMetadata(b)}
+            disabled={isRefreshing}
+            className="inline-flex items-center gap-1 text-surface-400 hover:text-primary-600 dark:hover:text-primary-400 text-xs font-medium disabled:opacity-50 min-w-[32px] min-h-[32px] justify-center"
+            aria-label="Refresh metadata"
+            title="Refresh metadata"
+          >
+            <RefreshCw size={12} className={isRefreshing ? 'animate-spin' : ''} />
+          </button>
+          <a
+            href={b.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-primary-600 dark:text-primary-400 hover:underline text-xs font-medium"
+          >
+            Open <ExternalLink size={12} />
+          </a>
+        </div>
       </div>
 
       {/* Badges + Actions row */}
