@@ -2,8 +2,8 @@
 
 > Start here. This file orients each session.
 
-**Version:** v3.0 | **Status:** Supabase Auth shipped, bookmarklet + iOS Shortcut verified working
-**Next up:** Content extraction pipeline (1.2b) — [plan ready](plan/phase-1.2b-extraction.md) → full-text search (1.3)
+**Version:** v3.0 | **Status:** Content extraction pipeline shipped
+**Next up:** Full-text search (1.3) → Import system (1.4)
 **Active phase:** [Phase 1 — Foundation](plan/phase-1.md)
 
 ---
@@ -13,7 +13,7 @@
 | If you're... | Read these |
 |---|---|
 | Starting a new feature | [plan/phase-1.md](plan/phase-1.md) + [guides/workflow.md](guides/workflow.md) |
-| Implementing 1.2b extraction | [plan/phase-1.2b-extraction.md](plan/phase-1.2b-extraction.md) |
+| Planning next feature (1.3+) | [plan/phase-1.md](plan/phase-1.md) |
 | Understanding the vision | [plan/vision.md](plan/vision.md) |
 | Debugging something that used to work | [log/](log/) — find the relevant implementation log |
 | Setting up Supabase Auth | [guides/supabase-auth-setup.md](guides/supabase-auth-setup.md) |
@@ -41,7 +41,8 @@ docs/
 │   ├── v3.0-auth.md                # 1.1 Supabase Auth
 │   ├── v3.0-bookmarklet.md         # 1.1a Bookmarklet fix
 │   ├── v3.0-ios-shortcut.md        # 1.1b iOS Shortcut fix
-│   └── v3.0-metadata-fix.md       # 1.2a Metadata quality fix
+│   ├── v3.0-metadata-fix.md       # 1.2a Metadata quality fix
+│   └── v3.0-content-extraction.md # 1.2b Content extraction pipeline
 ├── guides/                         # How-to references
 │   ├── workflow.md                 # Development practices, session workflow
 │   └── supabase-auth-setup.md      # Supabase Auth provider configuration
@@ -60,4 +61,5 @@ docs/
 | v3.0 | Bookmarklet (edge function + API token) | [log/v3.0-bookmarklet.md](log/v3.0-bookmarklet.md) |
 | v3.0 | iOS Shortcut (query-param GET) | [log/v3.0-ios-shortcut.md](log/v3.0-ios-shortcut.md) |
 | v3.0 | Metadata quality fix (YouTube Data API, Twitter, excerpts) | [log/v3.0-metadata-fix.md](log/v3.0-metadata-fix.md) |
+| v3.0 | Content extraction pipeline (Readability + linkedom) | [log/v3.0-content-extraction.md](log/v3.0-content-extraction.md) |
 | v2.0 | React + Vite + Tailwind migration | [log/v2-migration.md](log/v2-migration.md) |

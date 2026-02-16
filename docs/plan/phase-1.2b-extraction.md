@@ -1,6 +1,6 @@
 # Phase 1.2 Part B — Content Extraction Pipeline (Implementation Plan)
 
-**Status:** PLANNED — ready to implement next session
+**Status:** SHIPPED — 2026-02-16 — see [log/v3.0-content-extraction.md](../log/v3.0-content-extraction.md)
 
 ## Context
 
