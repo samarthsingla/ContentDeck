@@ -4,7 +4,7 @@ import { parseHTML } from 'https://esm.sh/linkedom@0.16.11';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-client-info, apikey',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
