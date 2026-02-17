@@ -1,16 +1,25 @@
 import { useState, useEffect } from 'react';
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
+import TagAreaInput from '../ui/TagAreaInput';
 import { detectSourceType } from '../../lib/utils';
 import { SourceBadge } from '../ui/Badge';
-import type { SourceType } from '../../types';
+import type { SourceType, TagArea } from '../../types';
 
 interface AddBookmarkModalProps {
   open: boolean;
   onClose: () => void;
-  onAdd: (data: { url: string; title?: string; source_type?: string; tags?: string[] }) => void;
+  onAdd: (data: {
+    url: string;
+    title?: string;
+    source_type?: string;
+    tags?: string[];
+    areaIds?: string[];
+  }) => void;
   isPending: boolean;
   initialUrl?: string;
+  allAreas: TagArea[];
+  allTags: string[];
 }
 
 export default function AddBookmarkModal({
@@ -19,12 +28,14 @@ export default function AddBookmarkModal({
   onAdd,
   isPending,
   initialUrl,
+  allAreas,
+  allTags,
 }: AddBookmarkModalProps) {
   const [url, setUrl] = useState('');
   const [title, setTitle] = useState('');
   const [detectedSource, setDetectedSource] = useState<SourceType | null>(null);
-  const [tagInput, setTagInput] = useState('');
   const [tags, setTags] = useState<string[]>([]);
+  const [selectedAreas, setSelectedAreas] = useState<TagArea[]>([]);
 
   // Pre-fill from share target or prop
   useEffect(() => {
@@ -43,44 +54,16 @@ export default function AddBookmarkModal({
     }
   }
 
-  function addTag(value: string) {
-    const tag = value.trim().toLowerCase();
-    if (tag && !tags.includes(tag)) {
-      setTags([...tags, tag]);
-    }
-    setTagInput('');
-  }
-
-  function removeTag(tag: string) {
-    setTags(tags.filter((t) => t !== tag));
-  }
-
-  function handleTagKeyDown(e: React.KeyboardEvent) {
-    if (e.key === 'Enter' || e.key === ',') {
-      e.preventDefault();
-      addTag(tagInput);
-    }
-    if (e.key === 'Backspace' && !tagInput && tags.length > 0) {
-      setTags(tags.slice(0, -1));
-    }
-  }
-
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!url.trim()) return;
-
-    // Auto-commit any pending tag text before submitting
-    const finalTags = [...tags];
-    const pending = tagInput.trim().toLowerCase();
-    if (pending && !finalTags.includes(pending)) {
-      finalTags.push(pending);
-    }
 
     onAdd({
       url: url.trim(),
       title: title.trim() || undefined,
       source_type: detectedSource ?? undefined,
-      tags: finalTags.length > 0 ? finalTags : undefined,
+      tags: tags.length > 0 ? tags : undefined,
+      areaIds: selectedAreas.length > 0 ? selectedAreas.map((a) => a.id) : undefined,
     });
 
     // Reset form
@@ -88,7 +71,7 @@ export default function AddBookmarkModal({
     setTitle('');
     setDetectedSource(null);
     setTags([]);
-    setTagInput('');
+    setSelectedAreas([]);
     onClose();
   }
 
@@ -138,41 +121,24 @@ export default function AddBookmarkModal({
           />
         </div>
 
-        {/* Tags */}
+        {/* Areas & Tags */}
         <div>
           <label
             htmlFor="add-tags"
             className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1"
           >
-            Tags <span className="text-surface-400 font-normal">(comma or enter to add)</span>
+            Areas & Tags{' '}
+            <span className="text-surface-400 font-normal">(type to search, comma to add)</span>
           </label>
-          <div className="flex flex-wrap gap-1.5 p-2 rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 min-h-[44px]">
-            {tags.map((tag) => (
-              <span
-                key={tag}
-                className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-primary-600/10 text-primary-600 dark:text-primary-400 text-sm font-medium"
-              >
-                {tag}
-                <button
-                  type="button"
-                  onClick={() => removeTag(tag)}
-                  className="text-surface-400 hover:text-red-500 min-w-[20px] min-h-[20px] flex items-center justify-center"
-                  aria-label={`Remove tag ${tag}`}
-                >
-                  &times;
-                </button>
-              </span>
-            ))}
-            <input
-              id="add-tags"
-              type="text"
-              value={tagInput}
-              onChange={(e) => setTagInput(e.target.value)}
-              onKeyDown={handleTagKeyDown}
-              placeholder={tags.length === 0 ? 'Add tags...' : ''}
-              className="flex-1 min-w-[80px] bg-transparent text-sm text-surface-900 dark:text-surface-100 placeholder:text-surface-400 outline-none py-1"
-            />
-          </div>
+          <TagAreaInput
+            id="add-tags"
+            tags={tags}
+            areas={selectedAreas}
+            allAreas={allAreas}
+            allTags={allTags}
+            onTagsChange={setTags}
+            onAreasChange={setSelectedAreas}
+          />
         </div>
 
         {/* Actions */}

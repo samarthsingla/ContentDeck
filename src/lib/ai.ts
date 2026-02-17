@@ -1,12 +1,13 @@
-import type { Bookmark } from '../types';
+import type { Bookmark, TagArea } from '../types';
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const TIMEOUT_MS = 30_000;
 const MAX_RETRIES = 3;
 const BASE_DELAY_MS = 1000;
 
-interface AIResponse {
+export interface AIResponse {
   tags: string[];
+  areas: string[];
   suggestedArea?: string;
 }
 
@@ -102,28 +103,45 @@ function parseAIJson(text: string): unknown {
   return JSON.parse(cleaned);
 }
 
-/** Suggest tags for a bookmark based on its URL and title */
+/** Suggest tags and area assignments for a bookmark */
 export async function suggestTags(
   bookmark: Bookmark,
   existingTags: string[],
+  areas: TagArea[],
   signal?: AbortSignal,
 ): Promise<AIResponse> {
   const existingList =
     existingTags.length > 0 ? `\nExisting tags in the system: ${existingTags.join(', ')}` : '';
 
-  const prompt = `Suggest 2-4 relevant tags for this bookmark.
+  const areaList =
+    areas.length > 0 ? `\nUser's content areas: ${areas.map((a) => a.name).join(', ')}` : '';
+
+  const prompt = `Categorize and tag this bookmark.
 URL: ${bookmark.url}
 Title: ${bookmark.title || 'Unknown'}
 Source: ${bookmark.source_type}
+${areaList}
 ${existingList}
 
-Respond with JSON: {"tags": ["tag1", "tag2"], "suggestedArea": "optional area name if none of the existing tags fit"}
-Tags should be lowercase, 1-2 words each. Prefer reusing existing tags when relevant.`;
+Respond with JSON:
+{
+  "areas": ["area1"],
+  "tags": ["tag1", "tag2"],
+  "suggestedArea": "name"
+}
+
+Rules:
+- "areas": 0-2 matching area names from the user's list, or empty if none fit. Only use area names from the user's list. Do NOT invent area names.
+- "tags": 2-3 descriptive tags, lowercase, 1-2 words each. Prefer reusing existing tags when relevant.
+- "suggestedArea": suggest a NEW area only if the content clearly doesn't fit existing ones. Omit if not needed.
+- If no areas are defined or none fit, return empty "areas" array.
+- Tags should be specific (e.g., "react hooks", "api design"), not generic (e.g., "interesting", "article").`;
 
   const response = await callOpenRouter(prompt, signal);
   const parsed = parseAIJson(response) as AIResponse;
   return {
     tags: (parsed.tags ?? []).map((t: string) => t.toLowerCase().trim()).filter(Boolean),
+    areas: (parsed.areas ?? []).map((a: string) => a.trim()).filter(Boolean),
     suggestedArea: parsed.suggestedArea?.trim() || undefined,
   };
 }
@@ -132,27 +150,28 @@ Tags should be lowercase, 1-2 words each. Prefer reusing existing tags when rele
 export async function bulkSuggestTags(
   bookmarks: Bookmark[],
   existingTags: string[],
-  onProgress: (current: number, total: number, bookmark: Bookmark, tags: string[]) => void,
+  areas: TagArea[],
+  onProgress: (current: number, total: number, bookmark: Bookmark, result: AIResponse) => void,
   signal?: AbortSignal,
-): Promise<Map<string, string[]>> {
-  const results = new Map<string, string[]>();
+): Promise<Map<string, AIResponse>> {
+  const results = new Map<string, AIResponse>();
 
   for (let i = 0; i < bookmarks.length; i++) {
     if (signal?.aborted) break;
 
     const bookmark = bookmarks[i]!;
     try {
-      const { tags } = await suggestTags(bookmark, existingTags, signal);
-      results.set(bookmark.id, tags);
+      const result = await suggestTags(bookmark, existingTags, areas, signal);
+      results.set(bookmark.id, result);
       // Add new tags to existing pool for better suggestions
-      for (const tag of tags) {
+      for (const tag of result.tags) {
         if (!existingTags.includes(tag)) existingTags.push(tag);
       }
-      onProgress(i + 1, bookmarks.length, bookmark, tags);
+      onProgress(i + 1, bookmarks.length, bookmark, result);
     } catch (e) {
       if (e instanceof DOMException && e.name === 'AbortError') break;
       // Skip failed bookmarks, continue with rest
-      onProgress(i + 1, bookmarks.length, bookmark, []);
+      onProgress(i + 1, bookmarks.length, bookmark, { tags: [], areas: [] });
     }
   }
 

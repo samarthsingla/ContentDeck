@@ -19,17 +19,13 @@ export default function AreasView({
   onEditArea,
   onManageAreas,
 }: AreasViewProps) {
-  // Count bookmarks per area (match area name to bookmark tags)
+  // Count bookmarks per area using junction table data (bookmark.areas)
   function getCount(area: TagArea): number {
-    return bookmarks.filter((b) => b.tags.some((t) => t.toLowerCase() === area.name.toLowerCase()))
-      .length;
+    return bookmarks.filter((b) => b.areas?.some((a) => a.id === area.id)).length;
   }
 
-  // Count untagged bookmarks (no tags or tags don't match any area)
-  const areaNames = new Set(areas.map((a) => a.name.toLowerCase()));
-  const untaggedCount = bookmarks.filter(
-    (b) => !b.tags || b.tags.length === 0 || !b.tags.some((t) => areaNames.has(t.toLowerCase())),
-  ).length;
+  // Count uncategorized bookmarks (no area assignments)
+  const uncategorizedCount = bookmarks.filter((b) => !b.areas || b.areas.length === 0).length;
 
   if (areas.length === 0) {
     return (
@@ -74,8 +70,8 @@ export default function AreasView({
           />
         ))}
 
-        {/* Untagged bucket */}
-        {untaggedCount > 0 && (
+        {/* Uncategorized bucket */}
+        {uncategorizedCount > 0 && (
           <button
             onClick={() => onAreaClick('__untagged__')}
             className="flex flex-col items-start gap-2 p-4 rounded-xl border border-dashed border-surface-300 dark:border-surface-700 bg-surface-50 dark:bg-surface-900/50 hover:border-surface-400 dark:hover:border-surface-600 transition-colors text-left w-full min-h-[100px]"
@@ -83,11 +79,11 @@ export default function AreasView({
             <div className="flex items-center gap-2">
               <span className="text-xl">📥</span>
               <h3 className="text-sm font-semibold text-surface-600 dark:text-surface-400">
-                Untagged
+                Uncategorized
               </h3>
             </div>
             <span className="mt-auto text-xs text-surface-400 dark:text-surface-500">
-              {untaggedCount} {untaggedCount === 1 ? 'bookmark' : 'bookmarks'}
+              {uncategorizedCount} {uncategorizedCount === 1 ? 'bookmark' : 'bookmarks'}
             </span>
           </button>
         )}

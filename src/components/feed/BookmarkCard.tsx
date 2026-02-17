@@ -111,9 +111,25 @@ export default function BookmarkCard({
           )}
         </div>
 
-        {/* Tags */}
-        {b.tags && b.tags.length > 0 && (
+        {/* Areas & Tags */}
+        {((b.areas && b.areas.length > 0) || (b.tags && b.tags.length > 0)) && (
           <div className="flex flex-wrap gap-1 mt-2">
+            {/* Area pills — colored with emoji */}
+            {b.areas?.map((area) => (
+              <button
+                key={`area-${area.id}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setTag(area.name);
+                }}
+                className="px-2 py-0.5 rounded-full text-xs font-medium text-white transition-opacity hover:opacity-80"
+                style={{ backgroundColor: area.color || '#6366f1' }}
+              >
+                {area.emoji && <span className="mr-0.5">{area.emoji}</span>}
+                {area.name}
+              </button>
+            ))}
+            {/* Tag pills */}
             {b.tags.slice(0, 3).map((tag) => (
               <button
                 key={tag}

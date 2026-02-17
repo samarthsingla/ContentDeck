@@ -41,6 +41,7 @@ export interface Bookmark {
   is_favorited: boolean;
   notes: Note[];
   tags: string[];
+  areas: TagArea[];
   metadata: BookmarkMetadata;
   content: BookmarkContent;
   content_status: ContentStatus;

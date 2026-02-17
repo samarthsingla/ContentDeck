@@ -3,16 +3,22 @@
  * Implements the chainable query builder pattern so hooks work transparently.
  */
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { DEMO_BOOKMARKS, DEMO_TAG_AREAS, DEMO_STATUS_HISTORY } from './demo-data';
-import type { Bookmark, TagArea, StatusHistoryEntry } from '../types';
+import {
+  DEMO_BOOKMARKS,
+  DEMO_TAG_AREAS,
+  DEMO_STATUS_HISTORY,
+  DEMO_BOOKMARK_TAGS,
+} from './demo-data';
+import type { Bookmark, TagArea, StatusHistoryEntry, BookmarkTag } from '../types';
 
-type TableName = 'bookmarks' | 'tag_areas' | 'status_history';
-type Row = Bookmark | TagArea | StatusHistoryEntry;
+type TableName = 'bookmarks' | 'tag_areas' | 'status_history' | 'bookmark_tags';
+type Row = Bookmark | TagArea | StatusHistoryEntry | BookmarkTag;
 
 interface TableStore {
   bookmarks: Bookmark[];
   tag_areas: TagArea[];
   status_history: StatusHistoryEntry[];
+  bookmark_tags: BookmarkTag[];
 }
 
 let nextId = 1;
@@ -33,24 +39,26 @@ class MockQueryBuilder {
   private orderCol: string | null = null;
   private orderAsc = true;
   private returnSingle = false;
-  private insertPayload: Record<string, unknown> | null = null;
+  private insertPayload: Record<string, unknown> | Record<string, unknown>[] | null = null;
   private updatePayload: Record<string, unknown> | null = null;
   private shouldReturnData = false;
+  private selectColumns: string = '*';
 
   constructor(store: TableStore, table: TableName) {
     this.store = store;
     this.table = table;
   }
 
-  select(_columns?: string) {
+  select(columns?: string) {
     this.op = 'select';
     this.shouldReturnData = true;
+    this.selectColumns = columns ?? '*';
     return this;
   }
 
   insert(payload: Record<string, unknown> | Record<string, unknown>[]) {
     this.op = 'insert';
-    this.insertPayload = Array.isArray(payload) ? payload[0]! : payload;
+    this.insertPayload = payload;
     return this;
   }
 
@@ -96,6 +104,22 @@ class MockQueryBuilder {
     return this;
   }
 
+  /** Attach bookmark_tags join data to bookmark rows */
+  private attachBookmarkTags(rows: Row[]): Row[] {
+    if (this.table !== 'bookmarks') return rows;
+    if (!this.selectColumns.includes('bookmark_tags')) return rows;
+
+    return rows.map((row) => {
+      const bm = row as Bookmark;
+      const junctionRows = this.store.bookmark_tags.filter((bt) => bt.bookmark_id === bm.id);
+      const bookmark_tags = junctionRows.map((bt) => {
+        const tagArea = this.store.tag_areas.find((ta) => ta.id === bt.tag_area_id);
+        return { tag_area_id: bt.tag_area_id, tag_areas: tagArea ?? null };
+      });
+      return { ...bm, bookmark_tags } as unknown as Row;
+    });
+  }
+
   private execute(): { data: unknown; error: null } {
     const arr = this.store[this.table] as Row[];
 
@@ -115,6 +139,7 @@ class MockQueryBuilder {
           return 0;
         });
       }
+      rows = this.attachBookmarkTags(rows);
       return {
         data: this.returnSingle ? (rows[0] ?? null) : deepClone(rows),
         error: null,
@@ -122,27 +147,39 @@ class MockQueryBuilder {
     }
 
     if (this.op === 'insert') {
-      const newRow = {
-        id: `demo-new-${nextId++}`,
-        created_at: new Date().toISOString(),
-        ...this.insertPayload,
-      } as Row;
-      arr.push(newRow);
+      const payloads = Array.isArray(this.insertPayload)
+        ? this.insertPayload
+        : [this.insertPayload!];
+      const inserted: Row[] = [];
 
-      // If inserting a bookmark, also add a status_history entry
-      if (this.table === 'bookmarks') {
-        const bm = newRow as Bookmark;
-        this.store.status_history.push({
-          id: `hist-new-${nextId++}`,
-          bookmark_id: bm.id,
-          old_status: null,
-          new_status: bm.status || 'unread',
-          changed_at: new Date().toISOString(),
-        } as StatusHistoryEntry);
+      for (const payload of payloads) {
+        const newRow = {
+          id: `demo-new-${nextId++}`,
+          created_at: new Date().toISOString(),
+          ...payload,
+        } as Row;
+        arr.push(newRow);
+        inserted.push(newRow);
+
+        // If inserting a bookmark, also add a status_history entry
+        if (this.table === 'bookmarks') {
+          const bm = newRow as Bookmark;
+          this.store.status_history.push({
+            id: `hist-new-${nextId++}`,
+            bookmark_id: bm.id,
+            old_status: null,
+            new_status: bm.status || 'unread',
+            changed_at: new Date().toISOString(),
+          } as StatusHistoryEntry);
+        }
       }
 
       if (this.shouldReturnData) {
-        return { data: this.returnSingle ? deepClone(newRow) : deepClone([newRow]), error: null };
+        const last = inserted[inserted.length - 1]!;
+        return {
+          data: this.returnSingle ? deepClone(last) : deepClone(inserted),
+          error: null,
+        };
       }
       return { data: null, error: null };
     }
@@ -211,6 +248,7 @@ export function createMockSupabaseClient(): SupabaseClient {
     bookmarks: deepClone(DEMO_BOOKMARKS),
     tag_areas: deepClone(DEMO_TAG_AREAS),
     status_history: deepClone(DEMO_STATUS_HISTORY),
+    bookmark_tags: deepClone(DEMO_BOOKMARK_TAGS),
   };
 
   const mock = {

@@ -1,16 +1,19 @@
 import { useState, useEffect } from 'react';
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
+import TagAreaInput from '../ui/TagAreaInput';
 import { SourceBadge } from '../ui/Badge';
-import type { Bookmark, SourceType, Status } from '../../types';
+import type { Bookmark, SourceType, Status, TagArea } from '../../types';
 import { SOURCE_LIST, SOURCE_LABELS, STATUS_LIST } from '../../types';
 
 interface EditBookmarkModalProps {
   open: boolean;
   bookmark: Bookmark | null;
   onClose: () => void;
-  onSave: (id: string, updates: Partial<Bookmark>) => void;
+  onSave: (id: string, updates: Partial<Bookmark>, areaIds: string[]) => void;
   isPending: boolean;
+  allAreas: TagArea[];
+  allTags: string[];
 }
 
 export default function EditBookmarkModal({
@@ -19,13 +22,15 @@ export default function EditBookmarkModal({
   onClose,
   onSave,
   isPending,
+  allAreas,
+  allTags,
 }: EditBookmarkModalProps) {
   const [url, setUrl] = useState('');
   const [title, setTitle] = useState('');
   const [sourceType, setSourceType] = useState<SourceType>('blog');
   const [status, setStatus] = useState<Status>('unread');
-  const [tagInput, setTagInput] = useState('');
   const [tags, setTags] = useState<string[]>([]);
+  const [selectedAreas, setSelectedAreas] = useState<TagArea[]>([]);
 
   // Sync form state when bookmark changes
   useEffect(() => {
@@ -35,50 +40,25 @@ export default function EditBookmarkModal({
       setSourceType(bookmark.source_type);
       setStatus(bookmark.status);
       setTags(bookmark.tags ?? []);
-      setTagInput('');
+      setSelectedAreas(bookmark.areas ?? []);
     }
   }, [bookmark]);
-
-  function addTag(value: string) {
-    const tag = value.trim().toLowerCase();
-    if (tag && !tags.includes(tag)) {
-      setTags([...tags, tag]);
-    }
-    setTagInput('');
-  }
-
-  function removeTag(tag: string) {
-    setTags(tags.filter((t) => t !== tag));
-  }
-
-  function handleTagKeyDown(e: React.KeyboardEvent) {
-    if (e.key === 'Enter' || e.key === ',') {
-      e.preventDefault();
-      addTag(tagInput);
-    }
-    if (e.key === 'Backspace' && !tagInput && tags.length > 0) {
-      setTags(tags.slice(0, -1));
-    }
-  }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!bookmark || !url.trim()) return;
 
-    // Auto-commit pending tag text
-    const finalTags = [...tags];
-    const pending = tagInput.trim().toLowerCase();
-    if (pending && !finalTags.includes(pending)) {
-      finalTags.push(pending);
-    }
-
-    onSave(bookmark.id, {
-      url: url.trim(),
-      title: title.trim() || null,
-      source_type: sourceType,
-      status,
-      tags: finalTags,
-    });
+    onSave(
+      bookmark.id,
+      {
+        url: url.trim(),
+        title: title.trim() || null,
+        source_type: sourceType,
+        status,
+        tags,
+      },
+      selectedAreas.map((a) => a.id),
+    );
     onClose();
   }
 
@@ -172,41 +152,24 @@ export default function EditBookmarkModal({
           </div>
         </div>
 
-        {/* Tags */}
+        {/* Areas & Tags */}
         <div>
           <label
             htmlFor="edit-tags"
             className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1"
           >
-            Tags <span className="text-surface-400 font-normal">(comma or enter to add)</span>
+            Areas & Tags{' '}
+            <span className="text-surface-400 font-normal">(type to search, comma to add)</span>
           </label>
-          <div className="flex flex-wrap gap-1.5 p-2 rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 min-h-[44px]">
-            {tags.map((tag) => (
-              <span
-                key={tag}
-                className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-primary-600/10 text-primary-600 dark:text-primary-400 text-sm font-medium"
-              >
-                {tag}
-                <button
-                  type="button"
-                  onClick={() => removeTag(tag)}
-                  className="text-primary-400 dark:text-primary-300 hover:text-red-500 min-w-[20px] min-h-[20px] flex items-center justify-center"
-                  aria-label={`Remove tag ${tag}`}
-                >
-                  &times;
-                </button>
-              </span>
-            ))}
-            <input
-              id="edit-tags"
-              type="text"
-              value={tagInput}
-              onChange={(e) => setTagInput(e.target.value)}
-              onKeyDown={handleTagKeyDown}
-              placeholder={tags.length === 0 ? 'Add tags...' : ''}
-              className="flex-1 min-w-[80px] bg-transparent text-sm text-surface-900 dark:text-surface-100 placeholder:text-surface-400 outline-none py-1"
-            />
-          </div>
+          <TagAreaInput
+            id="edit-tags"
+            tags={tags}
+            areas={selectedAreas}
+            allAreas={allAreas}
+            allTags={allTags}
+            onTagsChange={setTags}
+            onAreasChange={setSelectedAreas}
+          />
         </div>
 
         {/* Actions */}

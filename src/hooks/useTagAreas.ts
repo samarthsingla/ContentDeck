@@ -29,7 +29,12 @@ export function useTagAreas() {
       color?: string;
       emoji?: string;
     }) => {
-      const maxOrder = (query.data ?? []).reduce((max, a) => Math.max(max, a.sort_order), -1);
+      // Client-side duplicate check
+      const existing = query.data ?? [];
+      if (existing.some((a) => a.name.toLowerCase() === area.name.trim().toLowerCase())) {
+        throw new Error(`Area '${area.name.trim()}' already exists`);
+      }
+      const maxOrder = existing.reduce((max, a) => Math.max(max, a.sort_order), -1);
       const { data, error } = (await db
         .from('tag_areas')
         .insert({ ...area, sort_order: maxOrder + 1 })
@@ -44,7 +49,7 @@ export function useTagAreas() {
       );
       toast.success('Area created');
     },
-    onError: () => toast.error('Failed to create area'),
+    onError: (err) => toast.error(err instanceof Error ? err.message : 'Failed to create area'),
   });
 
   const updateArea = useMutation({
@@ -88,7 +93,7 @@ export function useTagAreas() {
       if (context?.prev) queryClient.setQueryData(QUERY_KEY, context.prev);
       toast.error('Failed to delete area');
     },
-    onSuccess: () => toast.success('Area deleted'),
+    onSuccess: () => toast.success('Area deleted — bookmarks kept, now uncategorized'),
     onSettled: () => queryClient.invalidateQueries({ queryKey: QUERY_KEY }),
   });
 

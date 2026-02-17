@@ -22,7 +22,6 @@ import ProgressBar from '../components/ui/ProgressBar';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { exportToObsidianUri, exportToClipboard } from '../lib/obsidian';
 import { fetchMetadata } from '../lib/metadata';
-import { suggestTags } from '../lib/ai';
 import type { Bookmark, Status, NoteType, TagArea } from '../types';
 
 interface DashboardProps {
@@ -47,6 +46,8 @@ export default function Dashboard({ userEmail, onSignOut, isDemo, sharedUrl }: D
     deleteNote,
     markSynced,
     refreshMetadata,
+    setAreas: setBookmarkAreas,
+    autoSuggestTags,
   } = useBookmarks();
   const { areas, createArea, updateArea, deleteArea, reorderAreas } = useTagAreas();
   const { stats, isLoading: statsLoading } = useStats(bookmarks);
@@ -160,23 +161,18 @@ export default function Dashboard({ userEmail, onSignOut, isDemo, sharedUrl }: D
     if (!apiKey) return;
     aiTaggedRef.current = true;
 
-    const untagged = currentBookmarks.filter((b) => !b.tags || b.tags.length === 0);
+    // Bookmarks with no tags AND no areas
+    const untagged = currentBookmarks.filter(
+      (b) => (!b.tags || b.tags.length === 0) && (!b.areas || b.areas.length === 0),
+    );
     if (untagged.length === 0) return;
-
-    const allTags = [...new Set(currentBookmarks.flatMap((b) => b.tags))];
 
     let cancelled = false;
     async function tagAll() {
       for (const b of untagged) {
         if (cancelled) break;
         try {
-          const { tags } = await suggestTags(b, [...allTags]);
-          if (tags.length === 0) continue;
-          await db.from('bookmarks').update({ tags }).eq('id', b.id);
-          for (const t of tags) {
-            if (!allTags.includes(t)) allTags.push(t);
-          }
-          toastRef.current.info(`AI tagged "${b.title || 'bookmark'}": ${tags.join(', ')}`);
+          await autoSuggestTags(b, areas);
         } catch {
           /* skip */
         }
@@ -213,6 +209,20 @@ export default function Dashboard({ userEmail, onSignOut, isDemo, sharedUrl }: D
     }),
     [bookmarks],
   );
+
+  // All unique tags across bookmarks (for autocomplete)
+  const allTags = useMemo(() => [...new Set(bookmarks.flatMap((b) => b.tags))], [bookmarks]);
+
+  // Bookmark count per area (for AreaManager)
+  const bookmarkCountByArea = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const b of bookmarks) {
+      for (const a of b.areas ?? []) {
+        map.set(a.id, (map.get(a.id) ?? 0) + 1);
+      }
+    }
+    return map;
+  }, [bookmarks]);
 
   // Status-filtered bookmarks for source tabs
   const statusFiltered = useMemo(() => {
@@ -397,17 +407,37 @@ export default function Dashboard({ userEmail, onSignOut, isDemo, sharedUrl }: D
       <AddBookmarkModal
         open={showAddModal}
         onClose={() => setShowAddModal(false)}
-        onAdd={(data) => addBookmark.mutate(data)}
+        onAdd={(data) => {
+          const { areaIds, ...bookmarkData } = data;
+          addBookmark.mutate(bookmarkData, {
+            onSuccess: (newBookmark) => {
+              // Assign areas after bookmark is created
+              if (areaIds && areaIds.length > 0) {
+                const selectedAreas = areas.filter((a) => areaIds.includes(a.id));
+                void setBookmarkAreas(newBookmark.id, selectedAreas);
+              }
+            },
+          });
+        }}
         isPending={addBookmark.isPending}
         initialUrl={sharedUrl ?? undefined}
+        allAreas={areas}
+        allTags={allTags}
       />
 
       <EditBookmarkModal
         open={editingBookmark !== null}
         bookmark={editingBookmark}
         onClose={() => setEditingBookmark(null)}
-        onSave={(id, updates) => updateBookmark.mutate({ id, ...updates })}
+        onSave={(id, updates, areaIds) => {
+          updateBookmark.mutate({ id, ...updates });
+          // Update area assignments via junction table
+          const selectedAreas = areas.filter((a) => areaIds.includes(a.id));
+          void setBookmarkAreas(id, selectedAreas);
+        }}
         isPending={updateBookmark.isPending}
+        allAreas={areas}
+        allTags={allTags}
       />
 
       <SettingsModal
@@ -433,6 +463,7 @@ export default function Dashboard({ userEmail, onSignOut, isDemo, sharedUrl }: D
         }}
         areas={areas}
         editingArea={editingArea}
+        bookmarkCountByArea={bookmarkCountByArea}
         onCreate={(data) => createArea.mutate(data)}
         onUpdate={(id, data) => updateArea.mutate({ id, ...data })}
         onDelete={(id) => deleteArea.mutate(id)}

@@ -53,13 +53,17 @@ export default function BookmarkList({
       result = result.filter((b) => b.status === currentStatus);
     }
 
-    // Tag filter
+    // Tag/Area filter
     if (currentTag) {
       if (currentTag === '__untagged__') {
-        result = result.filter((b) => !b.tags || b.tags.length === 0);
+        result = result.filter(
+          (b) => (!b.tags || b.tags.length === 0) && (!b.areas || b.areas.length === 0),
+        );
       } else {
-        result = result.filter((b) =>
-          b.tags.some((t) => t.toLowerCase() === currentTag.toLowerCase()),
+        result = result.filter(
+          (b) =>
+            b.tags.some((t) => t.toLowerCase() === currentTag.toLowerCase()) ||
+            b.areas?.some((a) => a.name.toLowerCase() === currentTag.toLowerCase()),
         );
       }
     }
@@ -71,7 +75,8 @@ export default function BookmarkList({
         (b) =>
           b.title?.toLowerCase().includes(q) ||
           b.url.toLowerCase().includes(q) ||
-          b.tags.some((t) => t.toLowerCase().includes(q)),
+          b.tags.some((t) => t.toLowerCase().includes(q)) ||
+          b.areas?.some((a) => a.name.toLowerCase().includes(q)),
       );
     }
 

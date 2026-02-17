@@ -9,6 +9,7 @@ interface AreaManagerProps {
   onClose: () => void;
   areas: TagArea[];
   editingArea: TagArea | null;
+  bookmarkCountByArea: Map<string, number>;
   onCreate: (data: { name: string; description?: string; color?: string; emoji?: string }) => void;
   onUpdate: (id: string, data: Partial<TagArea>) => void;
   onDelete: (id: string) => void;
@@ -33,6 +34,7 @@ export default function AreaManager({
   onClose,
   areas,
   editingArea,
+  bookmarkCountByArea,
   onCreate,
   onUpdate,
   onDelete,
@@ -45,12 +47,18 @@ export default function AreaManager({
       {isEditing ? (
         <AreaForm
           area={editingArea}
+          areas={areas}
           onSave={(data) => {
             onUpdate(editingArea.id, data);
             onClose();
           }}
           onDelete={() => {
-            if (confirm(`Delete "${editingArea.name}" area? Bookmarks won't be deleted.`)) {
+            const count = bookmarkCountByArea.get(editingArea.id) ?? 0;
+            const msg =
+              count > 0
+                ? `Delete "${editingArea.name}" area? ${count} bookmark${count === 1 ? '' : 's'} will become uncategorized. Bookmarks and their tags won't be deleted.`
+                : `Delete "${editingArea.name}" area? No bookmarks are assigned to it.`;
+            if (confirm(msg)) {
               onDelete(editingArea.id);
               onClose();
             }
@@ -63,6 +71,7 @@ export default function AreaManager({
           onCreate={onCreate}
           onReorder={onReorder}
           onClose={onClose}
+          bookmarkCountByArea={bookmarkCountByArea}
         />
       )}
     </Modal>
@@ -72,11 +81,13 @@ export default function AreaManager({
 // --- Form for creating/editing a single area ---
 function AreaForm({
   area,
+  areas = [],
   onSave,
   onDelete,
   onCancel,
 }: {
   area: TagArea | null;
+  areas?: TagArea[];
   onSave: (data: { name: string; description?: string; color?: string; emoji?: string }) => void;
   onDelete?: () => void;
   onCancel: () => void;
@@ -86,9 +97,14 @@ function AreaForm({
   const [color, setColor] = useState(area?.color ?? '');
   const [emoji, setEmoji] = useState(area?.emoji ?? '');
 
+  // Check for duplicate names (case-insensitive, exclude current area if editing)
+  const isDuplicate = areas.some(
+    (a) => a.id !== area?.id && a.name.toLowerCase() === name.trim().toLowerCase(),
+  );
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!name.trim() || isDuplicate) return;
     onSave({
       name: name.trim(),
       description: description.trim() || undefined,
@@ -116,9 +132,18 @@ function AreaForm({
             placeholder="e.g. Machine Learning"
             required
             autoFocus
-            className="flex-1 px-3 py-2.5 rounded-lg border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100 placeholder:text-surface-400 min-h-[44px]"
+            className={`flex-1 px-3 py-2.5 rounded-lg border bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-100 placeholder:text-surface-400 min-h-[44px] ${
+              isDuplicate
+                ? 'border-red-400 dark:border-red-500'
+                : 'border-surface-200 dark:border-surface-700'
+            }`}
           />
         </div>
+        {isDuplicate && (
+          <p className="text-xs text-red-500 mt-1">
+            Area &ldquo;{name.trim()}&rdquo; already exists
+          </p>
+        )}
       </div>
 
       {/* Emoji picker */}
@@ -202,7 +227,7 @@ function AreaForm({
         <Button type="button" variant="ghost" onClick={onCancel}>
           Cancel
         </Button>
-        <Button type="submit" disabled={!name.trim()}>
+        <Button type="submit" disabled={!name.trim() || isDuplicate}>
           {area ? 'Save Changes' : 'Create Area'}
         </Button>
       </div>
@@ -216,11 +241,13 @@ function AreaListManager({
   onCreate,
   onReorder,
   onClose,
+  bookmarkCountByArea,
 }: {
   areas: TagArea[];
   onCreate: (data: { name: string; description?: string; color?: string; emoji?: string }) => void;
   onReorder: (orderedIds: string[]) => void;
   onClose: () => void;
+  bookmarkCountByArea: Map<string, number>;
 }) {
   const [showCreate, setShowCreate] = useState(false);
   const [localAreas, setLocalAreas] = useState(areas);
@@ -246,6 +273,7 @@ function AreaListManager({
     return (
       <AreaForm
         area={null}
+        areas={areas}
         onSave={(data) => {
           onCreate(data);
           setShowCreate(false);
@@ -281,6 +309,9 @@ function AreaListManager({
               )}
               <span className="flex-1 text-sm font-medium text-surface-900 dark:text-surface-100 truncate">
                 {area.name}
+              </span>
+              <span className="text-xs text-surface-400 flex-shrink-0">
+                {bookmarkCountByArea.get(area.id) ?? 0}
               </span>
               <div className="flex gap-0.5">
                 <button

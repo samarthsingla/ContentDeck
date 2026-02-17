@@ -4,7 +4,7 @@ import { useToast } from '../components/ui/Toast';
 import { fetchMetadata } from '../lib/metadata';
 import { suggestTags } from '../lib/ai';
 import { detectSourceType } from '../lib/utils';
-import type { Bookmark, Status, NoteType, Note, BookmarkMetadata } from '../types';
+import type { Bookmark, TagArea, Status, NoteType, Note, BookmarkMetadata } from '../types';
 
 const QUERY_KEY = ['bookmarks'] as const;
 
@@ -30,11 +30,21 @@ function buildMetadataUpdates(
   return Object.keys(updates).length > 0 ? updates : null;
 }
 
+/** Raw bookmark row from Supabase with nested join data */
+interface RawBookmarkRow extends Omit<Bookmark, 'areas'> {
+  bookmark_tags?: Array<{ tag_area_id: string; tag_areas: TagArea }>;
+  areas?: TagArea[];
+}
+
 /** Normalize bookmark data from Supabase — ensures arrays/objects are never null */
-function normalizeBookmark(b: Bookmark): Bookmark {
+function normalizeBookmark(b: RawBookmarkRow): Bookmark {
+  // Flatten nested bookmark_tags join into areas array
+  const areas: TagArea[] =
+    b.bookmark_tags?.map((bt) => bt.tag_areas).filter(Boolean) ?? b.areas ?? [];
   return {
     ...b,
     tags: b.tags ?? [],
+    areas,
     notes: b.notes ?? [],
     metadata: b.metadata ?? {},
     content: b.content ?? {},
@@ -55,10 +65,10 @@ export function useBookmarks() {
     queryFn: async () => {
       const { data, error } = await db
         .from('bookmarks')
-        .select('*')
+        .select('*, bookmark_tags(tag_area_id, tag_areas(*))')
         .order('created_at', { ascending: false });
       if (error) throw error;
-      return ((data ?? []) as Bookmark[]).map(normalizeBookmark);
+      return ((data ?? []) as RawBookmarkRow[]).map(normalizeBookmark);
     },
   });
 
@@ -84,7 +94,7 @@ export function useBookmarks() {
           synced: false,
         })
         .select()
-        .single()) as { data: Bookmark; error: Error | null };
+        .single()) as { data: RawBookmarkRow; error: Error | null };
       if (error) throw error;
       return normalizeBookmark(data);
     },
@@ -145,12 +155,15 @@ export function useBookmarks() {
 
   const updateBookmark = useMutation({
     mutationFn: async ({ id, ...updates }: Partial<Bookmark> & { id: string }) => {
+      // Strip `areas` from updates — managed via junction table, not bookmark row
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { areas: _areas, ...dbUpdates } = updates;
       const { data, error } = (await db
         .from('bookmarks')
-        .update(updates)
+        .update(dbUpdates)
         .eq('id', id)
         .select()
-        .single()) as { data: Bookmark; error: Error | null };
+        .single()) as { data: RawBookmarkRow; error: Error | null };
       if (error) throw error;
       return normalizeBookmark(data);
     },
@@ -328,6 +341,56 @@ export function useBookmarks() {
     onSettled: () => queryClient.invalidateQueries({ queryKey: QUERY_KEY }),
   });
 
+  /** Assign an area to a bookmark via junction table */
+  async function assignArea(bookmarkId: string, area: TagArea) {
+    const { error } = await db
+      .from('bookmark_tags')
+      .insert({ bookmark_id: bookmarkId, tag_area_id: area.id });
+    if (error) throw error;
+    // Update cache
+    queryClient.setQueryData<Bookmark[]>(QUERY_KEY, (old) =>
+      old?.map((b) =>
+        b.id === bookmarkId
+          ? { ...b, areas: [...b.areas.filter((a) => a.id !== area.id), area] }
+          : b,
+      ),
+    );
+  }
+
+  /** Remove an area from a bookmark */
+  async function removeArea(bookmarkId: string, areaId: string) {
+    const { error } = await db
+      .from('bookmark_tags')
+      .delete()
+      .eq('bookmark_id', bookmarkId)
+      .eq('tag_area_id', areaId);
+    if (error) throw error;
+    queryClient.setQueryData<Bookmark[]>(QUERY_KEY, (old) =>
+      old?.map((b) =>
+        b.id === bookmarkId ? { ...b, areas: b.areas.filter((a) => a.id !== areaId) } : b,
+      ),
+    );
+  }
+
+  /** Replace all area assignments for a bookmark */
+  async function setAreas(bookmarkId: string, areas: TagArea[]) {
+    // Delete existing junction rows
+    const { error: delError } = await db
+      .from('bookmark_tags')
+      .delete()
+      .eq('bookmark_id', bookmarkId);
+    if (delError) throw delError;
+    // Insert new ones
+    if (areas.length > 0) {
+      const rows = areas.map((a) => ({ bookmark_id: bookmarkId, tag_area_id: a.id }));
+      const { error: insError } = await db.from('bookmark_tags').insert(rows);
+      if (insError) throw insError;
+    }
+    queryClient.setQueryData<Bookmark[]>(QUERY_KEY, (old) =>
+      old?.map((b) => (b.id === bookmarkId ? { ...b, areas } : b)),
+    );
+  }
+
   async function autoFetchMetadata(bookmark: Bookmark) {
     try {
       const result = await fetchMetadata(bookmark.url, bookmark.source_type);
@@ -384,12 +447,34 @@ export function useBookmarks() {
     }
   }
 
-  async function autoSuggestTags(bookmark: Bookmark) {
+  async function autoSuggestTags(bookmark: Bookmark, allAreas?: TagArea[]) {
+    const areas = allAreas ?? queryClient.getQueryData<TagArea[]>(['tagAreas']) ?? [];
     try {
       const allTags = (queryClient.getQueryData<Bookmark[]>(QUERY_KEY) ?? [])
         .flatMap((b) => b.tags)
         .filter((t, i, arr) => arr.indexOf(t) === i);
-      const { tags } = await suggestTags(bookmark, allTags);
+      const result = await suggestTags(bookmark, allTags, areas);
+      const { tags, areas: matchedAreaNames, suggestedArea } = result;
+
+      // Assign matched areas via junction table
+      if (matchedAreaNames && matchedAreaNames.length > 0) {
+        for (const areaName of matchedAreaNames) {
+          const area = areas.find((a) => a.name.toLowerCase() === areaName.toLowerCase());
+          if (area) {
+            try {
+              await assignArea(bookmark.id, area);
+            } catch {
+              // Ignore duplicate assignment errors
+            }
+          }
+        }
+      }
+
+      // Suggest new area via toast (don't auto-create)
+      if (suggestedArea) {
+        toast.info(`AI suggests creating area: "${suggestedArea}"`);
+      }
+
       if (tags.length === 0) return;
 
       const merged = [...new Set([...bookmark.tags, ...tags])];
@@ -421,6 +506,10 @@ export function useBookmarks() {
     deleteNote,
     markSynced,
     refreshMetadata,
+    assignArea,
+    removeArea,
+    setAreas,
+    autoSuggestTags,
   };
 }
 

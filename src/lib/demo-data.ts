@@ -1,4 +1,4 @@
-import type { Bookmark, TagArea, StatusHistoryEntry, BookmarkContent } from '../types';
+import type { Bookmark, TagArea, StatusHistoryEntry, BookmarkTag, BookmarkContent } from '../types';
 
 function daysAgo(n: number): string {
   const d = new Date();
@@ -29,6 +29,7 @@ export const DEMO_BOOKMARKS: Bookmark[] = [
     is_favorited: true,
     notes: [],
     tags: ['webdev', 'frontend'],
+    areas: [],
     metadata: { duration: '18:42', channel: 'Fireship' },
     content: {},
     content_status: 'skipped',
@@ -56,6 +57,7 @@ export const DEMO_BOOKMARKS: Bookmark[] = [
       },
     ],
     tags: ['react', 'frontend'],
+    areas: [],
     metadata: { duration: '24:15', channel: 'Theo' },
     content: {},
     content_status: 'skipped',
@@ -84,6 +86,7 @@ export const DEMO_BOOKMARKS: Bookmark[] = [
       },
     ],
     tags: ['react', 'mental-models'],
+    areas: [],
     metadata: {},
     content: {},
     content_status: 'skipped',
@@ -105,6 +108,7 @@ export const DEMO_BOOKMARKS: Bookmark[] = [
     is_favorited: false,
     notes: [],
     tags: ['career', 'writing'],
+    areas: [],
     metadata: {},
     content: {},
     content_status: 'skipped',
@@ -126,6 +130,7 @@ export const DEMO_BOOKMARKS: Bookmark[] = [
     is_favorited: false,
     notes: [],
     tags: ['ai', 'devops'],
+    areas: [],
     metadata: {},
     content: {},
     content_status: 'pending',
@@ -147,6 +152,7 @@ export const DEMO_BOOKMARKS: Bookmark[] = [
     is_favorited: false,
     notes: [],
     tags: ['leadership', 'career'],
+    areas: [],
     metadata: { word_count: 2400, reading_time: 10 },
     content: {},
     content_status: 'pending',
@@ -180,6 +186,7 @@ export const DEMO_BOOKMARKS: Bookmark[] = [
       },
     ],
     tags: ['productivity', 'engineering'],
+    areas: [],
     metadata: { word_count: 3200, reading_time: 13 },
     content: {},
     content_status: 'pending',
@@ -201,6 +208,7 @@ export const DEMO_BOOKMARKS: Bookmark[] = [
     is_favorited: false,
     notes: [],
     tags: ['leadership', 'systems-thinking'],
+    areas: [],
     metadata: { word_count: 4500, reading_time: 18 },
     content: {},
     content_status: 'pending',
@@ -222,6 +230,7 @@ export const DEMO_BOOKMARKS: Bookmark[] = [
     is_favorited: false,
     notes: [],
     tags: ['design', 'css'],
+    areas: [],
     metadata: { word_count: 1800, reading_time: 7 },
     content: {},
     content_status: 'pending',
@@ -250,6 +259,7 @@ export const DEMO_BOOKMARKS: Bookmark[] = [
       },
     ],
     tags: ['architecture', 'engineering'],
+    areas: [],
     metadata: { word_count: 5100, reading_time: 20 },
     content: SAMPLE_CONTENT,
     content_status: 'success',
@@ -271,6 +281,7 @@ export const DEMO_BOOKMARKS: Bookmark[] = [
     is_favorited: false,
     notes: [],
     tags: ['productivity', 'pkm'],
+    areas: [],
     metadata: { duration: '1:12:30', channel: 'Tiago Forte' },
     content: {},
     content_status: 'skipped',
@@ -292,6 +303,7 @@ export const DEMO_BOOKMARKS: Bookmark[] = [
     is_favorited: false,
     notes: [],
     tags: ['productivity', 'habits'],
+    areas: [],
     metadata: {},
     content: {},
     content_status: 'pending',
@@ -313,6 +325,7 @@ export const DEMO_BOOKMARKS: Bookmark[] = [
     is_favorited: false,
     notes: [],
     tags: ['react', 'frontend'],
+    areas: [],
     metadata: { word_count: 8900, reading_time: 35 },
     content: {},
     content_status: 'pending',
@@ -333,7 +346,8 @@ export const DEMO_BOOKMARKS: Bookmark[] = [
     status: 'unread',
     is_favorited: false,
     notes: [],
-    tags: [], // intentionally untagged
+    tags: [],
+    areas: [],
     metadata: { word_count: 1200, reading_time: 5 },
     content: {},
     content_status: 'pending',
@@ -354,7 +368,8 @@ export const DEMO_BOOKMARKS: Bookmark[] = [
     status: 'unread',
     is_favorited: false,
     notes: [],
-    tags: [], // intentionally untagged
+    tags: [],
+    areas: [],
     metadata: { word_count: 3800, reading_time: 15 },
     content: {},
     content_status: 'pending',
@@ -413,6 +428,31 @@ export const DEMO_TAG_AREAS: TagArea[] = [
     sort_order: 4,
     created_at: daysAgo(30),
   },
+];
+
+// Junction table: bookmark <-> area assignments
+export const DEMO_BOOKMARK_TAGS: BookmarkTag[] = [
+  // demo-2: React Server Components → react
+  { bookmark_id: 'demo-2', tag_area_id: 'area-5' },
+  // demo-3: Dan Abramov on React → react
+  { bookmark_id: 'demo-3', tag_area_id: 'area-5' },
+  // demo-4: swyx on writing → career
+  { bookmark_id: 'demo-4', tag_area_id: 'area-4' },
+  // demo-6: Engineering Leadership → career
+  { bookmark_id: 'demo-6', tag_area_id: 'area-4' },
+  // demo-7: Measuring Developer Productivity → productivity, engineering
+  { bookmark_id: 'demo-7', tag_area_id: 'area-3' },
+  { bookmark_id: 'demo-7', tag_area_id: 'area-2' },
+  // demo-9: Designing in the Browser → design
+  { bookmark_id: 'demo-9', tag_area_id: 'area-1' },
+  // demo-10: Modular Monolith → engineering
+  { bookmark_id: 'demo-10', tag_area_id: 'area-2' },
+  // demo-11: Building a Second Brain → productivity
+  { bookmark_id: 'demo-11', tag_area_id: 'area-3' },
+  // demo-12: Atomic Habits → productivity
+  { bookmark_id: 'demo-12', tag_area_id: 'area-3' },
+  // demo-13: useEffect guide → react
+  { bookmark_id: 'demo-13', tag_area_id: 'area-5' },
 ];
 
 export const DEMO_STATUS_HISTORY: StatusHistoryEntry[] = [
