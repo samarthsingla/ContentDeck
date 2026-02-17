@@ -10,6 +10,7 @@ import DemoBanner from './components/ui/DemoBanner';
 import AuthScreen from './components/auth/AuthScreen';
 import Dashboard from './pages/Dashboard';
 import { createMockSupabaseClient } from './lib/mock-supabase';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 
 const DEMO_KEY = 'contentdeck_demo';
 
@@ -63,6 +64,7 @@ export default function App() {
           onGoogle={signInWithGoogle}
           onGitHub={signInWithGitHub}
         />
+        <SpeedInsights />
       </ToastProvider>
     );
   }
@@ -89,6 +91,7 @@ export default function App() {
           </ToastProvider>
         </UIProvider>
       </SupabaseProvider>
+      <SpeedInsights />
     </ErrorBoundary>
   );
 }
