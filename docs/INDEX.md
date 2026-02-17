@@ -2,7 +2,7 @@
 
 > Start here. This file orients each session.
 
-**Version:** v3.0 | **Status:** Content extraction pipeline shipped
+**Version:** v3.0 | **Status:** Areas & tagging redesign shipped
 **Next up:** Full-text search (1.3) → Import system (1.4)
 **Active phase:** [Phase 1 — Foundation](plan/phase-1.md)
 
@@ -42,7 +42,8 @@ docs/
 │   ├── v3.0-bookmarklet.md         # 1.1a Bookmarklet fix
 │   ├── v3.0-ios-shortcut.md        # 1.1b iOS Shortcut fix
 │   ├── v3.0-metadata-fix.md       # 1.2a Metadata quality fix
-│   └── v3.0-content-extraction.md # 1.2b Content extraction pipeline
+│   ├── v3.0-content-extraction.md # 1.2b Content extraction pipeline
+│   └── v3.0-areas-tagging-redesign.md # Areas & tagging two-tier model
 ├── guides/                         # How-to references
 │   ├── workflow.md                 # Development practices, session workflow
 │   └── supabase-auth-setup.md      # Supabase Auth provider configuration
@@ -62,4 +63,5 @@ docs/
 | v3.0 | iOS Shortcut (query-param GET) | [log/v3.0-ios-shortcut.md](log/v3.0-ios-shortcut.md) |
 | v3.0 | Metadata quality fix (YouTube Data API, Twitter, excerpts) | [log/v3.0-metadata-fix.md](log/v3.0-metadata-fix.md) |
 | v3.0 | Content extraction pipeline (Readability + linkedom) | [log/v3.0-content-extraction.md](log/v3.0-content-extraction.md) |
+| v3.0 | Areas & tagging redesign (two-tier model, junction table, AI-aware) | [log/v3.0-areas-tagging-redesign.md](log/v3.0-areas-tagging-redesign.md) |
 | v2.0 | React + Vite + Tailwind migration | [log/v2-migration.md](log/v2-migration.md) |
