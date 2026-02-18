@@ -53,6 +53,7 @@ export default function FeedToolbar({ bookmarks, showSearch }: FeedToolbarProps)
       {/* Mobile: Search (toggleable) + Sort */}
       {showSearch && (
         <div className="lg:hidden flex items-center gap-2">
+          {/* eslint-disable-next-line jsx-a11y/no-autofocus -- search bar is shown by explicit user action (tapping search icon), autofocus is intentional UX */}
           <SearchBar autoFocus />
           <SortSelect />
         </div>

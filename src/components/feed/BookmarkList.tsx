@@ -146,7 +146,7 @@ export default function BookmarkList({
             : `${filtered.length} results for "${searchQuery}"`}
         </p>
       )}
-      <ul className="space-y-2" role="list">
+      <ul className="space-y-2">
         {filtered.map((b) => (
           <li key={b.id}>
             <BookmarkCard

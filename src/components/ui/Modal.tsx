@@ -73,6 +73,7 @@ export default function Modal({ open, onClose, title, children, size = 'md' }: M
   if (!open) return null;
 
   return (
+    // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- backdrop click-to-close is progressive enhancement; keyboard users have ESC via document-level handler
     <div
       ref={overlayRef}
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm"
@@ -82,12 +83,12 @@ export default function Modal({ open, onClose, title, children, size = 'md' }: M
       onKeyDown={(e) => {
         if (e.key === 'Escape') onClose();
       }}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="modal-title"
     >
       <div
         ref={contentRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-title"
         className={`
           ${sizeClasses[size]} w-full bg-white dark:bg-surface-900
           rounded-t-2xl sm:rounded-2xl shadow-xl

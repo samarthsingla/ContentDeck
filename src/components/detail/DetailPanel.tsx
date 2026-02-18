@@ -77,6 +77,7 @@ export default function DetailPanel({
       />
 
       {/* Mobile: full-screen slide-up overlay */}
+      {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions -- backdrop click-to-close is progressive enhancement; keyboard users have ESC via document-level handler */}
       <div
         ref={overlayRef}
         className="lg:hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
@@ -86,12 +87,12 @@ export default function DetailPanel({
         onKeyDown={(e) => {
           if (e.key === 'Escape') onClose();
         }}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Bookmark details"
       >
         <div
           ref={panelRef}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Bookmark details"
           className="absolute inset-x-0 bottom-0 top-12 bg-white dark:bg-surface-900 rounded-t-2xl shadow-xl overflow-y-auto motion-safe:animate-[slideUp_0.2s_ease-out]"
           style={{ paddingBottom: 'calc(16px + var(--safe-bottom))' }}
         >

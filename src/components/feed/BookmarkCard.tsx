@@ -51,12 +51,14 @@ export default function BookmarkCard({
   }
 
   return (
-    <article
+    <div
+      role="button"
       onClick={handleClick}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') handleClick();
       }}
       tabIndex={0}
+      aria-label={b.title || b.url}
       className={`
         group relative flex gap-3 p-3 rounded-xl border transition-colors cursor-pointer
         ${
@@ -65,7 +67,6 @@ export default function BookmarkCard({
             : 'border-surface-200 dark:border-surface-800 hover:border-surface-300 dark:hover:border-surface-700 bg-white dark:bg-surface-900'
         }
       `}
-      aria-label={b.title || b.url}
     >
       {/* Thumbnail */}
       {b.image && (
@@ -182,6 +183,6 @@ export default function BookmarkCard({
           <Trash2 size={16} />
         </button>
       </div>
-    </article>
+    </div>
   );
 }
