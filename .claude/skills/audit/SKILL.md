@@ -155,6 +155,41 @@ Compare source code against docs — flag any mismatches:
 - [ ] **`docs/plan/phase-1.md`** — completed items marked correctly
 - [ ] **`README.md`** — features, setup steps, project structure match reality
 - [ ] **`docs/reference/audit.md`** — no stale open issues that have been fixed
+- [ ] **`docs/log/`** — every shipped feature has a log entry (no missing logs)
+
+---
+
+## Category 10: Mobile Parity
+
+Desktop and mobile are rendered by separate component trees. Features added to the desktop sidebar must be manually mirrored in mobile components. Read `src/components/layout/Sidebar.tsx` and `src/components/layout/MobileNav.tsx` and verify:
+
+**Navigation parity — Sidebar vs MobileNav:**
+
+| Feature | Desktop (Sidebar) | Mobile (MobileNav) | Status |
+|---------|-------------------|--------------------|--------|
+| Unread filter | ✅ statusNav | ✅ tabs array | OK |
+| Reading filter | ✅ statusNav | ✅ tabs array | OK |
+| Done filter | ✅ statusNav | ✅ tabs array | OK |
+| Favorites filter | ✅ Star button | ✅ Star tab | OK |
+| Areas/List view toggle | ✅ View section | ✅ toggle button | OK |
+| All Bookmarks (no filter) | ✅ statusNav | ❌ not in mobile | Known gap |
+
+**Action parity — Sidebar footer vs MobileHeader:**
+
+| Feature | Desktop (Sidebar footer) | Mobile (MobileHeader) | Status |
+|---------|--------------------------|----------------------|--------|
+| Add bookmark | ✅ New Bookmark button | ✅ + button | OK |
+| Search | ✅ FeedToolbar | ✅ Search button | OK |
+| Settings | ✅ footer button | ✅ gear button | OK |
+| Theme toggle | ✅ footer button | ✅ sun/moon button | OK |
+| Statistics | ✅ footer button | ❌ not on mobile | Known gap |
+| Sign Out | ✅ footer button | ❌ not on mobile (via Settings modal?) | Verify |
+
+**Checks:**
+- [ ] Any new item added to Sidebar navigation is also in MobileNav
+- [ ] Any new action added to Sidebar footer is also in MobileHeader or MobileNav
+- [ ] Known gaps (Statistics on mobile, All Bookmarks on mobile) are either accepted or filed as issues
+- [ ] No TypeScript type mismatch between `MobileNavProps.counts` and what AppShell passes
 
 ---
 
@@ -173,6 +208,7 @@ Compare source code against docs — flag any mismatches:
 | PWA & Deployment | PASS/WARN/FAIL | count |
 | Dependencies | PASS/WARN/FAIL | count |
 | Documentation Drift | PASS/WARN/FAIL | count |
+| Mobile Parity | PASS/WARN/FAIL | count |
 
 ### Findings Detail
 
