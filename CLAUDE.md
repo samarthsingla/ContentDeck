@@ -45,6 +45,8 @@ npm run lint:fix     # ESLint auto-fix
 npm run format       # Prettier auto-format
 npm run format:check # Prettier check (CI-friendly)
 npm run typecheck    # TypeScript type check (no emit)
+npm run test         # Run Vitest regression tests
+npm run test:watch   # Run tests in watch mode
 ```
 
 ## Architecture
@@ -155,7 +157,8 @@ Run in this order before every commit — all must pass:
 1. `npm run format:check` — Prettier formatting
 2. `npm run lint` — ESLint (zero errors required, warnings acceptable)
 3. `npm run typecheck` — TypeScript strict mode
-4. `npm run build` — Vite production build
+4. `npm run test` — Vitest regression tests (all must pass)
+5. `npm run build` — Vite production build
 
 ### Claude Code Skills
 

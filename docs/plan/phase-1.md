@@ -61,7 +61,7 @@ CREATE INDEX bookmarks_search_idx ON bookmarks USING GIN (search_vector);
 ## 1.6 Testing & CI
 **Why**: Moving fast without breaking things requires automated verification.
 
-- **Vitest**: Unit tests for lib/ functions (utils, metadata, ai, obsidian)
+- **Vitest**: Unit tests for lib/ functions (utils, metadata, ai, obsidian) ✅ **DONE** — 62 tests across 4 files
 - **React Testing Library**: Component tests for critical flows (add bookmark, demo mode, auth)
 - **Playwright**: E2E tests (setup → demo → add → read → export flow)
 - **GitHub Actions**: Run tests on every PR, block merge on failure
