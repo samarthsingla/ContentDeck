@@ -93,7 +93,7 @@ Adopt practices in tiers. Each tier should feel habitual before moving to the ne
 
 **Conventional Commits.** `feat:`, `fix:`, `docs:`, `chore:` prefixes. Imperative mood. Why, not what. This enables auto-generated changelogs later and makes git history readable at a glance.
 
-**Quality Pipeline.** Before every commit: `format:check -> lint -> typecheck -> build`. In that order. If any step fails, fix it before moving on. Never skip.
+**Quality Pipeline.** Before every commit: `format:check -> lint -> typecheck -> test -> build`. In that order. If any step fails, fix it before moving on. Never skip.
 
 ### Tier 2 — Adopted (v3.0) ✅
 
@@ -200,11 +200,11 @@ Good: `fix: handle null title in metadata fetch`, `feat: add PWA share target fo
 ### Branch Naming
 
 ```
-feat/<slug>      New feature        feat/supabase-auth
-fix/<slug>       Bug fix            fix/metadata-null-title
-refactor/<slug>  Code restructure   refactor/extract-query-hooks
-chore/<slug>     Tooling/config     chore/add-vitest
-docs/<slug>      Documentation      docs/api-reference
+feat/<issue>-<slug>    New feature        feat/4-full-text-search
+fix/<issue>-<slug>     Bug fix            fix/7-mobile-stats
+refactor/<slug>        Code restructure   refactor/extract-query-hooks
+chore/<slug>           Tooling/config     chore/add-vitest
+docs/<slug>            Documentation      docs/api-reference
 ```
 
 ### Commit Format
@@ -236,16 +236,16 @@ Run in this exact order before every commit. Each step catches different problem
 1. npm run format:check    # Consistent formatting
 2. npm run lint            # Code quality + type safety
 3. npm run typecheck       # TypeScript strict mode
-4. npm run build           # Production build works
-5. npm run test            # Tests pass (when infra exists)
+4. npm run test            # Tests pass
+5. npm run build           # Production build works
 ```
 
 Why this order?
 - **Format first** — so lint doesn't flag formatting issues
 - **Lint second** — catches bugs, enforces patterns
 - **Typecheck third** — catches type errors lint might miss
-- **Build fourth** — proves everything compiles for production
-- **Test last** — verifies behavior (the slowest step)
+- **Test fourth** — verifies behavior; catches logic bugs before the expensive build
+- **Build last** — final production readiness check (most comprehensive)
 
 If any step fails, fix it before moving to the next. Never skip a step.
 
@@ -358,7 +358,7 @@ This is the master plan. Each version adopts new practices alongside new feature
 - [x] Vitest unit + component tests (95 tests across 9 files)
 - [x] GitHub Actions CI (`format → lint → typecheck → test → build` on every PR)
 - [ ] CHANGELOG.md (auto-generated from conventional commits) — deferred
-- [ ] GitHub Issues for work tracking — adopt now
+- [x] GitHub Issues for work tracking — adopted 2026-02-18, labels + 5 open issues (#4–#8)
 - [ ] Vercel preview deployments as staging — available, use per-branch
 
 ### v3.5 — Quality at Scale
@@ -472,8 +472,8 @@ Big features ship behind flags. Roll out to 10% of users, verify, then 100%. If 
 - [ ] `npm run format:check` passes
 - [ ] `npm run lint` — zero errors
 - [ ] `npm run typecheck` — zero errors
+- [ ] `npm run test` — all pass
 - [ ] `npm run build` — clean build
-- [ ] `npm run test` — all pass (when available)
 - [ ] Commit message uses conventional format
 - [ ] Only relevant files are staged
 

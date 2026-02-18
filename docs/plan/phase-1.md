@@ -2,7 +2,7 @@
 
 > Goal: Real users, real data, real reliability. The "production-grade" release.
 
-**Completed:** 1.1 Supabase Auth, 1.1a Bookmarklet, 1.1b iOS Shortcut, 1.2a Metadata fix, 1.2b Content extraction, Areas & tagging redesign — see `docs/log/`
+**Completed:** 1.1 Supabase Auth, 1.1a Bookmarklet, 1.1b iOS Shortcut, 1.2a Metadata fix, 1.2b Content extraction, Areas & tagging redesign, 1.6 Testing & CI — see `docs/log/`
 
 ---
 
@@ -61,7 +61,7 @@ CREATE INDEX bookmarks_search_idx ON bookmarks USING GIN (search_vector);
 ## 1.6 Testing & CI
 **Why**: Moving fast without breaking things requires automated verification.
 
-- **Vitest**: Unit tests for lib/ functions (utils, metadata, ai, obsidian) ✅ **DONE** — 62 tests across 4 files
+- **Vitest**: Unit tests for lib/ functions and hooks (utils, metadata, ai, useBookmarks) ✅ **DONE** — 62 tests across 4 files
 - **React Testing Library**: Component tests for critical UI flows ✅ **DONE** — 33 tests across 5 files (App, AuthScreen, AddBookmarkModal, BookmarkCard, StatusFilters)
 - **Playwright**: E2E tests — **DEFERRED** (overkill for personal app with strong unit + component coverage)
 - **GitHub Actions**: CI pipeline on PRs and pushes to main ✅ **DONE** — format → lint → typecheck → test → build

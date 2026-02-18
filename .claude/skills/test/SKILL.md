@@ -204,7 +204,7 @@ Tests live alongside source:
 - `src/lib/__tests__/utils.test.ts`
 - `src/lib/__tests__/metadata.test.ts`
 - `src/lib/__tests__/ai.test.ts`
-- `src/lib/__tests__/obsidian.test.ts`
+- `src/hooks/__tests__/useBookmarks.test.ts`
 - `src/components/__tests__/App.test.tsx`
 - `src/components/__tests__/AuthScreen.test.tsx`
 - `src/components/__tests__/AddBookmarkModal.test.tsx`

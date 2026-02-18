@@ -43,7 +43,8 @@ docs/
 │   ├── v3.0-ios-shortcut.md        # 1.1b iOS Shortcut fix
 │   ├── v3.0-metadata-fix.md       # 1.2a Metadata quality fix
 │   ├── v3.0-content-extraction.md # 1.2b Content extraction pipeline
-│   └── v3.0-areas-tagging-redesign.md # Areas & tagging two-tier model
+│   ├── v3.0-areas-tagging-redesign.md # Areas & tagging two-tier model
+│   └── v3.0-testing-ci.md         # 1.6 Testing & CI (Vitest + GitHub Actions)
 ├── guides/                         # How-to references
 │   ├── workflow.md                 # Development practices, session workflow
 │   └── supabase-auth-setup.md      # Supabase Auth provider configuration
