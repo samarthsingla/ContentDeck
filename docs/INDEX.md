@@ -2,9 +2,9 @@
 
 > Start here. This file orients each session.
 
-**Version:** v3.0 | **Status:** Reader mode shipped (Phase 1.5 complete)
-**Next up:** Import system (1.4) — deferred
-**Active phase:** [Phase 1 — Foundation](plan/phase-1.md)
+**Version:** v3.0 | **Status:** Phase 1 complete — all foundation features shipped
+**Next up:** Phase 2 (Intelligence) — AI summarisation, smart recommendations, Obsidian sync
+**Active phase:** [Phase 2 — Intelligence](plan/phase-2.md)
 
 ---
 

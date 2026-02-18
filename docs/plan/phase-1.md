@@ -1,8 +1,12 @@
-# Phase 1: Foundation (v3.0) — Active Items
+# Phase 1: Foundation (v3.0) — COMPLETE
 
 > Goal: Real users, real data, real reliability. The "production-grade" release.
 
-**Completed:** 1.1 Supabase Auth, 1.1a Bookmarklet, 1.1b iOS Shortcut, 1.2a Metadata fix, 1.2b Content extraction, Areas & tagging redesign, 1.3 Full-text search, 1.5 Reader mode, 1.6 Testing & CI — see `docs/log/`
+**Status: Phase 1 feature implementation is done. Future work in this area is iterative improvement only.**
+
+**Completed:** 1.1 Supabase Auth, 1.1a Bookmarklet, 1.1b iOS Shortcut, 1.2a Metadata fix, 1.2b Content extraction, Areas & tagging redesign, 1.3 Full-text search, 1.5 Reader mode (+ formatting improvements), 1.6 Testing & CI — see `docs/log/`
+
+**Deferred indefinitely:** 1.4 Import system (Pocket/Instapaper/Raindrop) — not a priority for a personal-use app
 
 ---
 
