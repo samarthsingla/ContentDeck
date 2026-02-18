@@ -137,7 +137,6 @@ export default function TokenManager() {
             <a
               href={bookmarkletCode}
               className="inline-block px-3 py-1.5 rounded bg-primary-600 text-white text-xs font-medium hover:bg-primary-700 no-underline"
-              onClick={(e) => e.preventDefault()}
               title="Drag to bookmarks bar"
             >
               + ContentDeck

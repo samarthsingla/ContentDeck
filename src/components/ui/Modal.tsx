@@ -79,6 +79,9 @@ export default function Modal({ open, onClose, title, children, size = 'md' }: M
       onClick={(e) => {
         if (e.target === overlayRef.current) onClose();
       }}
+      onKeyDown={(e) => {
+        if (e.key === 'Escape') onClose();
+      }}
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-title"

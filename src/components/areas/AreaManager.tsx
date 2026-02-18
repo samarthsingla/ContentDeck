@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Trash2, GripVertical } from 'lucide-react';
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
@@ -28,6 +28,8 @@ const PRESET_COLORS = [
 ];
 
 const PRESET_EMOJIS = ['📚', '🎥', '💻', '🧠', '📝', '🎯', '🔬', '💡', '🎨', '📊', '🏋️', '🌍'];
+
+const EMPTY_AREAS: TagArea[] = [];
 
 export default function AreaManager({
   open,
@@ -67,6 +69,7 @@ export default function AreaManager({
         />
       ) : (
         <AreaListManager
+          key={areas.map((a) => a.id).join(',')}
           areas={areas}
           onCreate={onCreate}
           onReorder={onReorder}
@@ -81,7 +84,7 @@ export default function AreaManager({
 // --- Form for creating/editing a single area ---
 function AreaForm({
   area,
-  areas = [],
+  areas = EMPTY_AREAS,
   onSave,
   onDelete,
   onCancel,
@@ -148,9 +151,9 @@ function AreaForm({
 
       {/* Emoji picker */}
       <div>
-        <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">
+        <p className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">
           Emoji
-        </label>
+        </p>
         <div className="flex flex-wrap gap-1.5">
           {PRESET_EMOJIS.map((e) => (
             <button
@@ -176,9 +179,9 @@ function AreaForm({
 
       {/* Color */}
       <div>
-        <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">
+        <p className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">
           Color
-        </label>
+        </p>
         <div className="flex flex-wrap gap-2">
           {PRESET_COLORS.map((c) => (
             <button
@@ -251,11 +254,6 @@ function AreaListManager({
 }) {
   const [showCreate, setShowCreate] = useState(false);
   const [localAreas, setLocalAreas] = useState(areas);
-
-  // Sync with prop updates (new areas created, areas deleted externally)
-  useEffect(() => {
-    setLocalAreas(areas);
-  }, [areas]);
 
   function moveArea(index: number, direction: 'up' | 'down') {
     const newAreas = [...localAreas];

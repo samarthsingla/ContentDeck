@@ -72,9 +72,7 @@ export default function SettingsModal({
             </h3>
             <div className="space-y-2">
               <div>
-                <label className="block text-xs text-surface-500 dark:text-surface-400 mb-1">
-                  Email
-                </label>
+                <p className="block text-xs text-surface-500 dark:text-surface-400 mb-1">Email</p>
                 <div className="px-3 py-2 rounded-lg bg-surface-100 dark:bg-surface-800 text-sm text-surface-600 dark:text-surface-400 truncate">
                   {userEmail ?? 'Unknown'}
                 </div>

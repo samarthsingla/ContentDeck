@@ -83,6 +83,9 @@ export default function DetailPanel({
         onClick={(e) => {
           if (e.target === overlayRef.current) onClose();
         }}
+        onKeyDown={(e) => {
+          if (e.key === 'Escape') onClose();
+        }}
         role="dialog"
         aria-modal="true"
         aria-label="Bookmark details"

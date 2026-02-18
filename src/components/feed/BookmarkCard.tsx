@@ -53,6 +53,10 @@ export default function BookmarkCard({
   return (
     <article
       onClick={handleClick}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') handleClick();
+      }}
+      tabIndex={0}
       className={`
         group relative flex gap-3 p-3 rounded-xl border transition-colors cursor-pointer
         ${
