@@ -16,27 +16,32 @@ Complete workflow for developing features professionally: branch → plan → im
 
 ## Phase 1 — PLAN
 
-1. **Create feature branch** from `main`:
-   - `feat/<name>` for new features
-   - `fix/<name>` for bug fixes
-   - `refactor/<name>` for refactoring
-   - `chore/<name>` for tooling, deps, config
-   - `docs/<name>` for documentation-only changes
+1. **Find or create a GitHub Issue** for this work:
+   - Check existing issues: `gh issue list --repo aditya30103/ContentDeck`
+   - If the issue exists, note its number (e.g. `#4`)
+   - If not, create one: `gh issue create --title "..." --label "type: feature,phase: 1,priority: high"`
+   - Use labels: `type: feature/bug/chore/perf/docs`, `phase: 1/2`, `priority: high/medium/low`, `area: mobile/ui/backend/testing`
 
-2. **Explore codebase** to understand affected areas:
+2. **Create feature branch** from `main`, including the issue number:
+   - `feat/4-full-text-search` for new features
+   - `fix/7-mobile-stats` for bug fixes
+   - `refactor/<issue>-<name>` for refactoring
+   - `chore/<issue>-<name>` for tooling, deps, config
+
+3. **Explore codebase** to understand affected areas:
    - Read `docs/INDEX.md` and `docs/plan/phase-1.md` for current roadmap state
    - Read relevant source files
    - Identify all files that need changes
    - Check for existing patterns to follow
 
-3. **Write implementation plan:**
+4. **Write implementation plan:**
    - Files to create/modify
    - Dependencies or migrations needed
    - Risks or edge cases
    - Testing approach (unit tests for lib/, component tests for UI)
    - Which docs/log/ entry will record this feature
 
-4. **Get user approval** before writing any code.
+5. **Get user approval** before writing any code.
 
 ## Phase 2 — IMPLEMENT
 
@@ -87,7 +92,7 @@ All five must pass with zero errors before proceeding to Phase 4.
    - `test: <description>` — tests only
    - End with `Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>`
 
-4. **Push and create PR:**
+4. **Push and create PR**, linking to the issue:
    ```bash
    git push -u origin <branch-name>
    gh pr create --title "<conventional title>" --body "..."
@@ -95,5 +100,6 @@ All five must pass with zero errors before proceeding to Phase 4.
    PR body must include:
    - `## Summary` — 1-3 bullet points
    - `## Test plan` — verification checklist
+   - `Closes #<issue-number>` — auto-closes the issue when PR merges
 
 5. **Show PR URL** to user.

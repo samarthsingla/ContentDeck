@@ -75,7 +75,7 @@ These are genuinely ahead of many solo developers:
 | Practice | When to Adopt |
 |----------|---------------|
 | CHANGELOG.md | With next major version |
-| GitHub Issues | Now — use for bug tracking and feature ideas |
+| ~~GitHub Issues~~ | ✅ Active — labels + issues created 2026-02-18 |
 | Staging environment | Vercel preview deploys are already free per-branch |
 | Pre-commit hooks (lint-staged + husky) | With v3.5 |
 | Error tracking (Sentry) | With v3.5 |
@@ -109,7 +109,13 @@ Adopt practices in tiers. Each tier should feel habitual before moving to the ne
 
 ### Tier 3 — Adopt Now / In Progress
 
-**GitHub Issues.** Stop tracking work mentally. Every bug, feature idea, and TODO becomes an issue with labels. Link PRs to issues. Start using this — the practice ladder requires it.
+**GitHub Issues. ✅ Now active.** Every bug, feature idea, and known gap is tracked as an issue with labels. The label system:
+- **Type:** `type: feature`, `type: bug`, `type: chore`, `type: perf`, `type: docs`
+- **Priority:** `priority: high` (this session), `priority: medium` (this phase), `priority: low` (someday)
+- **Phase:** `phase: 1`, `phase: 2`
+- **Area:** `area: mobile`, `area: ui`, `area: backend`, `area: testing`
+
+Branch names include the issue number: `feat/4-full-text-search`. PRs close issues automatically via `Closes #N` in the PR body.
 
 **Staging Environment.** Vercel preview deployments are already free. Every PR gets its own URL. Use it before merging to production.
 
