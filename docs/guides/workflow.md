@@ -51,7 +51,7 @@ These are genuinely ahead of many solo developers:
 - **PWA-first distribution** — real-world deployment from v1
 - **Free-tier constraint** — forces good architecture decisions
 
-### What's now in place (as of this session)
+### What's now in place (as of v3.0)
 
 | Practice | Status |
 |----------|--------|
@@ -59,22 +59,25 @@ These are genuinely ahead of many solo developers:
 | Prettier | Configured, all files pass |
 | EditorConfig | Configured |
 | Conventional commits | Adopted |
-| Quality pipeline | `format -> lint -> typecheck -> build` |
-| `/feature` skill | Branch-to-PR workflow |
-| `/ship` skill | Updated with lint + format checks |
-| `/audit` skill | Updated with lint + test sections |
+| Quality pipeline | `format → lint → typecheck → test → build` |
+| Feature branches + PRs | All work goes through branches, PRs to main |
+| Vitest (unit + component) | 95 tests — 62 unit, 33 component across 9 files |
+| GitHub Actions CI | `.github/workflows/ci.yml` — runs on PR + push to main |
+| `/feature` skill | Branch-to-PR workflow, mandatory tests + log creation |
+| `/ship` skill | Quality pipeline + mandatory docs/log update |
+| `/audit` skill | 9-category deep audit, async/cache/demo-parity emphasis |
+| `/perf-check` skill | Build size, deployment config, type safety |
+| `/supabase-migrate` skill | SQL migration file generation |
 | Skills tracked in git | `.claude/skills/` committed |
 
 ### What's still missing (adopt per the roadmap below)
 
 | Practice | When to Adopt |
 |----------|---------------|
-| Feature branches + PRs | Next feature session |
-| Vitest (unit tests) | Next session |
-| GitHub Actions CI | With first PR |
-| CHANGELOG.md | With v3.0 |
-| GitHub Issues | With v3.0 |
-| Staging environment | With v3.0 (Vercel preview deploys — free) |
+| CHANGELOG.md | With next major version |
+| GitHub Issues | Now — use for bug tracking and feature ideas |
+| Staging environment | Vercel preview deploys are already free per-branch |
+| Pre-commit hooks (lint-staged + husky) | With v3.5 |
 | Error tracking (Sentry) | With v3.5 |
 | E2E tests (Playwright) | With v4.0 |
 
@@ -92,27 +95,27 @@ Adopt practices in tiers. Each tier should feel habitual before moving to the ne
 
 **Quality Pipeline.** Before every commit: `format:check -> lint -> typecheck -> build`. In that order. If any step fails, fix it before moving on. Never skip.
 
-### Tier 2 — Adopt Next Session
+### Tier 2 — Adopted (v3.0) ✅
 
-**Feature Branches + PRs.** Never commit directly to `main`. Every change goes through a branch -> PR -> merge. Even solo. Why?
+**Feature Branches + PRs.** All work happens on branches. PRs to `main`. Even solo this gives:
 - Clean history of what each feature changed
 - A place to review your own work before it goes live
 - Easy rollback (revert a PR, not hunt through commits)
 - Vercel gives you free preview deployments per branch
 
-**Vitest (Unit Tests).** Start with lib functions (`src/lib/`). They're pure logic, easy to test, high value. Then expand to hooks. Vite-native, zero config.
+**Vitest (Unit + Component Tests).** 95 tests across 9 files. Unit tests in `src/lib/`, component tests in `src/components/__tests__/`. All new features require tests.
 
-**GitHub Actions CI.** A `.github/workflows/ci.yml` that runs `lint -> typecheck -> test -> build` on every PR. This is the safety net — it catches what you forgot to run locally.
+**GitHub Actions CI.** `.github/workflows/ci.yml` runs `format → lint → typecheck → test → build` on every PR and push to `main`. Secrets (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`) configured in GitHub Actions settings.
 
-### Tier 3 — Adopt with v3.0
+### Tier 3 — Adopt Now / In Progress
 
-**CHANGELOG.md.** Auto-generated from conventional commits. Users and your future self can see what changed between versions.
+**GitHub Issues.** Stop tracking work mentally. Every bug, feature idea, and TODO becomes an issue with labels. Link PRs to issues. Start using this — the practice ladder requires it.
 
-**GitHub Issues.** Stop tracking work mentally. Every bug, feature idea, and TODO becomes an issue with labels. Link PRs to issues.
+**Staging Environment.** Vercel preview deployments are already free. Every PR gets its own URL. Use it before merging to production.
 
-**Staging Environment.** Vercel preview deployments are free. Every PR gets its own URL. Test before merging to production.
+**CHANGELOG.md.** Auto-generated from conventional commits. Deferred — revisit at next major version.
 
-**Error Tracking (Sentry).** Free tier gives 5K events/month. When real users hit errors, you'll know immediately instead of wondering why something looks broken.
+**Error Tracking (Sentry).** Free tier gives 5K events/month. Adopt at v3.5 when Phase 2 features land.
 
 ---
 
@@ -205,7 +208,7 @@ docs/<slug>      Documentation      docs/api-reference
 
 [optional body — explain why, not what]
 
-Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 ```
 
 Types: `feat`, `fix`, `refactor`, `chore`, `docs`, `test`, `perf`, `style`
@@ -340,14 +343,14 @@ This is the master plan. Each version adopts new practices alongside new feature
 
 ### v3.0 — Professional Development
 
-**Features:** Supabase Auth, content extraction, full-text search, reader mode
-**Practices to adopt:**
-- [ ] Feature branches + PRs for all work
-- [ ] Vitest unit tests (start with `src/lib/`)
-- [ ] GitHub Actions CI (`lint -> typecheck -> test -> build` on every PR)
-- [ ] CHANGELOG.md (auto-generated from conventional commits)
-- [ ] GitHub Issues for work tracking
-- [ ] Vercel preview deployments as staging
+**Features:** Supabase Auth, content extraction, areas & tagging redesign, testing & CI
+**Practices adopted:**
+- [x] Feature branches + PRs for all work
+- [x] Vitest unit + component tests (95 tests across 9 files)
+- [x] GitHub Actions CI (`format → lint → typecheck → test → build` on every PR)
+- [ ] CHANGELOG.md (auto-generated from conventional commits) — deferred
+- [ ] GitHub Issues for work tracking — adopt now
+- [ ] Vercel preview deployments as staging — available, use per-branch
 
 ### v3.5 — Quality at Scale
 
@@ -502,5 +505,5 @@ Big features ship behind flags. Roll out to 10% of users, verify, then 100%. If 
 
 ---
 
-*Last updated: v2.2 — ESLint + Prettier + professional workflow setup.*
-*Next milestone: v3.0 — feature branches, Vitest, GitHub Actions CI.*
+*Last updated: v3.0 — Testing & CI shipped (95 tests, GitHub Actions), skills rewritten, workflow practices current.*
+*Next milestone: v3.5 — pre-commit hooks, error tracking (Sentry), integration tests.*

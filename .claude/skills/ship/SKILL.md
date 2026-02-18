@@ -1,6 +1,6 @@
 ---
 name: ship
-description: End-of-session shipping routine. Lint, type-check, build, update docs, commit, and push.
+description: End-of-session shipping routine. Lint, type-check, test, build, update docs, commit, and push.
 disable-model-invocation: true
 ---
 
@@ -14,31 +14,28 @@ End-of-session routine to verify, document, commit, and push all changes.
 
 Run these in sequence — stop if any fail:
 
-```
-npx prettier --check "src/**/*.{ts,tsx}" "*.{js,json}"
-npx eslint src/
-npx tsc --noEmit
-npx vite build
-```
-
-When test infrastructure exists, also run:
-```
-npx vitest run
+```bash
+npm run format:check
+npm run lint
+npm run typecheck
+npm run test
+npm run build
 ```
 
-If any check fails, fix the errors before continuing. Do NOT skip this step.
+All five must pass with zero errors. Do NOT skip or reorder.
 
 ### 2. Update documentation
 
 Check if any of these files need updates based on what changed this session:
 
-- **CLAUDE.md** — Architecture, key patterns, important rules. Update if new files, patterns, or conventions were added.
-- **README.md** — User-facing docs. Update if features, setup steps, project structure, or known limitations changed.
-- **docs/INDEX.md** — Shipped features table and "next up" status. Update if features were shipped.
-- **docs/plan/phase-1.md** — Active roadmap. Mark completed items, update priorities.
-- **docs/reference/audit.md** — Bug tracking. Update if bugs were found and fixed.
+- **`docs/log/<version>-<feature>.md`** — If a feature shipped this session, this log **must** exist. Create it if it doesn't. Include: what was built, key decisions, files changed, gotchas for future sessions.
+- **`docs/INDEX.md`** — Shipped features table and "next up" status. Update if features were shipped.
+- **`docs/plan/phase-1.md`** — Active roadmap. Mark completed items.
+- **`CLAUDE.md`** — Architecture, key patterns, important rules. Update if new files, patterns, or conventions were added.
+- **`README.md`** — User-facing docs. Update if features, setup steps, or project structure changed.
+- **`docs/reference/audit.md`** — Bug tracking. Update if bugs were found and fixed.
 
-Only update what actually changed. Don't touch docs that are already current.
+Only update what actually changed. But always check `docs/log/` — a missing log for a shipped feature is a documentation debt.
 
 ### 3. Bump service worker cache version
 
@@ -57,12 +54,12 @@ If any code in `src/` or `public/` changed, bump the `CACHE_NAME` version in `pu
   - `chore:` tooling, deps, config
   - `docs:` documentation only
   - `test:` tests only
-- End with `Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>`
+- End with `Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>`
 - Use HEREDOC format for the message
 
 ### 5. Push
 
-```
+```bash
 git push -u origin <current-branch>
 ```
 
@@ -73,5 +70,5 @@ Show a summary table of what was shipped:
 - Files changed (count)
 - Commit hash + message
 - Docs updated (which ones)
-- Lint status (clean/warnings)
-- Build status (clean/warnings)
+- Log created/updated (which file)
+- All 5 quality checks: PASS/FAIL

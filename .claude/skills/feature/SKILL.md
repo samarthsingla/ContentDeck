@@ -21,8 +21,10 @@ Complete workflow for developing features professionally: branch → plan → im
    - `fix/<name>` for bug fixes
    - `refactor/<name>` for refactoring
    - `chore/<name>` for tooling, deps, config
+   - `docs/<name>` for documentation-only changes
 
 2. **Explore codebase** to understand affected areas:
+   - Read `docs/INDEX.md` and `docs/plan/phase-1.md` for current roadmap state
    - Read relevant source files
    - Identify all files that need changes
    - Check for existing patterns to follow
@@ -31,7 +33,8 @@ Complete workflow for developing features professionally: branch → plan → im
    - Files to create/modify
    - Dependencies or migrations needed
    - Risks or edge cases
-   - Testing approach
+   - Testing approach (unit tests for lib/, component tests for UI)
+   - Which docs/log/ entry will record this feature
 
 4. **Get user approval** before writing any code.
 
@@ -43,33 +46,34 @@ Complete workflow for developing features professionally: branch → plan → im
    - Maintain accessibility standards (44px touch targets, ARIA, focus-visible)
    - Use `type` imports for type-only imports
 
-2. **Write tests** (when test infrastructure exists):
-   - Unit tests for lib functions
-   - Component tests for complex UI logic
+2. **Write tests** — this is mandatory, not optional:
+   - Unit tests in `src/lib/*.test.ts` for any lib function changes
+   - Component tests in `src/components/__tests__/` for complex UI logic
+   - Name tests as sentences: `"shows error when URL is empty"`
+   - Test behavior, not implementation
 
 ## Phase 3 — VERIFY
 
 Run all quality checks in order — stop and fix if any fail:
 
 ```bash
-npx prettier --check "src/**/*.{ts,tsx}" "*.{js,json}"
-npx eslint src/
-npx tsc --noEmit
-npx vite build
+npm run format:check
+npm run lint
+npm run typecheck
+npm run test
+npm run build
 ```
 
-When test infrastructure exists, also run:
-```bash
-npx vitest run
-```
+All five must pass with zero errors before proceeding to Phase 4.
 
 ## Phase 4 — SHIP
 
-1. **Update documentation** (only what changed):
+1. **Update documentation** — mandatory, not optional:
+   - `docs/log/<version>-<feature>.md` — **always create/update this log** when a feature ships. Record: what was built, key decisions, files changed, gotchas.
+   - `docs/INDEX.md` — add to shipped features table, update "Next up"
+   - `docs/plan/phase-1.md` — mark completed items
    - `CLAUDE.md` — if architecture, patterns, or rules changed
    - `README.md` — if user-facing features changed
-   - `docs/INDEX.md` — if features were shipped (update shipped features table)
-   - `docs/plan/phase-1.md` — if roadmap items were completed
    - `docs/reference/audit.md` — if bugs were found/fixed
 
 2. **Bump SW cache version** in `public/sw.js` if `src/` or `public/` changed.
@@ -81,7 +85,7 @@ npx vitest run
    - `chore: <description>` — tooling, deps, config
    - `docs: <description>` — documentation only
    - `test: <description>` — tests only
-   - End with `Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>`
+   - End with `Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>`
 
 4. **Push and create PR:**
    ```bash

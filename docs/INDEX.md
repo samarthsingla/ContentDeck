@@ -2,7 +2,7 @@
 
 > Start here. This file orients each session.
 
-**Version:** v3.0 | **Status:** Areas & tagging redesign shipped
+**Version:** v3.0 | **Status:** Testing & CI shipped (Phase 1.6 complete)
 **Next up:** Full-text search (1.3) → Import system (1.4)
 **Active phase:** [Phase 1 — Foundation](plan/phase-1.md)
 
@@ -58,10 +58,11 @@ docs/
 
 | Version | Feature | Log |
 |---|---|---|
-| v3.0 | Supabase Auth (magic link + Google + GitHub OAuth) | [log/v3.0-auth.md](log/v3.0-auth.md) |
-| v3.0 | Bookmarklet (edge function + API token) | [log/v3.0-bookmarklet.md](log/v3.0-bookmarklet.md) |
-| v3.0 | iOS Shortcut (query-param GET) | [log/v3.0-ios-shortcut.md](log/v3.0-ios-shortcut.md) |
-| v3.0 | Metadata quality fix (YouTube Data API, Twitter, excerpts) | [log/v3.0-metadata-fix.md](log/v3.0-metadata-fix.md) |
-| v3.0 | Content extraction pipeline (Readability + linkedom) | [log/v3.0-content-extraction.md](log/v3.0-content-extraction.md) |
+| v3.0 | Testing & CI (Vitest 95 tests, GitHub Actions pipeline) | [log/v3.0-testing-ci.md](log/v3.0-testing-ci.md) |
 | v3.0 | Areas & tagging redesign (two-tier model, junction table, AI-aware) | [log/v3.0-areas-tagging-redesign.md](log/v3.0-areas-tagging-redesign.md) |
+| v3.0 | Content extraction pipeline (Readability + linkedom) | [log/v3.0-content-extraction.md](log/v3.0-content-extraction.md) |
+| v3.0 | Metadata quality fix (YouTube Data API, Twitter, excerpts) | [log/v3.0-metadata-fix.md](log/v3.0-metadata-fix.md) |
+| v3.0 | iOS Shortcut (query-param GET) | [log/v3.0-ios-shortcut.md](log/v3.0-ios-shortcut.md) |
+| v3.0 | Bookmarklet (edge function + API token) | [log/v3.0-bookmarklet.md](log/v3.0-bookmarklet.md) |
+| v3.0 | Supabase Auth (magic link + Google + GitHub OAuth) | [log/v3.0-auth.md](log/v3.0-auth.md) |
 | v2.0 | React + Vite + Tailwind migration | [log/v2-migration.md](log/v2-migration.md) |

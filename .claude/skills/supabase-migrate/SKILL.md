@@ -19,7 +19,7 @@ Before generating, read `sql/setup.sql` to understand existing patterns:
 ### Table patterns
 - UUIDs for primary keys: `id UUID DEFAULT gen_random_uuid() PRIMARY KEY`
 - Timestamps: `created_at TIMESTAMPTZ DEFAULT now()`
-- All tables will need `user_id UUID REFERENCES auth.users(id)` once auth is added (Phase 1.1)
+- All tables require `user_id UUID REFERENCES auth.users(id)` — Supabase Auth is live (Phase 1.1 complete)
 
 ### Trigger patterns
 - Source detection: `detect_source_type()` using `~*` (case-insensitive regex)
@@ -45,7 +45,7 @@ CREATE POLICY "Users see own data" ON <table>
 
 Generate a complete, runnable SQL file:
 
-1. **Header comment**: Description, date, references to ENGINEERING-PLAN.md section
+1. **Header comment**: Description, date, references to `docs/plan/phase-1.md` section
 2. **Extensions**: `CREATE EXTENSION IF NOT EXISTS` for any needed extensions
 3. **Tables**: New tables with all columns and constraints
 4. **Indexes**: Performance indexes
