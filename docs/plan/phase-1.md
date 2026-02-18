@@ -62,7 +62,7 @@ CREATE INDEX bookmarks_search_idx ON bookmarks USING GIN (search_vector);
 **Why**: Moving fast without breaking things requires automated verification.
 
 - **Vitest**: Unit tests for lib/ functions (utils, metadata, ai, obsidian) ✅ **DONE** — 62 tests across 4 files
-- **React Testing Library**: Component tests for critical flows (add bookmark, demo mode, auth)
-- **Playwright**: E2E tests (setup → demo → add → read → export flow)
-- **GitHub Actions**: Run tests on every PR, block merge on failure
-- **Type checking**: `tsc --noEmit` in CI (already works locally)
+- **React Testing Library**: Component tests for critical UI flows ✅ **DONE** — 33 tests across 5 files (App, AuthScreen, AddBookmarkModal, BookmarkCard, StatusFilters)
+- **Playwright**: E2E tests — **DEFERRED** (overkill for personal app with strong unit + component coverage)
+- **GitHub Actions**: CI pipeline on PRs and pushes to main ✅ **DONE** — format → lint → typecheck → test → build
+- **Type checking**: `tsc --noEmit` in CI ✅ **DONE** (included in GitHub Actions pipeline)

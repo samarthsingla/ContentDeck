@@ -1,9 +1,16 @@
-import { vi, beforeEach } from 'vitest';
+import { vi, beforeEach, afterEach } from 'vitest';
+import { cleanup } from '@testing-library/react';
+import '@testing-library/jest-dom/vitest';
 
 // Reset mock call history between tests (but keep implementations)
 beforeEach(() => {
   vi.clearAllMocks();
   localStorageStore.clear();
+});
+
+// Clean up rendered components after each test
+afterEach(() => {
+  cleanup();
 });
 
 // Mock fetch globally

@@ -160,6 +160,8 @@ Run in this order before every commit — all must pass:
 4. `npm run test` — Vitest regression tests (all must pass)
 5. `npm run build` — Vite production build
 
+**CI:** GitHub Actions runs this same pipeline on every PR and push to `main` (`.github/workflows/ci.yml`).
+
 ### Claude Code Skills
 
 | Skill | Description |
