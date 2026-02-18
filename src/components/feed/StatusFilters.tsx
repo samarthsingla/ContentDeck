@@ -23,7 +23,7 @@ export default function StatusFilters({ bookmarks }: { bookmarks: Bookmark[] }) 
             aria-selected={active}
             onClick={() => setStatus(active ? 'all' : status)}
             className={`
-              px-3 py-1.5 rounded-lg text-sm font-medium transition-colors min-h-[36px]
+              px-3 py-1.5 rounded-lg text-sm font-medium transition-colors min-h-[44px]
               ${
                 active
                   ? 'bg-primary-600/10 text-primary-600 dark:text-primary-400'

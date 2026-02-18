@@ -136,20 +136,21 @@ export default function BookmarkList({
   }
 
   return (
-    <div className="space-y-2">
+    <ul className="space-y-2" role="list">
       {filtered.map((b) => (
-        <BookmarkCard
-          key={b.id}
-          bookmark={b}
-          selected={selectedIds.has(b.id)}
-          selectMode={selectMode}
-          onCycleStatus={onCycleStatus}
-          onToggleFavorite={onToggleFavorite}
-          onDelete={onDelete}
-          onSelect={toggleSelected}
-          onClick={onClick}
-        />
+        <li key={b.id}>
+          <BookmarkCard
+            bookmark={b}
+            selected={selectedIds.has(b.id)}
+            selectMode={selectMode}
+            onCycleStatus={onCycleStatus}
+            onToggleFavorite={onToggleFavorite}
+            onDelete={onDelete}
+            onSelect={toggleSelected}
+            onClick={onClick}
+          />
+        </li>
       ))}
-    </div>
+    </ul>
   );
 }

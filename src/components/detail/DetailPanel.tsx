@@ -128,7 +128,7 @@ export default function DetailPanel({
           </h2>
           <button
             onClick={onClose}
-            className="p-2 rounded-lg hover:bg-surface-100 dark:hover:bg-surface-800 min-w-[36px] min-h-[36px] flex items-center justify-center"
+            className="p-2 rounded-lg hover:bg-surface-100 dark:hover:bg-surface-800 min-w-[44px] min-h-[44px] flex items-center justify-center"
             aria-label="Close panel"
           >
             <X size={18} />

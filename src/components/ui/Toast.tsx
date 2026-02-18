@@ -59,8 +59,8 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             className={`
               flex items-center gap-2 px-4 py-3 rounded-lg shadow-lg text-sm font-medium
               motion-safe:animate-[slideUp_0.2s_ease-out]
-              ${t.type === 'success' ? 'bg-green-600 text-white' : ''}
-              ${t.type === 'error' ? 'bg-red-600 text-white' : ''}
+              ${t.type === 'success' ? 'bg-green-600 dark:bg-green-700 text-white' : ''}
+              ${t.type === 'error' ? 'bg-red-600 dark:bg-red-700 text-white' : ''}
               ${t.type === 'info' ? 'bg-surface-700 text-surface-100 dark:bg-surface-800' : ''}
             `}
           >

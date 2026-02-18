@@ -69,6 +69,7 @@ export default function Sidebar({ counts, onAdd, onSignOut, onSettings, onStats 
             return (
               <button
                 key={status}
+                aria-current={active ? 'page' : undefined}
                 onClick={() => {
                   setStatus(status);
                   setTag(null);
@@ -92,6 +93,7 @@ export default function Sidebar({ counts, onAdd, onSignOut, onSettings, onStats 
 
           {/* Favorites */}
           <button
+            aria-current={showFavorites ? 'page' : undefined}
             onClick={() => {
               setFavorites(true);
               setStatus('all');

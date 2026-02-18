@@ -38,7 +38,7 @@ export default function FeedToolbar({ bookmarks, showSearch }: FeedToolbarProps)
         <SortSelect />
         <button
           onClick={toggleSelectMode}
-          className={`p-2 rounded-lg transition-colors min-w-[36px] min-h-[36px] flex items-center justify-center ${
+          className={`p-2 rounded-lg transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center ${
             selectMode
               ? 'bg-primary-600/10 text-primary-600 dark:text-primary-400'
               : 'text-surface-400 hover:bg-surface-100 dark:hover:bg-surface-800'
