@@ -32,8 +32,8 @@ Visit [contentdeck.vercel.app](https://contentdeck.vercel.app) and click **Try D
 
 ### Export
 - **Obsidian integration** — one-click export with YAML frontmatter + structured notes
-- **File System API** — writes directly to your vault folder (Chrome/Edge)
-- **Clipboard fallback** — copies markdown on Firefox/Safari/mobile
+- **Obsidian URI** — opens directly in your vault via `obsidian://` protocol
+- **Clipboard fallback** — copies markdown when vault name not configured
 - **Sync tracking** — marks exported bookmarks so you know what's been processed
 
 ## Save from Anywhere

@@ -9,16 +9,17 @@ import {
   DEMO_STATUS_HISTORY,
   DEMO_BOOKMARK_TAGS,
 } from './demo-data';
-import type { Bookmark, TagArea, StatusHistoryEntry, BookmarkTag } from '../types';
+import type { Bookmark, TagArea, StatusHistoryEntry, BookmarkTag, UserToken } from '../types';
 
-type TableName = 'bookmarks' | 'tag_areas' | 'status_history' | 'bookmark_tags';
-type Row = Bookmark | TagArea | StatusHistoryEntry | BookmarkTag;
+type TableName = 'bookmarks' | 'tag_areas' | 'status_history' | 'bookmark_tags' | 'user_tokens';
+type Row = Bookmark | TagArea | StatusHistoryEntry | BookmarkTag | UserToken;
 
 interface TableStore {
   bookmarks: Bookmark[];
   tag_areas: TagArea[];
   status_history: StatusHistoryEntry[];
   bookmark_tags: BookmarkTag[];
+  user_tokens: UserToken[];
 }
 
 let nextId = 1;
@@ -249,6 +250,7 @@ export function createMockSupabaseClient(): SupabaseClient {
     tag_areas: deepClone(DEMO_TAG_AREAS),
     status_history: deepClone(DEMO_STATUS_HISTORY),
     bookmark_tags: deepClone(DEMO_BOOKMARK_TAGS),
+    user_tokens: [],
   };
 
   const mock = {
@@ -257,6 +259,15 @@ export function createMockSupabaseClient(): SupabaseClient {
     },
     functions: {
       invoke: () => Promise.resolve({ data: null, error: null }),
+    },
+    auth: {
+      getUser: () =>
+        Promise.resolve({
+          data: { user: { id: 'demo-user', email: 'demo@example.com' } },
+          error: null,
+        }),
+      getSession: () => Promise.resolve({ data: { session: null }, error: null }),
+      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
     },
   };
 

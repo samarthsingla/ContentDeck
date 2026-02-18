@@ -1,4 +1,6 @@
-# ContentDeck v2.0 Audit Report
+# ContentDeck Audit Report (Historical — v2.0 Migration)
+
+> **Note:** This is a historical document from the v1→v2 migration. For the current v3.0 audit, run `/audit` in Claude Code.
 
 Post-migration audit of the React + TypeScript + Vite + Tailwind rewrite.
 

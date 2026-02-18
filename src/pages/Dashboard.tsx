@@ -68,7 +68,6 @@ export default function Dashboard({ userEmail, onSignOut, isDemo, sharedUrl }: D
   const [metaProgress, setMetaProgress] = useState<{ current: number; total: number } | null>(null);
   const [isRefreshingMeta, setIsRefreshingMeta] = useState(false);
   const metaFetchedRef = useRef(false);
-  const aiTaggedRef = useRef(false);
 
   // Keyboard shortcuts
   useKeyboardShortcuts(
@@ -98,77 +97,65 @@ export default function Dashboard({ userEmail, onSignOut, isDemo, sharedUrl }: D
   const toastRef = useRef(toast);
   toastRef.current = toast;
 
-  // Auto-fetch missing metadata on first load (skip in demo)
+  // Auto-fetch missing metadata on first load, then auto-tag untagged bookmarks.
+  // Chained into one effect so AI tagging reads enriched data (with titles/excerpts).
   useEffect(() => {
     if (isDemo || isLoading || metaFetchedRef.current) return;
     const currentBookmarks = bookmarksRef.current;
     if (currentBookmarks.length === 0) return;
     metaFetchedRef.current = true;
 
-    // Only fetch for bookmarks with no title — the primary missing-metadata signal.
-    // Bookmarks with title but no image are fine (Twitter posts rarely have images).
-    const missing = currentBookmarks.filter((b) => !b.title);
-    if (missing.length === 0) return;
-
     let cancelled = false;
-    async function fetchAll() {
-      setMetaProgress({ current: 0, total: missing.length });
 
-      // Process in batches of 3 to avoid overwhelming APIs
-      const BATCH_SIZE = 3;
-      for (let i = 0; i < missing.length; i += BATCH_SIZE) {
-        if (cancelled) break;
-        const batch = missing.slice(i, i + BATCH_SIZE);
-        await Promise.allSettled(
-          batch.map(async (b) => {
-            try {
-              const result = await fetchMetadata(b.url, b.source_type);
-              const updates: Record<string, unknown> = {};
-              if (result.title) updates.title = result.title;
-              if (result.image && !b.image) updates.image = result.image;
-              if (result.excerpt && !b.excerpt) updates.excerpt = result.excerpt;
-              if (result.metadata) updates.metadata = { ...b.metadata, ...result.metadata };
-              if (Object.keys(updates).length > 0) {
-                void db.from('bookmarks').update(updates).eq('id', b.id);
+    async function enrichAndTag() {
+      // Phase 1: Fetch missing metadata
+      const missing = currentBookmarks.filter((b) => !b.title);
+      if (missing.length > 0) {
+        setMetaProgress({ current: 0, total: missing.length });
+        const BATCH_SIZE = 3;
+        for (let i = 0; i < missing.length; i += BATCH_SIZE) {
+          if (cancelled) break;
+          const batch = missing.slice(i, i + BATCH_SIZE);
+          await Promise.allSettled(
+            batch.map(async (b) => {
+              try {
+                const result = await fetchMetadata(b.url, b.source_type);
+                const updates: Record<string, unknown> = {};
+                if (result.title) updates.title = result.title;
+                if (result.image && !b.image) updates.image = result.image;
+                if (result.excerpt && !b.excerpt) updates.excerpt = result.excerpt;
+                if (result.metadata) updates.metadata = { ...b.metadata, ...result.metadata };
+                if (Object.keys(updates).length > 0) {
+                  void db.from('bookmarks').update(updates).eq('id', b.id);
+                }
+              } catch {
+                /* skip */
               }
-            } catch {
-              /* skip */
-            }
-          }),
-        );
-        setMetaProgress({
-          current: Math.min(i + BATCH_SIZE, missing.length),
-          total: missing.length,
-        });
+            }),
+          );
+          setMetaProgress({
+            current: Math.min(i + BATCH_SIZE, missing.length),
+            total: missing.length,
+          });
+        }
+        setMetaProgress(null);
+        // Refresh cache so phase 2 reads enriched bookmarks
+        await queryClient.invalidateQueries({ queryKey: ['bookmarks'] });
       }
-      setMetaProgress(null);
-      // Single invalidation after all fetches complete
-      void queryClient.invalidateQueries({ queryKey: ['bookmarks'] });
-    }
-    void fetchAll();
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isDemo, isLoading]);
 
-  // Auto-tag untagged bookmarks via AI on load (skip in demo)
-  useEffect(() => {
-    if (isDemo || isLoading || aiTaggedRef.current) return;
-    const currentBookmarks = bookmarksRef.current;
-    if (currentBookmarks.length === 0) return;
-    const apiKey = localStorage.getItem('openrouter_key');
-    if (!apiKey) return;
-    aiTaggedRef.current = true;
+      if (cancelled) return;
 
-    // Bookmarks with no tags AND no areas
-    const untagged = currentBookmarks.filter(
-      (b) => (!b.tags || b.tags.length === 0) && (!b.areas || b.areas.length === 0),
-    );
-    if (untagged.length === 0) return;
+      // Phase 2: AI-tag untagged bookmarks using fresh cache data
+      const apiKey = localStorage.getItem('openrouter_key');
+      if (!apiKey) return;
 
-    let cancelled = false;
-    async function tagAll() {
+      const freshBookmarks =
+        queryClient.getQueryData<Bookmark[]>(['bookmarks']) ?? currentBookmarks;
+      const untagged = freshBookmarks.filter(
+        (b) => (!b.tags || b.tags.length === 0) && (!b.areas || b.areas.length === 0),
+      );
+      if (untagged.length === 0) return;
+
       for (const b of untagged) {
         if (cancelled) break;
         try {
@@ -181,7 +168,8 @@ export default function Dashboard({ userEmail, onSignOut, isDemo, sharedUrl }: D
         void queryClient.invalidateQueries({ queryKey: ['bookmarks'] });
       }
     }
-    void tagAll();
+
+    void enrichAndTag();
     return () => {
       cancelled = true;
     };

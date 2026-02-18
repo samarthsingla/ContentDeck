@@ -7,6 +7,8 @@ interface MetadataResult {
   metadata?: BookmarkMetadata;
 }
 
+const FETCH_TIMEOUT_MS = 10_000;
+
 /** Extract YouTube video ID from various URL formats */
 function extractYouTubeId(url: string): string | null {
   const patterns = [
@@ -43,7 +45,7 @@ async function fetchYouTubeMetadata(url: string): Promise<MetadataResult> {
   if (videoId && ytKey) {
     try {
       const apiUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${videoId}&key=${ytKey}`;
-      const resp = await fetch(apiUrl);
+      const resp = await fetch(apiUrl, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
       if (resp.ok) {
         const data = (await resp.json()) as {
           items?: Array<{
@@ -81,7 +83,7 @@ async function fetchYouTubeMetadata(url: string): Promise<MetadataResult> {
   // Fallback: oEmbed (no key needed, but no duration)
   try {
     const oembedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`;
-    const resp = await fetch(oembedUrl);
+    const resp = await fetch(oembedUrl, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
     if (!resp.ok) return {};
     const data = (await resp.json()) as {
       title?: string;
@@ -103,7 +105,7 @@ async function fetchTwitterMetadata(url: string): Promise<MetadataResult> {
   // Try Twitter oEmbed first
   try {
     const oembedUrl = `https://publish.twitter.com/oembed?url=${encodeURIComponent(url)}`;
-    const resp = await fetch(oembedUrl);
+    const resp = await fetch(oembedUrl, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
     if (resp.ok) {
       const data = (await resp.json()) as { author_name?: string; html?: string };
       if (data.author_name) {
@@ -136,7 +138,7 @@ async function fetchTwitterMetadata(url: string): Promise<MetadataResult> {
 async function fetchMicrolinkMetadata(url: string): Promise<MetadataResult> {
   try {
     const apiUrl = `https://api.microlink.io/?url=${encodeURIComponent(url)}`;
-    const resp = await fetch(apiUrl);
+    const resp = await fetch(apiUrl, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
     if (!resp.ok) return {};
     const json = (await resp.json()) as {
       data?: {
