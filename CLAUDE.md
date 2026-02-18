@@ -21,7 +21,7 @@ All project docs live in `docs/`. Start each session by reading `docs/INDEX.md`.
 | `docs/guides/` | Development workflow and setup guides |
 | `docs/reference/` | Audit trail, integrations, lookup tables |
 
-**Current phase:** Phase 1 (Foundation) — see `docs/plan/phase-1.md`
+**Current phase:** Phase 2 (Intelligence) — see `docs/plan/phase-2.md` (Phase 1 complete)
 
 ## Tech Stack
 
@@ -74,7 +74,9 @@ supabase/
 - **All data mutations** use TanStack Query with optimistic updates + automatic rollback on error
 - **Source type colors** defined once in `tailwind.config.ts` (not duplicated in CSS)
 - **Reusable `Modal` component** has focus trapping, ARIA attributes, ESC handling built in
-- **Accessibility first:** `focus-visible:ring-2` on all interactives, proper `<label>` elements, `motion-safe:`/`motion-reduce:` variants
+- **Accessibility first:** `focus-visible:ring-2` on all interactives, proper `<label>` elements, `motion-safe:`/`motion-reduce:` variants. `eslint-plugin-jsx-a11y` enforces a11y rules at lint time.
+- **Clickable cards:** use `<div role="button">` not `<article role="button">` — non-interactive elements cannot take interactive roles per ARIA spec
+- **Modal structure:** `role="dialog"` goes on the inner content panel, not the backdrop `<div>`; backdrop is a plain div with no role
 - **Demo mode:** `localStorage.getItem('contentdeck_demo') === 'true'` → mock Supabase client operates on in-memory arrays, zero hook changes needed
 - **PWA Share Target:** `manifest.json` `share_target` + `?url=` query param handling in App.tsx → AddBookmarkModal pre-fill
 - **Service worker:** Network-first for navigation, stale-while-revalidate for assets. Version in `CACHE_NAME` must be bumped manually on deploys.

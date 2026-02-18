@@ -56,12 +56,13 @@ These are genuinely ahead of many solo developers:
 | Practice | Status |
 |----------|--------|
 | ESLint (type-checked) | Configured, zero errors |
+| eslint-plugin-jsx-a11y | Configured — a11y issues caught at lint time |
 | Prettier | Configured, all files pass |
 | EditorConfig | Configured |
 | Conventional commits | Adopted |
 | Quality pipeline | `format → lint → typecheck → test → build` |
 | Feature branches + PRs | All work goes through branches, PRs to main |
-| Vitest (unit + component) | 95 tests — 62 unit, 33 component across 9 files |
+| Vitest (unit + component) | 133 tests — unit + component across 12 files |
 | GitHub Actions CI | `.github/workflows/ci.yml` — runs on PR + push to main |
 | `/feature` skill | Branch-to-PR workflow, mandatory tests + log creation |
 | `/ship` skill | Quality pipeline + mandatory docs/log update |
@@ -103,7 +104,7 @@ Adopt practices in tiers. Each tier should feel habitual before moving to the ne
 - Easy rollback (revert a PR, not hunt through commits)
 - Vercel gives you free preview deployments per branch
 
-**Vitest (Unit + Component Tests).** 95 tests across 9 files. Unit tests in `src/lib/`, component tests in `src/components/__tests__/`. All new features require tests.
+**Vitest (Unit + Component Tests).** 133 tests across 12 files. Unit tests in `src/lib/`, component tests in `src/components/__tests__/`. All new features require tests.
 
 **GitHub Actions CI.** `.github/workflows/ci.yml` runs `format → lint → typecheck → test → build` on every PR and push to `main`. Secrets (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`) configured in GitHub Actions settings.
 
@@ -514,5 +515,5 @@ Big features ship behind flags. Roll out to 10% of users, verify, then 100%. If 
 
 ---
 
-*Last updated: v3.0 — Testing & CI shipped (95 tests, GitHub Actions), skills rewritten, workflow practices current.*
-*Next milestone: v3.5 — pre-commit hooks, error tracking (Sentry), integration tests.*
+*Last updated: v3.0 — Phase 1 complete (133 tests), jsx-a11y added to ESLint, React Doctor 93/100.*
+*Next milestone: Phase 2 (Intelligence) — AI summarisation, smart recommendations, Obsidian sync.*
