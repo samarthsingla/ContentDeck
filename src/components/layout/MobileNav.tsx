@@ -1,9 +1,9 @@
-import { Inbox, BookOpen, CheckCircle, List, LayoutGrid } from 'lucide-react';
+import { Inbox, BookOpen, CheckCircle, Star, List, LayoutGrid } from 'lucide-react';
 import { useUI } from '../../context/UIProvider';
 import type { Status } from '../../types';
 
 interface MobileNavProps {
-  counts: { unread: number; reading: number; done: number };
+  counts: { unread: number; reading: number; done: number; favorited: number };
 }
 
 const tabs: { status: Status; label: string; icon: React.ElementType }[] = [
@@ -13,7 +13,7 @@ const tabs: { status: Status; label: string; icon: React.ElementType }[] = [
 ];
 
 export default function MobileNav({ counts }: MobileNavProps) {
-  const { currentStatus, setStatus, currentView, setView } = useUI();
+  const { currentStatus, setStatus, currentView, setView, showFavorites, setFavorites } = useUI();
 
   return (
     <nav
@@ -23,11 +23,14 @@ export default function MobileNav({ counts }: MobileNavProps) {
     >
       <div className="flex items-center">
         {tabs.map(({ status, label, icon: Icon }) => {
-          const active = currentStatus === status;
+          const active = currentStatus === status && !showFavorites;
           return (
             <button
               key={status}
-              onClick={() => setStatus(status)}
+              onClick={() => {
+                setStatus(status);
+                setFavorites(false);
+              }}
               className={`flex-1 flex flex-col items-center gap-0.5 py-2 min-h-[56px] transition-colors
                 ${active ? 'text-primary-600 dark:text-primary-400' : 'text-surface-400 dark:text-surface-500'}
               `}
@@ -40,6 +43,23 @@ export default function MobileNav({ counts }: MobileNavProps) {
             </button>
           );
         })}
+
+        {/* Favorites */}
+        <button
+          onClick={() => {
+            setFavorites(true);
+            setStatus('all');
+          }}
+          className={`flex-1 flex flex-col items-center gap-0.5 py-2 min-h-[56px] transition-colors
+            ${showFavorites ? 'text-primary-600 dark:text-primary-400' : 'text-surface-400 dark:text-surface-500'}
+          `}
+          aria-label={`Favorites (${counts.favorited})`}
+          aria-current={showFavorites ? 'page' : undefined}
+        >
+          <Star size={20} />
+          <span className="text-[10px] font-medium">Favorites</span>
+          {counts.favorited > 0 && <span className="text-[10px]">{counts.favorited}</span>}
+        </button>
 
         {/* View toggle */}
         <button
