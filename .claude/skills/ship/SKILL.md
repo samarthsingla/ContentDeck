@@ -34,8 +34,9 @@ Check if any of these files need updates based on what changed this session:
 
 - **CLAUDE.md** — Architecture, key patterns, important rules. Update if new files, patterns, or conventions were added.
 - **README.md** — User-facing docs. Update if features, setup steps, project structure, or known limitations changed.
-- **AUDIT.md** — Bug tracking. Update if bugs were found and fixed, or known limitations changed.
-- **ENGINEERING-PLAN.md** — Roadmap. Update if features were shipped or priorities shifted.
+- **docs/INDEX.md** — Shipped features table and "next up" status. Update if features were shipped.
+- **docs/plan/phase-1.md** — Active roadmap. Mark completed items, update priorities.
+- **docs/reference/audit.md** — Bug tracking. Update if bugs were found and fixed.
 
 Only update what actually changed. Don't touch docs that are already current.
 

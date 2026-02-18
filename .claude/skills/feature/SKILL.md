@@ -68,8 +68,9 @@ npx vitest run
 1. **Update documentation** (only what changed):
    - `CLAUDE.md` — if architecture, patterns, or rules changed
    - `README.md` — if user-facing features changed
-   - `AUDIT.md` — if bugs were found/fixed
-   - `ENGINEERING-PLAN.md` — if roadmap items were completed
+   - `docs/INDEX.md` — if features were shipped (update shipped features table)
+   - `docs/plan/phase-1.md` — if roadmap items were completed
+   - `docs/reference/audit.md` — if bugs were found/fixed
 
 2. **Bump SW cache version** in `public/sw.js` if `src/` or `public/` changed.
 
