@@ -136,8 +136,8 @@ RLS policies:
 ### Branching Strategy
 
 - **`main`** = production (auto-deploys to Vercel)
-- **Feature branches** for all non-trivial work: `feat/`, `fix/`, `refactor/`, `chore/`
-- **Pull requests** to merge back to `main`
+- **Feature branches** include the GitHub Issue number: `feat/4-full-text-search`, `fix/7-mobile-stats`
+- **Pull requests** to merge back to `main` — body must include `Closes #N` to auto-close the issue
 
 ### Conventional Commits
 
@@ -167,7 +167,10 @@ Run in this order before every commit — all must pass:
 | Skill | Description |
 |-------|-------------|
 | `/feature` | Full branch-to-PR workflow: plan → implement → verify → ship |
-| `/ship` | End-of-session: lint, build, commit, push |
-| `/audit` | Comprehensive codebase quality audit |
-| `/perf-check` | Performance profiling and optimization |
-| `/supabase-migrate` | Generate SQL migration files |
+| `/ship` | End-of-session: quality pipeline, docs/log update, commit, push |
+| `/audit` | 10-category codebase quality audit (async, cache, demo parity, mobile) |
+| `/sync-docs` | Documentation reconciler — finds and fixes drift across all docs, skills, memory, and code |
+| `/test` | Write Vitest unit or component tests following codebase patterns |
+| `/ui` | Systematic UI work — component states, mobile parity, accessibility |
+| `/perf-check` | Bundle size, deployment config, TTFB investigation |
+| `/supabase-migrate` | Generate SQL migration files following schema conventions |

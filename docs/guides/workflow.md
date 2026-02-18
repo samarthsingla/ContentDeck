@@ -255,11 +255,14 @@ If any step fails, fix it before moving to the next. Never skip a step.
 
 | Skill | When to Use | What It Does |
 |-------|-------------|--------------|
-| `/feature` | Starting new work | Creates branch, plans, implements, verifies, ships via PR |
-| `/ship` | End of session | Runs quality pipeline, updates docs, commits, pushes |
-| `/audit` | Before releases | 40+ point quality audit across all dimensions |
-| `/perf-check` | After changes | Bundle size, deployment config, performance verification |
-| `/supabase-migrate` | Database changes | Generates SQL migration files following conventions |
+| `/feature` | Starting new work | Creates branch (with issue number), plans, implements, verifies, ships via PR |
+| `/ship` | End of session | Quality pipeline, mandatory docs/log update, commit, push |
+| `/audit` | Before releases | 10-category quality audit — async, cache, demo parity, mobile parity |
+| `/sync-docs` | When drift is sensed; end of each phase | Documentation reconciler — reads all docs, skills, memory, code; finds and fixes drift |
+| `/test` | Writing tests | Unit vs component decision, codebase mock patterns, checklist |
+| `/ui` | Building or reviewing UI | Component states, mobile parity table, touch targets, a11y, dark mode |
+| `/perf-check` | After significant changes | Bundle size, deployment config, TTFB investigation |
+| `/supabase-migrate` | Database changes | Generates SQL migration files following schema conventions |
 
 ### `/feature` Workflow (the main one)
 
