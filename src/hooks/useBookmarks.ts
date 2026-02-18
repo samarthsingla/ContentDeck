@@ -103,14 +103,10 @@ export function useBookmarks() {
         old ? [newBookmark, ...old] : [newBookmark],
       );
       toast.success('Bookmark added');
-      // Auto-fetch metadata in background
-      void autoFetchMetadata(newBookmark);
       // Auto-extract content in background
       void triggerExtraction(newBookmark);
-      // Auto-suggest tags via AI if no tags provided and API key exists
-      if (newBookmark.tags.length === 0 && localStorage.getItem('openrouter_key')) {
-        void autoSuggestTags(newBookmark);
-      }
+      // Auto-fetch metadata, then AI-tag with the enriched bookmark
+      void autoFetchMetadataAndTag(newBookmark);
     },
     onError: () => toast.error('Failed to add bookmark'),
   });
@@ -391,24 +387,30 @@ export function useBookmarks() {
     );
   }
 
-  async function autoFetchMetadata(bookmark: Bookmark) {
+  /** Fetch metadata then AI-tag — used on add so AI has title context */
+  async function autoFetchMetadataAndTag(bookmark: Bookmark) {
+    let enriched = bookmark;
     try {
       const result = await fetchMetadata(bookmark.url, bookmark.source_type);
       const updates = buildMetadataUpdates(bookmark, result);
-      if (!updates) return;
-
-      const { error } = await db.from('bookmarks').update(updates).eq('id', bookmark.id);
-      if (!error) {
-        queryClient.setQueryData<Bookmark[]>(QUERY_KEY, (old) =>
-          old?.map((b) => (b.id === bookmark.id ? { ...b, ...updates } : b)),
-        );
+      if (updates) {
+        const { error } = await db.from('bookmarks').update(updates).eq('id', bookmark.id);
+        if (!error) {
+          enriched = { ...bookmark, ...updates } as Bookmark;
+          queryClient.setQueryData<Bookmark[]>(QUERY_KEY, (old) =>
+            old?.map((b) => (b.id === bookmark.id ? enriched : b)),
+          );
+        }
       }
     } catch {
-      // Silent fail for metadata — non-critical
+      // Silent fail for metadata — still attempt tagging with whatever we have
+    }
+    if (enriched.tags.length === 0 && localStorage.getItem('openrouter_key')) {
+      void autoSuggestTags(enriched);
     }
   }
 
-  /** Refresh metadata for any bookmark — force re-fetches even if fields exist */
+  /** Refresh metadata for any bookmark — force re-fetches even if fields exist, then re-tags */
   async function refreshMetadata(bookmark: Bookmark) {
     const result = await fetchMetadata(bookmark.url, bookmark.source_type);
     const updates: Record<string, unknown> = {};
@@ -424,11 +426,16 @@ export function useBookmarks() {
 
     const { error } = await db.from('bookmarks').update(updates).eq('id', bookmark.id);
     if (error) throw error;
+    const enriched = { ...bookmark, ...updates } as Bookmark;
     queryClient.setQueryData<Bookmark[]>(QUERY_KEY, (old) =>
-      old?.map((b) => (b.id === bookmark.id ? { ...b, ...updates } : b)),
+      old?.map((b) => (b.id === bookmark.id ? enriched : b)),
     );
-    // Also re-extract content
+    // Re-extract content
     void triggerExtraction(bookmark);
+    // Re-tag with AI using refreshed metadata
+    if (localStorage.getItem('openrouter_key')) {
+      void autoSuggestTags(enriched);
+    }
   }
 
   const isDemo = localStorage.getItem('contentdeck_demo') === 'true';

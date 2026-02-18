@@ -127,7 +127,7 @@ RLS policies:
 - **Error Boundary**: Wraps the entire app — catches render errors, shows reload button
 - **TanStack Query**: All mutations have optimistic update + automatic rollback on error + toast notification
 - **Notes mutations**: `addNote`/`deleteNote` fetch current state from DB (not cache) to prevent race conditions
-- **AI/Metadata**: Fire-and-forget with silent failure — non-critical features
+- **AI/Metadata**: Fire-and-forget with silent failure — non-critical features. Metadata fetch completes before AI tagging so the LLM has title + excerpt context.
 
 ## Development Workflow
 

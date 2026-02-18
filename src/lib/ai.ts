@@ -116,10 +116,12 @@ export async function suggestTags(
   const areaList =
     areas.length > 0 ? `\nUser's content areas: ${areas.map((a) => a.name).join(', ')}` : '';
 
+  const excerptLine = bookmark.excerpt ? `\nExcerpt: ${bookmark.excerpt.slice(0, 300)}` : '';
+
   const prompt = `Categorize and tag this bookmark.
 URL: ${bookmark.url}
 Title: ${bookmark.title || 'Unknown'}
-Source: ${bookmark.source_type}
+Source: ${bookmark.source_type}${excerptLine}
 ${areaList}
 ${existingList}
 
