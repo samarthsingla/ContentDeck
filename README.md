@@ -197,7 +197,7 @@ ContentDeck is your **capture and reflection layer**. Obsidian is your **knowled
 
 ## Contributing
 
-Issues and PRs welcome at [github.com/aditya30103/ContentDeck](https://github.com/aditya30103/ContentDeck)
+Issues and PRs welcome at [github.com/samarthsingla/ContentDeck](https://github.com/samarthsingla/ContentDeck)
 
 ## License
 

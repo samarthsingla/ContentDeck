@@ -1,51 +1,80 @@
 # ContentDeck — Vision & Architecture
 
-> From personal bookmark manager to full-stack knowledge capture platform.
-> All components free-tier. No compromises on scale, security, or reliability.
+> Augment your thinking, don't replace it.
+> Bridge between consuming content and building knowledge — all on free-tier infrastructure.
 
 ---
 
 ## Vision
 
-ContentDeck today: a personal bookmark manager with status tracking and Obsidian export.
+ContentDeck today: a personal bookmark manager with status tracking, full-text search, and reader mode.
 
-ContentDeck tomorrow: **the bridge between consuming content and building knowledge** — a platform where you capture anything, an AI helps you understand it, and your insights flow into your permanent knowledge system.
+ContentDeck tomorrow: **a personal knowledge and thinking augmentation system** — where you capture content, write notes to develop your understanding, discover hidden connections across everything you've saved, and use AI as a thinking partner that asks the right questions instead of giving you summaries.
 
 ```
-v2.2 (today)     v3.0              v3.5               v4.0              v5.0
-Bookmarks    →   Auth + Import  →  AI Intelligence  →  Multi-platform →  Social
-Save URLs        Real users        Summarize, link     Extension, API    Public lists
-Demo mode        Full-text search  Smart queue         Offline-first     Collaboration
-PWA share        Reader mode       Spaced review       Webhooks          Analytics
+v3.0 (current)    v3.5               v4.0                    v4.5                  v5.0
+Foundation    →   Notes System    →  Knowledge Graph      →  Thinking Companion →  Life Management
+Auth, search      Standalone notes   Embeddings, pgvector     AI reflection         Telegram capture
+Reader mode       TipTap editor      Topic clusters           Bias detection        Reminders
+Testing & CI      Bookmark linking   Semantic search          Socratic prompts      People & context
 ```
 
 ---
 
 ## Architecture Evolution
 
-### Current (v2.2)
+### Current (v3.0)
 ```
-Browser (React SPA) → Supabase REST API → PostgreSQL
-                    → OpenRouter (AI tagging)
+React PWA ─────────┐
+iOS Shortcut ──────┼→ Supabase (Auth + RLS + Edge Functions)
+Bookmarklet ───────┘     ├→ PostgreSQL (full-text search, tsvector, JSONB)
+                         └→ Edge Functions (content extraction, bookmark save)
+                    → OpenRouter (AI tagging, free models)
                     → Microlink/oEmbed (metadata)
 ```
 
 ### Target (v5.0)
 ```
-Browser Extension ─┐
-React PWA ─────────┤
-iOS Shortcut ──────┼→ Supabase (Auth + RLS + Edge Functions + Realtime)
-Telegram Bot ──────┤     ├→ PostgreSQL (full-text search, JSONB, pg_cron)
-CLI Tool ──────────┘     ├→ Supabase Storage (article snapshots, PDFs)
-                         ├→ Edge Functions (content extraction, AI pipeline)
+React PWA ─────────┐
+iOS Shortcut ──────┤
+Bookmarklet ───────┼→ Supabase (Auth + RLS + Edge Functions + Realtime)
+Telegram Bot ──────┘     ├→ PostgreSQL (tsvector + pgvector + pg_cron)
+                         ├→ Edge Functions (embeddings, companion AI, reminders)
                          └→ Realtime (live sync across devices)
-                    → OpenRouter (summarize, tag, recommend, chat)
-                    → GitHub Actions (scheduled jobs, health checks)
+                    → OpenRouter (tagging, reflection prompts, connection analysis)
+                    → Hugging Face Inference API (embeddings, free tier)
 ```
 
-### Key Architectural Principles
-1. **Edge-first**: Processing at Supabase Edge Functions, not client-side
-2. **Offline-capable**: Service worker + IndexedDB for full offline CRUD
-3. **Event-driven**: Database triggers + webhooks for automation pipelines
-4. **Progressive enhancement**: Every feature degrades gracefully without API keys
-5. **Zero vendor lock-in**: Standard PostgreSQL, portable data, open formats
+---
+
+## Dependency Graph
+
+```
+Phase 2 (Notes) ──────┬──→ Phase 3 (Embeddings + Topics)──┐
+                       │                                     ├──→ Phase 5 (Life Mgmt)
+                       └──→ Phase 4 (Thinking Companion) ──┘
+```
+
+- **Phase 2** is the foundation — notes are required for everything that follows.
+- **Phase 3** and **Phase 4** can start in parallel once Phase 2 ships.
+  - Phase 4 works without embeddings (uses tag overlap) but is better with them.
+- **Phase 5** requires both Phase 3 (embeddings for contextual recall) and Phase 4 (companion for people context).
+
+---
+
+## Core Principles
+
+### 1. Questions over summaries
+AI prompts reflection, it doesn't summarize for you. Every AI output is a prompt for the user to think deeper. "What surprised you about this?" not "Here are the key points."
+
+### 2. Notes are first-class
+Notes aren't just annotations on bookmarks — they're standalone thinking artifacts. A note can link to multiple bookmarks, belong to topic areas, and exist independently as your own thought.
+
+### 3. Connections emerge
+Embeddings and topic modeling surface what you'd miss on your own. "You saved 3 articles about distributed systems last month and wrote a note about CAP theorem — have you connected these?"
+
+### 4. Free tier forever
+Supabase (500MB DB) + OpenRouter (free models) + Vercel (100GB bandwidth) + Hugging Face (free inference) = $0/month. Every architectural decision respects this constraint.
+
+### 5. Progressive enhancement
+Each phase is independently useful. Notes are valuable without embeddings. Embeddings are valuable without AI companion. You never need to "finish" the roadmap to get value.

@@ -29,3 +29,5 @@ supabase/.temp/
 
 # Local dev files
 rename-project.bat
+
+personal_keys.txt
