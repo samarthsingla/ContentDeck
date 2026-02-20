@@ -17,7 +17,7 @@ Complete workflow for developing features professionally: branch → plan → im
 ## Phase 1 — PLAN
 
 1. **Find or create a GitHub Issue** for this work:
-   - Check existing issues: `gh issue list --repo aditya30103/ContentDeck`
+   - Check existing issues: `gh issue list --repo samarthsingla/ContentDeck`
    - If the issue exists, note its number (e.g. `#4`)
    - If not, create one: `gh issue create --title "..." --label "type: feature,phase: 1,priority: high"`
    - Use labels: `type: feature/bug/chore/perf/docs`, `phase: 1/2`, `priority: high/medium/low`, `area: mobile/ui/backend/testing`

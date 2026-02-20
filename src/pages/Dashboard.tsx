@@ -7,6 +7,8 @@ import BookmarkList from '../components/feed/BookmarkList';
 import AreasView from '../components/areas/AreasView';
 import AreaManager from '../components/areas/AreaManager';
 import DetailPanel from '../components/detail/DetailPanel';
+import NotesList from '../components/notes/NotesList';
+import NoteEditorModal from '../components/notes/NoteEditorModal';
 import AddBookmarkModal from '../components/modals/AddBookmarkModal';
 import EditBookmarkModal from '../components/modals/EditBookmarkModal';
 import SettingsModal from '../components/modals/SettingsModal';
@@ -15,6 +17,8 @@ import BulkActionBar from '../components/modals/BulkActionBar';
 import { useBookmarks } from '../hooks/useBookmarks';
 import { useTagAreas } from '../hooks/useTagAreas';
 import { useStats } from '../hooks/useStats';
+import { useNotes } from '../hooks/useNotes';
+import { useLinkedNoteIds } from '../hooks/useLinkedNoteIds';
 import { useUI } from '../context/UIProvider';
 import { useSupabase } from '../context/SupabaseProvider';
 import { useToast } from '../components/ui/Toast';
@@ -22,7 +26,7 @@ import ProgressBar from '../components/ui/ProgressBar';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { exportToObsidianUri, exportToClipboard } from '../lib/obsidian';
 import { fetchMetadata } from '../lib/metadata';
-import type { Bookmark, Status, NoteType, TagArea } from '../types';
+import type { Bookmark, Status, NoteType, TagArea, StandaloneNote } from '../types';
 
 interface DashboardProps {
   userEmail: string | null;
@@ -51,6 +55,13 @@ export default function Dashboard({ userEmail, onSignOut, isDemo, sharedUrl }: D
   } = useBookmarks();
   const { areas, createArea, updateArea, deleteArea, reorderAreas } = useTagAreas();
   const { stats, isLoading: statsLoading } = useStats(bookmarks);
+  const {
+    notes,
+    isLoading: notesLoading,
+    createNote,
+    updateNote,
+    deleteNote: deleteStandaloneNote,
+  } = useNotes();
   const { currentStatus, currentView, selectMode, selectedIds, clearSelection, setTag, setView } =
     useUI();
   const toast = useToast();
@@ -65,9 +76,19 @@ export default function Dashboard({ userEmail, onSignOut, isDemo, sharedUrl }: D
   const [editingArea, setEditingArea] = useState<TagArea | null>(null);
   const [editingBookmark, setEditingBookmark] = useState<Bookmark | null>(null);
   const [selectedBookmark, setSelectedBookmark] = useState<Bookmark | null>(null);
+  const [showNoteEditor, setShowNoteEditor] = useState(false);
+  const [selectedNote, setSelectedNote] = useState<StandaloneNote | null>(null);
+  const [noteInitialBookmarkId, setNoteInitialBookmarkId] = useState<string | null>(null);
   const [metaProgress, setMetaProgress] = useState<{ current: number; total: number } | null>(null);
   const [isRefreshingMeta, setIsRefreshingMeta] = useState(false);
   const metaFetchedRef = useRef(false);
+
+  // Linked notes for selected bookmark
+  const { data: linkedNoteIds = [] } = useLinkedNoteIds(selectedBookmark?.id ?? null);
+  const linkedNotesForBookmark = useMemo(
+    () => notes.filter((n) => linkedNoteIds.includes(n.id)),
+    [notes, linkedNoteIds],
+  );
 
   // Keyboard shortcuts
   useKeyboardShortcuts(
@@ -326,6 +347,7 @@ export default function Dashboard({ userEmail, onSignOut, isDemo, sharedUrl }: D
       <div className="flex h-screen bg-surface-50 dark:bg-surface-950">
         <AppShell
           counts={counts}
+          noteCount={notes.length}
           onAdd={() => setShowAddModal(true)}
           onSignOut={onSignOut}
           onToggleSearch={() => setShowSearch((s) => !s)}
@@ -341,7 +363,26 @@ export default function Dashboard({ userEmail, onSignOut, isDemo, sharedUrl }: D
             />
           )}
           <div className="max-w-3xl mx-auto px-4 py-4 space-y-4">
-            {currentView === 'areas' ? (
+            {currentView === 'notes' ? (
+              <NotesList
+                notes={notes}
+                isLoading={notesLoading}
+                onNoteClick={(id) => {
+                  const note = notes.find((n) => n.id === id);
+                  if (note) {
+                    setSelectedNote(note);
+                    setNoteInitialBookmarkId(null);
+                    setShowNoteEditor(true);
+                  }
+                }}
+                onDeleteNote={(id) => deleteStandaloneNote.mutate(id)}
+                onCreateNote={() => {
+                  setSelectedNote(null);
+                  setNoteInitialBookmarkId(null);
+                  setShowNoteEditor(true);
+                }}
+              />
+            ) : currentView === 'areas' ? (
               <AreasView
                 areas={areas}
                 bookmarks={statusFiltered}
@@ -387,6 +428,29 @@ export default function Dashboard({ userEmail, onSignOut, isDemo, sharedUrl }: D
             onRefreshMetadata={handleRefreshMetadata}
             isNotePending={addNote.isPending}
             isRefreshing={isRefreshingMeta}
+            linkedNotes={linkedNotesForBookmark}
+            onPromoteToNote={(content) => {
+              setSelectedNote(null);
+              setNoteInitialBookmarkId(activeBookmark.id);
+              setShowNoteEditor(true);
+              // Pre-fill content will be handled by passing it as initial content
+              // For now open empty note linked to this bookmark
+              void content;
+            }}
+            onCreateNoteForBookmark={(bookmarkId) => {
+              setSelectedNote(null);
+              setNoteInitialBookmarkId(bookmarkId);
+              setView('notes');
+              setShowNoteEditor(true);
+            }}
+            onOpenNote={(noteId) => {
+              const note = notes.find((n) => n.id === noteId);
+              if (note) {
+                setSelectedNote(note);
+                setNoteInitialBookmarkId(null);
+                setShowNoteEditor(true);
+              }
+            }}
           />
         )}
       </div>
@@ -456,6 +520,24 @@ export default function Dashboard({ userEmail, onSignOut, isDemo, sharedUrl }: D
         onUpdate={(id, data) => updateArea.mutate({ id, ...data })}
         onDelete={(id) => deleteArea.mutate(id)}
         onReorder={(ids) => reorderAreas.mutate(ids)}
+      />
+
+      <NoteEditorModal
+        open={showNoteEditor}
+        note={selectedNote}
+        allBookmarks={bookmarks}
+        allAreas={areas}
+        initialBookmarkId={noteInitialBookmarkId}
+        onClose={() => {
+          setShowNoteEditor(false);
+          setSelectedNote(null);
+          setNoteInitialBookmarkId(null);
+        }}
+        onSave={(id, updates) => updateNote.mutate({ id, ...updates })}
+        onCreate={async (data) => {
+          const result = await createNote.mutateAsync(data);
+          return result;
+        }}
       />
 
       {/* Bulk Action Bar */}

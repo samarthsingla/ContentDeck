@@ -185,7 +185,7 @@ export default function SettingsModal({
           <div className="flex items-center justify-between text-xs text-surface-400 dark:text-surface-500">
             <span>ContentDeck v3.0</span>
             <a
-              href="https://github.com/aditya30103/ContentDeck"
+              href="https://github.com/samarthsingla/ContentDeck"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1 hover:text-surface-600 dark:hover:text-surface-300"

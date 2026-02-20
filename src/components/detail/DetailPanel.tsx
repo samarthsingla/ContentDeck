@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { X, BookOpen } from 'lucide-react';
+import { X, BookOpen, FileText, Plus } from 'lucide-react';
 import MetadataHeader from './MetadataHeader';
 import NotesTab from './NotesTab';
 import DetailActions from './DetailActions';
 import ReaderModal from '../reader/ReaderModal';
-import type { Bookmark, Status, NoteType } from '../../types';
+import type { Bookmark, Status, NoteType, StandaloneNote } from '../../types';
 
 interface DetailPanelProps {
   bookmark: Bookmark | null;
@@ -19,6 +19,10 @@ interface DetailPanelProps {
   onRefreshMetadata: (bookmark: Bookmark) => void;
   isNotePending: boolean;
   isRefreshing?: boolean;
+  linkedNotes?: StandaloneNote[];
+  onPromoteToNote?: (content: string) => void;
+  onCreateNoteForBookmark?: (bookmarkId: string) => void;
+  onOpenNote?: (noteId: string) => void;
 }
 
 export default function DetailPanel({
@@ -34,6 +38,10 @@ export default function DetailPanel({
   onRefreshMetadata,
   isNotePending,
   isRefreshing,
+  linkedNotes = [],
+  onPromoteToNote,
+  onCreateNoteForBookmark,
+  onOpenNote,
 }: DetailPanelProps) {
   const [showReader, setShowReader] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -134,7 +142,40 @@ export default function DetailPanel({
               onAddNote={(type, content) => onAddNote(bookmark.id, type, content)}
               onDeleteNote={(index) => onDeleteNote(bookmark.id, index)}
               isPending={isNotePending}
+              onPromoteToNote={onPromoteToNote}
             />
+            {/* Linked standalone notes */}
+            {(linkedNotes.length > 0 || onCreateNoteForBookmark) && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-medium text-surface-400 dark:text-surface-500 uppercase tracking-wider flex items-center gap-1">
+                    <FileText size={12} />
+                    Linked Notes ({linkedNotes.length})
+                  </h4>
+                  {onCreateNoteForBookmark && (
+                    <button
+                      onClick={() => onCreateNoteForBookmark(bookmark.id)}
+                      className="flex items-center gap-1 text-xs text-primary-600 dark:text-primary-400 hover:text-primary-700 transition-colors"
+                      aria-label="Create linked note"
+                    >
+                      <Plus size={12} />
+                      New
+                    </button>
+                  )}
+                </div>
+                {linkedNotes.map((ln) => (
+                  <button
+                    key={ln.id}
+                    onClick={() => onOpenNote?.(ln.id)}
+                    className="w-full text-left px-3 py-2 rounded-lg bg-surface-50 dark:bg-surface-800 hover:bg-surface-100 dark:hover:bg-surface-700 transition-colors"
+                  >
+                    <p className="text-sm font-medium text-surface-700 dark:text-surface-300 truncate">
+                      {ln.title || 'Untitled Note'}
+                    </p>
+                  </button>
+                ))}
+              </div>
+            )}
             <DetailActions
               bookmark={bookmark}
               onEdit={() => {
