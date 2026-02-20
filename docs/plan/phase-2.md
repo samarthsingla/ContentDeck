@@ -2,7 +2,7 @@
 
 > Goal: Notes as first-class thinking artifacts — not just bookmark annotations, but standalone objects you write, link, and organize.
 
-**Status:** Not started
+**Status:** Complete ✅ (2.1–2.5 shipped in feat/12-notes)
 **Depends on:** Phase 1 (complete)
 **Unlocks:** Phase 3 (Knowledge Graph), Phase 4 (Thinking Companion)
 
@@ -26,7 +26,7 @@ Without standalone notes, ContentDeck is a bookmark manager. With them, it's a t
 
 ---
 
-## 2.1 Schema + Hook + Demo Data
+## 2.1 Schema + Hook + Demo Data ✅
 
 **Database:**
 - `notes` table: `id`, `user_id`, `title`, `content` (markdown text), `created_at`, `updated_at`
@@ -69,7 +69,7 @@ CREATE POLICY "Users can CRUD own notes" ON notes FOR ALL USING (auth.uid() = us
 - Mock client updates for demo mode: in-memory notes array
 - Demo data: 5-8 sample notes linked to existing demo bookmarks
 
-## 2.2 Notes List View
+## 2.2 Notes List View ✅
 
 - `NotesList` component: grid/list of note cards, sorted by `updated_at`
 - `NoteCard`: title, preview (first ~100 chars of content), linked bookmark count, area badges, timestamp
@@ -78,7 +78,7 @@ CREATE POLICY "Users can CRUD own notes" ON notes FOR ALL USING (auth.uid() = us
 - Mobile parity: responsive cards, touch targets, same filter/sort patterns as bookmarks
 - Empty state: illustration + "Create your first note" CTA
 
-## 2.3 Note Editor
+## 2.3 Note Editor ✅
 
 - **TipTap** markdown editor, lazy loaded (`React.lazy` + `Suspense`)
 - `NoteEditorModal` (or full-page on mobile): title input + editor + toolbar
@@ -87,14 +87,14 @@ CREATE POLICY "Users can CRUD own notes" ON notes FOR ALL USING (auth.uid() = us
 - Keyboard shortcuts: standard markdown shortcuts (Ctrl+B, Ctrl+I, etc.)
 - "Promote to Note" action on inline bookmark notes → creates standalone note pre-filled with the annotation text, auto-linked to the source bookmark
 
-## 2.4 Bookmark Linking
+## 2.4 Bookmark Linking ✅
 
 - `LinkedBookmarks` panel inside NoteEditorModal: shows bookmarks linked to this note, with search/add UI
 - "Create Note" button in bookmark DetailPanel → opens NoteEditorModal with that bookmark pre-linked
 - "Linked Notes" section in bookmark DetailPanel: shows notes that reference this bookmark
 - Bidirectional navigation: note → bookmarks, bookmark → notes
 
-## 2.5 Polish + Export
+## 2.5 Polish + Export ✅
 
 - Area assignments: notes can be tagged with areas (same area picker as bookmarks)
 - Markdown export: download note as `.md` file (title as filename)

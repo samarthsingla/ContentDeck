@@ -2,9 +2,9 @@
 
 > Start here. This file orients each session.
 
-**Version:** v3.0 | **Status:** Phase 1 complete — all foundation features shipped
-**Next up:** Phase 2 (Notes System) — standalone notes, TipTap editor, bookmark linking
-**Active phase:** [Phase 2 — Notes System](plan/phase-2.md)
+**Version:** v3.5 | **Status:** Phase 2 complete — full notes system shipped
+**Next up:** Phase 3 (Knowledge Graph + Topics)
+**Active phase:** [Phase 3 — Knowledge Graph](plan/phase-3.md)
 
 ---
 
@@ -13,7 +13,7 @@
 | If you're... | Read these |
 |---|---|
 | Understanding the vision | [plan/vision.md](plan/vision.md) |
-| Starting Phase 2 work | [plan/phase-2.md](plan/phase-2.md) + [guides/workflow.md](guides/workflow.md) |
+| Starting Phase 3 work | [plan/phase-3.md](plan/phase-3.md) + [guides/workflow.md](guides/workflow.md) |
 | Planning future phases | [plan/phase-3.md](plan/phase-3.md), [plan/phase-4.md](plan/phase-4.md), [plan/phase-5.md](plan/phase-5.md) |
 | Debugging something that used to work | [log/](log/) — find the relevant implementation log |
 | Setting up Supabase Auth | [guides/supabase-auth-setup.md](guides/supabase-auth-setup.md) |
@@ -45,7 +45,9 @@ docs/
 │   ├── v3.0-areas-tagging-redesign.md # Areas & tagging two-tier model
 │   ├── v3.0-full-text-search.md    # 1.3 Full-text search
 │   ├── v3.0-reader-mode.md         # 1.5 Reader mode
-│   └── v3.0-testing-ci.md         # 1.6 Testing & CI (Vitest + GitHub Actions)
+│   ├── v3.0-testing-ci.md         # 1.6 Testing & CI (Vitest + GitHub Actions)
+│   ├── feat-notes-branch.md        # Branch log: feat/12-notes (phases 2.2–2.5)
+│   └── v3.5-notes-system.md        # Phase 2 completion record
 ├── guides/                         # How-to references
 │   ├── workflow.md                 # Development practices, session workflow
 │   └── supabase-auth-setup.md      # Supabase Auth provider configuration
@@ -60,6 +62,7 @@ docs/
 
 | Version | Feature | Log |
 |---|---|---|
+| v3.5 | Notes system (NotesList, TipTap editor, auto-save, bookmark linking, area tagging, Markdown export) | [log/v3.5-notes-system.md](log/v3.5-notes-system.md) |
 | v3.0 | Reader mode (full-screen, typography controls, progress, sepia theme) | [log/v3.0-reader-mode.md](log/v3.0-reader-mode.md) |
 | v3.0 | Full-text search (excerpt + content.text, debounce, result count, tsvector) | [log/v3.0-full-text-search.md](log/v3.0-full-text-search.md) |
 | v3.0 | Testing & CI (Vitest 133 tests, GitHub Actions pipeline) | [log/v3.0-testing-ci.md](log/v3.0-testing-ci.md) |
