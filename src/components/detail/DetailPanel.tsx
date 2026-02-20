@@ -1,28 +1,27 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { X, BookOpen, FileText, Plus } from 'lucide-react';
 import MetadataHeader from './MetadataHeader';
-import NotesTab from './NotesTab';
+import BookmarkScratchpad from './BookmarkScratchpad';
 import DetailActions from './DetailActions';
 import ReaderModal from '../reader/ReaderModal';
-import type { Bookmark, Status, NoteType, StandaloneNote } from '../../types';
+import type { Bookmark, Status, StandaloneNote } from '../../types';
 
 interface DetailPanelProps {
   bookmark: Bookmark | null;
   onClose: () => void;
   onCycleStatus: (id: string, newStatus: Status) => void;
   onToggleFavorite: (id: string, favorited: boolean) => void;
-  onAddNote: (bookmarkId: string, type: NoteType, content: string) => void;
-  onDeleteNote: (bookmarkId: string, noteIndex: number) => void;
+  onUpdateScratchpad: (id: string, scratchpad: string) => void;
+  onUpdateTitle?: (id: string, title: string) => void;
   onEdit: (bookmark: Bookmark) => void;
   onExport: (bookmark: Bookmark) => void;
   onDelete: (id: string) => void;
   onRefreshMetadata: (bookmark: Bookmark) => void;
-  isNotePending: boolean;
   isRefreshing?: boolean;
   linkedNotes?: StandaloneNote[];
-  onPromoteToNote?: (content: string) => void;
   onCreateNoteForBookmark?: (bookmarkId: string) => void;
   onOpenNote?: (noteId: string) => void;
+  onConvertToNote?: () => void;
 }
 
 export default function DetailPanel({
@@ -30,21 +29,19 @@ export default function DetailPanel({
   onClose,
   onCycleStatus,
   onToggleFavorite,
-  onAddNote,
-  onDeleteNote,
+  onUpdateScratchpad,
+  onUpdateTitle,
   onEdit,
   onExport,
   onDelete,
   onRefreshMetadata,
-  isNotePending,
   isRefreshing,
   linkedNotes = [],
-  onPromoteToNote,
   onCreateNoteForBookmark,
   onOpenNote,
+  onConvertToNote,
 }: DetailPanelProps) {
   const [showReader, setShowReader] = useState(false);
-  const panelRef = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
 
   const handleKeyDown = useCallback(
@@ -57,7 +54,11 @@ export default function DetailPanel({
   useEffect(() => {
     if (bookmark) {
       document.addEventListener('keydown', handleKeyDown);
-      return () => document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.removeEventListener('keydown', handleKeyDown);
+        document.body.style.overflow = '';
+      };
     }
   }, [bookmark, handleKeyDown]);
 
@@ -84,11 +85,11 @@ export default function DetailPanel({
         onCycleStatus={onCycleStatus}
       />
 
-      {/* Mobile: full-screen slide-up overlay */}
+      {/* Centered popup modal */}
       {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions -- backdrop click-to-close is progressive enhancement; keyboard users have ESC via document-level handler */}
       <div
         ref={overlayRef}
-        className="lg:hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
         onClick={(e) => {
           if (e.target === overlayRef.current) onClose();
         }}
@@ -97,35 +98,39 @@ export default function DetailPanel({
         }}
       >
         <div
-          ref={panelRef}
           role="dialog"
           aria-modal="true"
           aria-label="Bookmark details"
-          className="absolute inset-x-0 bottom-0 top-12 bg-white dark:bg-surface-900 rounded-t-2xl shadow-xl overflow-y-auto motion-safe:animate-[slideUp_0.2s_ease-out]"
-          style={{ paddingBottom: 'calc(16px + var(--safe-bottom))' }}
+          className="w-full max-w-lg bg-white dark:bg-surface-900 rounded-2xl shadow-xl max-h-[88vh] flex flex-col overflow-hidden motion-safe:animate-[slideUp_0.2s_ease-out]"
         >
-          {/* Mobile header */}
-          <div className="sticky top-0 flex items-center justify-between p-4 border-b border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 rounded-t-2xl z-10">
-            <h2 className="text-base font-semibold text-surface-900 dark:text-surface-100 truncate">
+          {/* Sticky header */}
+          <div className="flex-shrink-0 flex items-center justify-between p-4 border-b border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 rounded-t-2xl">
+            <h2 className="text-base font-semibold text-surface-900 dark:text-surface-100">
               Details
             </h2>
             <button
               onClick={onClose}
-              className="p-2 rounded-lg hover:bg-surface-100 dark:hover:bg-surface-800 min-w-[44px] min-h-[44px] flex items-center justify-center"
+              className="p-2 rounded-lg hover:bg-surface-100 dark:hover:bg-surface-800 min-w-[44px] min-h-[44px] flex items-center justify-center text-surface-700 dark:text-surface-200"
               aria-label="Close"
             >
               <X size={20} />
             </button>
           </div>
 
-          <div className="p-4 space-y-6">
+          {/* Scrollable content */}
+          <div
+            className="flex-1 overflow-y-auto p-4 space-y-6"
+            style={{ paddingBottom: 'calc(16px + var(--safe-bottom))' }}
+          >
             <MetadataHeader
               bookmark={bookmark}
               onCycleStatus={onCycleStatus}
               onToggleFavorite={onToggleFavorite}
               onRefreshMetadata={onRefreshMetadata}
               isRefreshing={isRefreshing}
+              onUpdateTitle={onUpdateTitle}
             />
+
             {(canRead || isExtracting) && (
               <button
                 onClick={() => setShowReader(true)}
@@ -137,13 +142,14 @@ export default function DetailPanel({
                 {isExtracting ? 'Extracting…' : 'Read'}
               </button>
             )}
-            <NotesTab
-              notes={bookmark.notes}
-              onAddNote={(type, content) => onAddNote(bookmark.id, type, content)}
-              onDeleteNote={(index) => onDeleteNote(bookmark.id, index)}
-              isPending={isNotePending}
-              onPromoteToNote={onPromoteToNote}
+
+            <BookmarkScratchpad
+              bookmarkId={bookmark.id}
+              scratchpad={bookmark.scratchpad}
+              onUpdate={onUpdateScratchpad}
+              onConvertToNote={onConvertToNote}
             />
+
             {/* Linked standalone notes */}
             {(linkedNotes.length > 0 || onCreateNoteForBookmark) && (
               <div className="space-y-2">
@@ -176,6 +182,7 @@ export default function DetailPanel({
                 ))}
               </div>
             )}
+
             <DetailActions
               bookmark={bookmark}
               onEdit={() => {
@@ -188,59 +195,6 @@ export default function DetailPanel({
           </div>
         </div>
       </div>
-
-      {/* Desktop: right column panel */}
-      <aside className="hidden lg:flex flex-col w-[400px] h-screen border-l border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 overflow-y-auto">
-        {/* Header */}
-        <div className="sticky top-0 flex items-center justify-between p-4 border-b border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-900 z-10">
-          <h2 className="text-base font-semibold text-surface-900 dark:text-surface-100">
-            Details
-          </h2>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-lg hover:bg-surface-100 dark:hover:bg-surface-800 min-w-[44px] min-h-[44px] flex items-center justify-center"
-            aria-label="Close panel"
-          >
-            <X size={18} />
-          </button>
-        </div>
-
-        <div className="flex-1 p-4 space-y-6">
-          <MetadataHeader
-            bookmark={bookmark}
-            onCycleStatus={onCycleStatus}
-            onToggleFavorite={onToggleFavorite}
-            onRefreshMetadata={onRefreshMetadata}
-            isRefreshing={isRefreshing}
-          />
-          {(canRead || isExtracting) && (
-            <button
-              onClick={() => setShowReader(true)}
-              disabled={!canRead}
-              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-primary-600 text-white text-sm font-medium hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[44px]"
-              aria-label={isExtracting ? 'Extracting content…' : 'Open reader mode'}
-            >
-              <BookOpen size={16} />
-              {isExtracting ? 'Extracting…' : 'Read'}
-            </button>
-          )}
-          <NotesTab
-            notes={bookmark.notes}
-            onAddNote={(type, content) => onAddNote(bookmark.id, type, content)}
-            onDeleteNote={(index) => onDeleteNote(bookmark.id, index)}
-            isPending={isNotePending}
-          />
-          <DetailActions
-            bookmark={bookmark}
-            onEdit={() => {
-              onClose();
-              onEdit(bookmark);
-            }}
-            onExport={() => onExport(bookmark)}
-            onDelete={handleDelete}
-          />
-        </div>
-      </aside>
     </>
   );
 }

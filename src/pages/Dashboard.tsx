@@ -26,7 +26,7 @@ import ProgressBar from '../components/ui/ProgressBar';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { exportToObsidianUri, exportToClipboard } from '../lib/obsidian';
 import { fetchMetadata } from '../lib/metadata';
-import type { Bookmark, Status, NoteType, TagArea, StandaloneNote } from '../types';
+import type { Bookmark, Status, TagArea, StandaloneNote } from '../types';
 
 interface DashboardProps {
   userEmail: string | null;
@@ -46,8 +46,7 @@ export default function Dashboard({ userEmail, onSignOut, isDemo, sharedUrl }: D
     bulkDelete,
     cycleStatus,
     toggleFavorite,
-    addNote,
-    deleteNote,
+    updateScratchpad,
     markSynced,
     refreshMetadata,
     setAreas: setBookmarkAreas,
@@ -265,20 +264,6 @@ export default function Dashboard({ userEmail, onSignOut, isDemo, sharedUrl }: D
     [bookmarks],
   );
 
-  const handleAddNote = useCallback(
-    (bookmarkId: string, type: NoteType, content: string) => {
-      addNote.mutate({ bookmarkId, type, content });
-    },
-    [addNote],
-  );
-
-  const handleDeleteNote = useCallback(
-    (bookmarkId: string, noteIndex: number) => {
-      deleteNote.mutate({ bookmarkId, noteIndex });
-    },
-    [deleteNote],
-  );
-
   async function handleRefreshMetadata(bookmark: Bookmark) {
     setIsRefreshingMeta(true);
     try {
@@ -307,6 +292,20 @@ export default function Dashboard({ userEmail, onSignOut, isDemo, sharedUrl }: D
         markSynced.mutate(bookmark.id);
         toast.info('Markdown copied — add vault name in Settings for one-click export');
       }
+    }
+  }
+
+  async function handleConvertToNote(bookmark: Bookmark) {
+    try {
+      const newNote = await createNote.mutateAsync({
+        title: bookmark.title ?? 'Untitled Note',
+        content: bookmark.scratchpad,
+      });
+      setSelectedNote(newNote);
+      setNoteInitialBookmarkId(bookmark.id);
+      setShowNoteEditor(true);
+    } catch {
+      toast.error('Failed to create note');
     }
   }
 
@@ -410,15 +409,15 @@ export default function Dashboard({ userEmail, onSignOut, isDemo, sharedUrl }: D
           </div>
         </AppShell>
 
-        {/* Desktop Detail Panel */}
+        {/* Detail Panel (centered modal) */}
         {activeBookmark && (
           <DetailPanel
             bookmark={activeBookmark}
             onClose={() => setSelectedBookmark(null)}
             onCycleStatus={handleCycleStatus}
             onToggleFavorite={handleToggleFavorite}
-            onAddNote={handleAddNote}
-            onDeleteNote={handleDeleteNote}
+            onUpdateScratchpad={(id, scratchpad) => updateScratchpad.mutate({ id, scratchpad })}
+            onUpdateTitle={(id, title) => updateBookmark.mutate({ id, title })}
             onEdit={(bm) => setEditingBookmark(bm)}
             onExport={handleExport}
             onDelete={(id) => {
@@ -426,17 +425,8 @@ export default function Dashboard({ userEmail, onSignOut, isDemo, sharedUrl }: D
               setSelectedBookmark(null);
             }}
             onRefreshMetadata={handleRefreshMetadata}
-            isNotePending={addNote.isPending}
             isRefreshing={isRefreshingMeta}
             linkedNotes={linkedNotesForBookmark}
-            onPromoteToNote={(content) => {
-              setSelectedNote(null);
-              setNoteInitialBookmarkId(activeBookmark.id);
-              setShowNoteEditor(true);
-              // Pre-fill content will be handled by passing it as initial content
-              // For now open empty note linked to this bookmark
-              void content;
-            }}
             onCreateNoteForBookmark={(bookmarkId) => {
               setSelectedNote(null);
               setNoteInitialBookmarkId(bookmarkId);
@@ -451,6 +441,7 @@ export default function Dashboard({ userEmail, onSignOut, isDemo, sharedUrl }: D
                 setShowNoteEditor(true);
               }
             }}
+            onConvertToNote={() => handleConvertToNote(activeBookmark)}
           />
         )}
       </div>

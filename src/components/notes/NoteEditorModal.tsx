@@ -36,6 +36,7 @@ export default function NoteEditorModal({
   const [content, setContent] = useState('');
   const [noteId, setNoteId] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<SaveState>('idle');
+  const [isEditing, setIsEditing] = useState(false);
   const titleRef = useRef<HTMLInputElement>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
@@ -52,6 +53,7 @@ export default function NoteEditorModal({
     setContent(note?.content ?? '');
     setNoteId(note?.id ?? null);
     setSaveState('idle');
+    setIsEditing(false);
     isCreatingRef.current = false;
     // Track pending bookmark to link after note is created
     pendingBookmarkIdRef.current = initialBookmarkId ?? null;
@@ -113,12 +115,12 @@ export default function NoteEditorModal({
   function handleTitleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const val = e.target.value;
     setTitle(val);
-    triggerAutoSave(val, content, noteId);
+    if (isEditing) triggerAutoSave(val, content, noteId);
   }
 
   function handleContentChange(html: string) {
     setContent(html);
-    triggerAutoSave(title, html, noteId);
+    if (isEditing) triggerAutoSave(title, html, noteId);
   }
 
   function flushSave() {
@@ -197,9 +199,18 @@ export default function NoteEditorModal({
             <Download size={18} />
           </button>
 
+          {/* Edit / Done toggle */}
+          <button
+            onClick={() => setIsEditing((e) => !e)}
+            className="p-2 rounded-lg hover:bg-surface-100 dark:hover:bg-surface-800 min-w-[44px] min-h-[44px] flex items-center justify-center text-surface-500 dark:text-surface-400 text-xs font-medium"
+            aria-pressed={isEditing}
+          >
+            {isEditing ? 'Done' : 'Edit'}
+          </button>
+
           <button
             onClick={handleClose}
-            className="p-2 rounded-lg hover:bg-surface-100 dark:hover:bg-surface-800 min-w-[44px] min-h-[44px] flex items-center justify-center"
+            className="p-2 rounded-lg hover:bg-surface-100 dark:hover:bg-surface-800 min-w-[44px] min-h-[44px] flex items-center justify-center text-surface-700 dark:text-surface-200"
             aria-label="Close"
           >
             <X size={20} />
@@ -215,8 +226,10 @@ export default function NoteEditorModal({
             type="text"
             value={title}
             onChange={handleTitleChange}
+            onClick={() => !isEditing && setIsEditing(true)}
+            readOnly={!isEditing}
             placeholder="Note title…"
-            className="w-full text-lg font-semibold text-surface-900 dark:text-surface-100 bg-transparent border-none outline-none placeholder-surface-300 dark:placeholder-surface-600 focus:ring-0"
+            className={`w-full text-lg font-semibold text-surface-900 dark:text-surface-100 bg-transparent border-none outline-none placeholder-surface-300 dark:placeholder-surface-600 focus:ring-0 ${!isEditing ? 'cursor-default' : ''}`}
           />
 
           {/* Area tags */}
@@ -258,19 +271,26 @@ export default function NoteEditorModal({
           )}
 
           {/* TipTap Editor */}
-          <React.Suspense
-            fallback={
-              <div className="flex justify-center py-8">
-                <Spinner size={28} />
-              </div>
-            }
+          {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- click-to-edit is progressive enhancement */}
+          <div
+            onClick={() => !isEditing && setIsEditing(true)}
+            className={!isEditing ? 'cursor-text' : ''}
           >
-            <TipTapEditor
-              content={content}
-              onChange={handleContentChange}
-              placeholder="Start writing your note…"
-            />
-          </React.Suspense>
+            <React.Suspense
+              fallback={
+                <div className="flex justify-center py-8">
+                  <Spinner size={28} />
+                </div>
+              }
+            >
+              <TipTapEditor
+                content={content}
+                onChange={handleContentChange}
+                placeholder="Start writing your note…"
+                isEditable={isEditing}
+              />
+            </React.Suspense>
+          </div>
 
           {/* Linked Bookmarks — only when note exists */}
           {noteId && (

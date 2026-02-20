@@ -37,6 +37,7 @@ function makeBookmark(overrides: Partial<Bookmark> = {}): Bookmark {
     status_changed_at: '2024-01-01T00:00:00Z',
     started_reading_at: null,
     finished_at: null,
+    scratchpad: '',
     ...overrides,
   };
 }

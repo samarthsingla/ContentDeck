@@ -106,7 +106,7 @@ export default function Modal({ open, onClose, title, children, size = 'md' }: M
           </h2>
           <button
             onClick={onClose}
-            className="p-2 rounded-lg hover:bg-surface-100 dark:hover:bg-surface-800 min-w-[44px] min-h-[44px] flex items-center justify-center"
+            className="p-2 rounded-lg hover:bg-surface-100 dark:hover:bg-surface-800 min-w-[44px] min-h-[44px] flex items-center justify-center text-surface-700 dark:text-surface-200"
             aria-label="Close"
           >
             <X size={20} />

@@ -35,6 +35,7 @@ function makeBookmarks(): Bookmark[] {
     status_changed_at: new Date().toISOString(),
     started_reading_at: null,
     finished_at: null,
+    scratchpad: '',
   };
   return [
     { ...base, id: '1', status: 'unread' as const },

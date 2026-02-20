@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef } from 'react';
 import {
   Heart,
   ExternalLink,
@@ -6,6 +7,7 @@ import {
   RefreshCw,
   Loader2,
   AlertCircle,
+  Pencil,
 } from 'lucide-react';
 import { SourceBadge, StatusBadge } from '../ui/Badge';
 import { getDomain, getFaviconUrl, timeAgo, formatDate } from '../../lib/utils';
@@ -18,6 +20,7 @@ interface MetadataHeaderProps {
   onToggleFavorite: (id: string, favorited: boolean) => void;
   onRefreshMetadata: (bookmark: Bookmark) => void;
   isRefreshing?: boolean;
+  onUpdateTitle?: (id: string, newTitle: string) => void;
 }
 
 export default function MetadataHeader({
@@ -26,8 +29,23 @@ export default function MetadataHeader({
   onToggleFavorite,
   onRefreshMetadata,
   isRefreshing,
+  onUpdateTitle,
 }: MetadataHeaderProps) {
   const domain = getDomain(b.url);
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [titleDraft, setTitleDraft] = useState(b.title ?? '');
+  const titleInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setTitleDraft(b.title ?? '');
+    setIsEditingTitle(false);
+  }, [b.id, b.title]);
+
+  useEffect(() => {
+    if (isEditingTitle) {
+      titleInputRef.current?.focus();
+    }
+  }, [isEditingTitle]);
 
   return (
     <div className="space-y-3">
@@ -39,9 +57,44 @@ export default function MetadataHeader({
       )}
 
       {/* Title */}
-      <h2 className="text-lg font-semibold text-surface-900 dark:text-surface-100 leading-snug">
-        {b.title || b.url}
-      </h2>
+      {isEditingTitle ? (
+        <input
+          ref={titleInputRef}
+          type="text"
+          value={titleDraft}
+          onChange={(e) => setTitleDraft(e.target.value)}
+          onBlur={() => {
+            if (titleDraft.trim() && titleDraft !== b.title) {
+              onUpdateTitle?.(b.id, titleDraft.trim());
+            }
+            setIsEditingTitle(false);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+            if (e.key === 'Escape') {
+              setTitleDraft(b.title ?? '');
+              setIsEditingTitle(false);
+            }
+          }}
+          className="w-full text-lg font-semibold text-surface-900 dark:text-surface-100 bg-transparent border-b border-primary-500 outline-none leading-snug pb-0.5"
+          aria-label="Edit bookmark title"
+        />
+      ) : (
+        <div className="group flex items-start gap-1">
+          <h2 className="text-lg font-semibold text-surface-900 dark:text-surface-100 leading-snug flex-1">
+            {b.title || b.url}
+          </h2>
+          {onUpdateTitle && (
+            <button
+              onClick={() => setIsEditingTitle(true)}
+              className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-surface-100 dark:hover:bg-surface-800 text-surface-400 min-w-[32px] min-h-[32px] flex items-center justify-center transition-opacity"
+              aria-label="Edit title"
+            >
+              <Pencil size={14} />
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Domain row */}
       <div className="flex items-center gap-2 text-sm text-surface-500 dark:text-surface-400">

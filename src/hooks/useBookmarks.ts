@@ -4,7 +4,7 @@ import { useToast } from '../components/ui/Toast';
 import { fetchMetadata } from '../lib/metadata';
 import { suggestTags } from '../lib/ai';
 import { detectSourceType } from '../lib/utils';
-import type { Bookmark, TagArea, Status, NoteType, Note, BookmarkMetadata } from '../types';
+import type { Bookmark, TagArea, Status, BookmarkMetadata } from '../types';
 
 const QUERY_KEY = ['bookmarks'] as const;
 
@@ -46,6 +46,7 @@ function normalizeBookmark(b: RawBookmarkRow): Bookmark {
     tags: b.tags ?? [],
     areas,
     notes: b.notes ?? [],
+    scratchpad: b.scratchpad ?? '',
     metadata: b.metadata ?? {},
     content: b.content ?? {},
     content_status: b.content_status ?? 'pending',
@@ -221,79 +222,21 @@ export function useBookmarks() {
     onSettled: () => queryClient.invalidateQueries({ queryKey: QUERY_KEY }),
   });
 
-  const addNote = useMutation({
-    mutationFn: async ({
-      bookmarkId,
-      type,
-      content,
-    }: {
-      bookmarkId: string;
-      type: NoteType;
-      content: string;
-    }) => {
-      // Fetch current notes from DB (not cache, which onMutate already modified)
-      const { data: row, error: fetchErr } = await db
-        .from('bookmarks')
-        .select('notes')
-        .eq('id', bookmarkId)
-        .single();
-      if (fetchErr) throw fetchErr;
-      const currentNotes = (row as { notes: Note[] | null }).notes ?? [];
-      const newNote = { type, content, created_at: new Date().toISOString() };
-      const updatedNotes = [...currentNotes, newNote];
-      const { error } = await db
-        .from('bookmarks')
-        .update({ notes: updatedNotes })
-        .eq('id', bookmarkId);
+  const updateScratchpad = useMutation({
+    mutationFn: async ({ id, scratchpad }: { id: string; scratchpad: string }) => {
+      const { error } = await db.from('bookmarks').update({ scratchpad }).eq('id', id);
       if (error) throw error;
     },
-    onMutate: async ({ bookmarkId, type, content }) => {
-      await queryClient.cancelQueries({ queryKey: QUERY_KEY });
-      const prev = queryClient.getQueryData<Bookmark[]>(QUERY_KEY);
-      const newNote = { type, content, created_at: new Date().toISOString() };
-      queryClient.setQueryData<Bookmark[]>(QUERY_KEY, (old) =>
-        old?.map((b) => (b.id === bookmarkId ? { ...b, notes: [...b.notes, newNote] } : b)),
-      );
-      return { prev };
-    },
-    onError: (_err, _vars, context) => {
-      if (context?.prev) queryClient.setQueryData(QUERY_KEY, context.prev);
-      toast.error('Failed to add note');
-    },
-    onSuccess: () => toast.success('Note added'),
-    onSettled: () => queryClient.invalidateQueries({ queryKey: QUERY_KEY }),
-  });
-
-  const deleteNote = useMutation({
-    mutationFn: async ({ bookmarkId, noteIndex }: { bookmarkId: string; noteIndex: number }) => {
-      // Fetch current notes from DB (not cache, which onMutate already modified)
-      const { data: row, error: fetchErr } = await db
-        .from('bookmarks')
-        .select('notes')
-        .eq('id', bookmarkId)
-        .single();
-      if (fetchErr) throw fetchErr;
-      const currentNotes = (row as { notes: Note[] | null }).notes ?? [];
-      const updatedNotes = currentNotes.filter((_, i) => i !== noteIndex);
-      const { error } = await db
-        .from('bookmarks')
-        .update({ notes: updatedNotes })
-        .eq('id', bookmarkId);
-      if (error) throw error;
-    },
-    onMutate: async ({ bookmarkId, noteIndex }) => {
+    onMutate: async ({ id, scratchpad }) => {
       await queryClient.cancelQueries({ queryKey: QUERY_KEY });
       const prev = queryClient.getQueryData<Bookmark[]>(QUERY_KEY);
       queryClient.setQueryData<Bookmark[]>(QUERY_KEY, (old) =>
-        old?.map((b) =>
-          b.id === bookmarkId ? { ...b, notes: b.notes.filter((_, i) => i !== noteIndex) } : b,
-        ),
+        old?.map((b) => (b.id === id ? { ...b, scratchpad } : b)),
       );
       return { prev };
     },
-    onError: (_err, _vars, context) => {
-      if (context?.prev) queryClient.setQueryData(QUERY_KEY, context.prev);
-      toast.error('Failed to delete note');
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.prev) queryClient.setQueryData(QUERY_KEY, ctx.prev);
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: QUERY_KEY }),
   });
@@ -509,8 +452,7 @@ export function useBookmarks() {
     bulkDelete,
     cycleStatus,
     toggleFavorite,
-    addNote,
-    deleteNote,
+    updateScratchpad,
     markSynced,
     refreshMetadata,
     assignArea,

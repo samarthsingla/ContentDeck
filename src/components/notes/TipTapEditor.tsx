@@ -9,9 +9,16 @@ interface TipTapEditorProps {
   content: string;
   onChange: (html: string) => void;
   placeholder?: string;
+  isEditable?: boolean;
 }
 
-export default function TipTapEditor({ content, onChange, placeholder }: TipTapEditorProps) {
+export default function TipTapEditor({
+  content,
+  onChange,
+  placeholder,
+  isEditable,
+}: TipTapEditorProps) {
+  const editable = isEditable ?? true;
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -19,10 +26,17 @@ export default function TipTapEditor({ content, onChange, placeholder }: TipTapE
       Placeholder.configure({ placeholder: placeholder ?? 'Start writing…' }),
     ],
     content,
+    editable,
     onUpdate({ editor }) {
       onChange(editor.getHTML());
     },
   });
+
+  useEffect(() => {
+    if (editor) {
+      editor.setEditable(editable);
+    }
+  }, [editor, editable]);
 
   // Sync external content changes (e.g. when note changes)
   useEffect(() => {
@@ -102,37 +116,39 @@ export default function TipTapEditor({ content, onChange, placeholder }: TipTapE
 
   return (
     <div className="flex flex-col gap-2">
-      {/* Toolbar */}
-      <div
-        role="toolbar"
-        aria-label="Formatting"
-        className="flex flex-wrap gap-1 p-1 rounded-lg bg-surface-100 dark:bg-surface-800 border border-surface-200 dark:border-surface-700"
-      >
-        {toolbarButtons.map(({ label, icon: Icon, action, isActive }) => (
-          <button
-            key={label}
-            type="button"
-            onClick={action}
-            aria-label={label}
-            aria-pressed={isActive()}
-            className={`p-1.5 rounded-md transition-colors min-w-[32px] min-h-[32px] flex items-center justify-center
-              ${
-                isActive()
-                  ? 'bg-primary-600 text-white'
-                  : 'text-surface-600 dark:text-surface-400 hover:bg-surface-200 dark:hover:bg-surface-700'
-              }`}
-          >
-            <Icon size={15} />
-          </button>
-        ))}
-      </div>
+      {/* Toolbar — only shown in editable mode */}
+      {editable && (
+        <div
+          role="toolbar"
+          aria-label="Formatting"
+          className="flex flex-wrap gap-1 p-1 rounded-lg bg-surface-100 dark:bg-surface-800 border border-surface-200 dark:border-surface-700"
+        >
+          {toolbarButtons.map(({ label, icon: Icon, action, isActive }) => (
+            <button
+              key={label}
+              type="button"
+              onClick={action}
+              aria-label={label}
+              aria-pressed={isActive()}
+              className={`p-1.5 rounded-md transition-colors min-w-[32px] min-h-[32px] flex items-center justify-center
+                ${
+                  isActive()
+                    ? 'bg-primary-600 text-white'
+                    : 'text-surface-600 dark:text-surface-400 hover:bg-surface-200 dark:hover:bg-surface-700'
+                }`}
+            >
+              <Icon size={15} />
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Editor */}
       <EditorContent
         editor={editor}
         aria-label="Note content"
         aria-multiline="true"
-        className="min-h-[200px] prose prose-sm dark:prose-invert max-w-none focus-within:outline-none [&_.tiptap]:outline-none [&_.tiptap]:min-h-[200px] [&_.tiptap]:p-3 [&_.tiptap]:rounded-lg [&_.tiptap]:border [&_.tiptap]:border-surface-200 dark:[&_.tiptap]:border-surface-700 [&_.tiptap]:bg-white dark:[&_.tiptap]:bg-surface-900 [&_.tiptap_p.is-editor-empty:first-child::before]:content-[attr(data-placeholder)] [&_.tiptap_p.is-editor-empty:first-child::before]:text-surface-400 [&_.tiptap_p.is-editor-empty:first-child::before]:pointer-events-none [&_.tiptap_p.is-editor-empty:first-child::before]:float-left [&_.tiptap_p.is-editor-empty:first-child::before]:h-0"
+        className="min-h-[200px] text-sm leading-relaxed max-w-none focus-within:outline-none [&_.tiptap]:outline-none [&_.tiptap]:min-h-[200px] [&_.tiptap]:p-3 [&_.tiptap]:rounded-lg [&_.tiptap]:border [&_.tiptap]:border-surface-200 dark:[&_.tiptap]:border-surface-700 [&_.tiptap]:bg-white dark:[&_.tiptap]:bg-surface-900 [&_.tiptap]:text-surface-900 dark:[&_.tiptap]:text-surface-100 [&_.tiptap_p.is-editor-empty:first-child::before]:content-[attr(data-placeholder)] [&_.tiptap_p.is-editor-empty:first-child::before]:text-surface-400 [&_.tiptap_p.is-editor-empty:first-child::before]:pointer-events-none [&_.tiptap_p.is-editor-empty:first-child::before]:float-left [&_.tiptap_p.is-editor-empty:first-child::before]:h-0"
       />
     </div>
   );

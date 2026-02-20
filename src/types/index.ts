@@ -46,6 +46,7 @@ export interface Bookmark {
   content: BookmarkContent;
   content_status: ContentStatus;
   content_fetched_at: string | null;
+  scratchpad: string;
   synced: boolean;
   created_at: string;
   status_changed_at: string;

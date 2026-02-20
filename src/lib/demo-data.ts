@@ -1,4 +1,13 @@
-import type { Bookmark, TagArea, StatusHistoryEntry, BookmarkTag, BookmarkContent } from '../types';
+import type {
+  Bookmark,
+  TagArea,
+  StatusHistoryEntry,
+  BookmarkTag,
+  BookmarkContent,
+  StandaloneNote,
+  NoteBookmark,
+  NoteTag,
+} from '../types';
 
 function daysAgo(n: number): string {
   const d = new Date();
@@ -100,6 +109,7 @@ export const DEMO_BOOKMARKS: Bookmark[] = [
     status: 'unread',
     is_favorited: true,
     notes: [],
+    scratchpad: '',
     tags: ['webdev', 'frontend'],
     areas: [],
     metadata: { duration: '18:42', channel: 'Fireship' },
@@ -128,6 +138,8 @@ export const DEMO_BOOKMARKS: Bookmark[] = [
         created_at: daysAgo(2),
       },
     ],
+    scratchpad:
+      '## Highlight\n\nRSCs run only on the server — zero JS shipped to client for these components.',
     tags: ['react', 'frontend'],
     areas: [],
     metadata: { duration: '24:15', channel: 'Theo' },
@@ -157,6 +169,8 @@ export const DEMO_BOOKMARKS: Bookmark[] = [
         created_at: daysAgo(5),
       },
     ],
+    scratchpad:
+      '## Insight\n\nThe shift from lifecycle methods to effects mirrors how we think about synchronization, not sequences.',
     tags: ['react', 'mental-models'],
     areas: [],
     metadata: {},
@@ -179,6 +193,7 @@ export const DEMO_BOOKMARKS: Bookmark[] = [
     status: 'unread',
     is_favorited: false,
     notes: [],
+    scratchpad: '',
     tags: ['career', 'writing'],
     areas: [],
     metadata: {},
@@ -201,6 +216,7 @@ export const DEMO_BOOKMARKS: Bookmark[] = [
     status: 'unread',
     is_favorited: false,
     notes: [],
+    scratchpad: '',
     tags: ['ai', 'devops'],
     areas: [],
     metadata: {},
@@ -223,6 +239,7 @@ export const DEMO_BOOKMARKS: Bookmark[] = [
     status: 'reading',
     is_favorited: false,
     notes: [],
+    scratchpad: '',
     tags: ['leadership', 'career'],
     areas: [],
     metadata: { word_count: 2400, reading_time: 10 },
@@ -258,6 +275,8 @@ export const DEMO_BOOKMARKS: Bookmark[] = [
         created_at: daysAgo(4),
       },
     ],
+    scratchpad:
+      '## Insight\n\nDORA metrics work best when teams self-report, not when management enforces them.\n\n## Question\n\nHow would this apply to a team of < 5 engineers?',
     tags: ['productivity', 'engineering'],
     areas: [],
     metadata: { word_count: 3200, reading_time: 13 },
@@ -281,6 +300,7 @@ export const DEMO_BOOKMARKS: Bookmark[] = [
     status: 'unread',
     is_favorited: false,
     notes: [],
+    scratchpad: '',
     tags: ['leadership', 'systems-thinking'],
     areas: [],
     metadata: { word_count: 4500, reading_time: 18 },
@@ -304,6 +324,7 @@ export const DEMO_BOOKMARKS: Bookmark[] = [
     status: 'unread',
     is_favorited: false,
     notes: [],
+    scratchpad: '',
     tags: ['design', 'css'],
     areas: [],
     metadata: { word_count: 1800, reading_time: 7 },
@@ -333,6 +354,8 @@ export const DEMO_BOOKMARKS: Bookmark[] = [
         created_at: daysAgo(1),
       },
     ],
+    scratchpad:
+      '## Highlight\n\nA well-structured monolith is easier to split into services later than a poorly structured microservice architecture.',
     tags: ['architecture', 'engineering'],
     areas: [],
     metadata: { word_count: 5100, reading_time: 20 },
@@ -355,6 +378,7 @@ export const DEMO_BOOKMARKS: Bookmark[] = [
     status: 'done',
     is_favorited: false,
     notes: [],
+    scratchpad: '',
     tags: ['productivity', 'pkm'],
     areas: [],
     metadata: { duration: '1:12:30', channel: 'Tiago Forte' },
@@ -377,6 +401,7 @@ export const DEMO_BOOKMARKS: Bookmark[] = [
     status: 'reading',
     is_favorited: false,
     notes: [],
+    scratchpad: '',
     tags: ['productivity', 'habits'],
     areas: [],
     metadata: {},
@@ -399,6 +424,7 @@ export const DEMO_BOOKMARKS: Bookmark[] = [
     status: 'done',
     is_favorited: false,
     notes: [],
+    scratchpad: '',
     tags: ['react', 'frontend'],
     areas: [],
     metadata: { word_count: 8900, reading_time: 35 },
@@ -421,6 +447,7 @@ export const DEMO_BOOKMARKS: Bookmark[] = [
     status: 'unread',
     is_favorited: false,
     notes: [],
+    scratchpad: '',
     tags: [],
     areas: [],
     metadata: { word_count: 1200, reading_time: 5 },
@@ -444,6 +471,7 @@ export const DEMO_BOOKMARKS: Bookmark[] = [
     status: 'unread',
     is_favorited: false,
     notes: [],
+    scratchpad: '',
     tags: [],
     areas: [],
     metadata: { word_count: 3800, reading_time: 15 },
@@ -529,6 +557,77 @@ export const DEMO_BOOKMARK_TAGS: BookmarkTag[] = [
   { bookmark_id: 'demo-12', tag_area_id: 'area-3' },
   // demo-13: useEffect guide → react
   { bookmark_id: 'demo-13', tag_area_id: 'area-5' },
+];
+
+export const DEMO_STANDALONE_NOTES: StandaloneNote[] = [
+  {
+    id: 'note-1',
+    title: 'Monolith vs Microservices Decision Framework',
+    content:
+      'Key insight from the Martin Fowler article: start with a well-modularized monolith. Define clear module boundaries from day one. Extract services only when a module needs independent scaling or separate team ownership. The boundaries you define in the monolith become your service contracts.',
+    created_at: daysAgo(2),
+    updated_at: daysAgo(1),
+  },
+  {
+    id: 'note-2',
+    title: 'useEffect Mental Model',
+    content:
+      'useEffect is for synchronizing with something outside React (browser API, network, subscription). If not syncing with something external, you probably do not need useEffect. The dependency array is a contract, not a performance optimization.',
+    created_at: daysAgo(5),
+    updated_at: daysAgo(3),
+  },
+  {
+    id: 'note-3',
+    title: 'Browser-First Design Workflow',
+    content:
+      'Start with semantic HTML, add CSS incrementally. Use DevTools as the design canvas. Responsive behavior is immediately visible — no separate artboards. Hot-reloading dev server + minimal component + side-by-side browser/editor.',
+    created_at: daysAgo(3),
+    updated_at: daysAgo(2),
+  },
+  {
+    id: 'note-4',
+    title: 'DORA Metrics for Small Teams',
+    content:
+      'DORA metrics work best when teams self-report. For teams under 5 engineers, focus on deployment frequency and lead time. Change failure rate is less meaningful at low volumes. Track trends, not absolute numbers.',
+    created_at: daysAgo(4),
+    updated_at: daysAgo(4),
+  },
+  {
+    id: 'note-5',
+    title: 'Writing in Public — Why It Matters',
+    content:
+      'swyx argues that writing in public accelerates learning by forcing you to articulate ideas clearly. The audience is secondary — the primary benefit is to the writer. Start with what you learned today, not what you think others want to read.',
+    created_at: daysAgo(2),
+    updated_at: daysAgo(2),
+  },
+  {
+    id: 'note-6',
+    title: 'Atomic Habits — Core Loop',
+    content:
+      'Cue → Craving → Response → Reward. Make good habits obvious (cue), attractive (craving), easy (response), satisfying (reward). Invert for breaking bad habits. Identity-based habits: focus on who you want to become, not what you want to achieve.',
+    created_at: daysAgo(6),
+    updated_at: daysAgo(5),
+  },
+];
+
+export const DEMO_NOTE_BOOKMARKS: NoteBookmark[] = [
+  { note_id: 'note-1', bookmark_id: 'demo-10' },
+  { note_id: 'note-2', bookmark_id: 'demo-13' },
+  { note_id: 'note-2', bookmark_id: 'demo-3' },
+  { note_id: 'note-3', bookmark_id: 'demo-9' },
+  { note_id: 'note-4', bookmark_id: 'demo-7' },
+  { note_id: 'note-5', bookmark_id: 'demo-4' },
+  { note_id: 'note-6', bookmark_id: 'demo-12' },
+];
+
+export const DEMO_NOTE_TAGS: NoteTag[] = [
+  { note_id: 'note-1', tag_area_id: 'area-2' },
+  { note_id: 'note-2', tag_area_id: 'area-5' },
+  { note_id: 'note-3', tag_area_id: 'area-1' },
+  { note_id: 'note-4', tag_area_id: 'area-3' },
+  { note_id: 'note-4', tag_area_id: 'area-2' },
+  { note_id: 'note-5', tag_area_id: 'area-4' },
+  { note_id: 'note-6', tag_area_id: 'area-3' },
 ];
 
 export const DEMO_STATUS_HISTORY: StatusHistoryEntry[] = [

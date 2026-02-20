@@ -57,6 +57,7 @@ function makeBookmark(overrides: Partial<Bookmark> = {}): Bookmark {
     status_changed_at: new Date().toISOString(),
     started_reading_at: null,
     finished_at: null,
+    scratchpad: '',
     ...overrides,
   };
 }
