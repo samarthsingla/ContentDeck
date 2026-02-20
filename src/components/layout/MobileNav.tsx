@@ -1,10 +1,9 @@
-import { Inbox, BookOpen, CheckCircle, Star, List, LayoutGrid, FileText } from 'lucide-react';
+import { Inbox, BookOpen, CheckCircle, Star, List, LayoutGrid } from 'lucide-react';
 import { useUI } from '../../context/UIProvider';
 import type { Status } from '../../types';
 
 interface MobileNavProps {
   counts: { unread: number; reading: number; done: number; favorited: number };
-  noteCount: number;
 }
 
 const tabs: { status: Status; label: string; icon: React.ElementType }[] = [
@@ -13,9 +12,8 @@ const tabs: { status: Status; label: string; icon: React.ElementType }[] = [
   { status: 'done', label: 'Done', icon: CheckCircle },
 ];
 
-export default function MobileNav({ counts, noteCount }: MobileNavProps) {
-  const { currentStatus, setStatus, currentView, setView, showFavorites, setFavorites, setTag } =
-    useUI();
+export default function MobileNav({ counts }: MobileNavProps) {
+  const { currentStatus, setStatus, currentView, setView, showFavorites, setFavorites } = useUI();
 
   return (
     <nav
@@ -63,37 +61,15 @@ export default function MobileNav({ counts, noteCount }: MobileNavProps) {
           {counts.favorited > 0 && <span className="text-[10px]">{counts.favorited}</span>}
         </button>
 
-        {/* Notes */}
-        <button
-          onClick={() => {
-            setView('notes');
-            setTag(null);
-            setFavorites(false);
-          }}
-          className={`flex-1 flex flex-col items-center gap-0.5 py-2 min-h-[56px] transition-colors
-            ${currentView === 'notes' ? 'text-primary-600 dark:text-primary-400' : 'text-surface-400 dark:text-surface-500'}
-          `}
-          aria-label={`Notes (${noteCount})`}
-          aria-current={currentView === 'notes' ? 'page' : undefined}
-        >
-          <FileText size={20} />
-          <span className="text-[10px] font-medium">Notes</span>
-          {noteCount > 0 && <span className="text-[10px]">{noteCount}</span>}
-        </button>
-
         {/* View toggle */}
         <button
           onClick={() => setView(currentView === 'list' ? 'areas' : 'list')}
           className="flex-1 flex flex-col items-center gap-0.5 py-2 min-h-[56px] text-surface-400 dark:text-surface-500"
           aria-label={`Switch to ${currentView === 'list' ? 'areas' : 'list'} view`}
         >
-          {currentView === 'list' || currentView === 'notes' ? (
-            <LayoutGrid size={20} />
-          ) : (
-            <List size={20} />
-          )}
+          {currentView === 'list' ? <LayoutGrid size={20} /> : <List size={20} />}
           <span className="text-[10px] font-medium">
-            {currentView === 'list' || currentView === 'notes' ? 'Areas' : 'List'}
+            {currentView === 'list' ? 'Areas' : 'List'}
           </span>
         </button>
       </div>

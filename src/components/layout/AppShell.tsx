@@ -4,7 +4,6 @@ import MobileNav from './MobileNav';
 
 interface AppShellProps {
   counts: { unread: number; reading: number; done: number; favorited: number };
-  noteCount: number;
   onAdd: () => void;
   onSignOut: () => void;
   onToggleSearch: () => void;
@@ -16,7 +15,6 @@ interface AppShellProps {
 
 export default function AppShell({
   counts,
-  noteCount,
   onAdd,
   onSignOut,
   onToggleSearch,
@@ -30,7 +28,6 @@ export default function AppShell({
       {/* Desktop Sidebar */}
       <Sidebar
         counts={counts}
-        noteCount={noteCount}
         onAdd={onAdd}
         onSignOut={onSignOut}
         onSettings={onSettings}
@@ -57,7 +54,7 @@ export default function AppShell({
         </main>
 
         {/* Mobile Bottom Nav */}
-        <MobileNav counts={counts} noteCount={noteCount} />
+        <MobileNav counts={counts} />
       </div>
     </div>
   );

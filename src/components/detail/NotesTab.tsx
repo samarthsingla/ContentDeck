@@ -7,16 +7,9 @@ interface NotesTabProps {
   onAddNote: (type: NoteType, content: string) => void;
   onDeleteNote: (index: number) => void;
   isPending: boolean;
-  onPromoteToNote?: (content: string) => void;
 }
 
-export default function NotesTab({
-  notes,
-  onAddNote,
-  onDeleteNote,
-  isPending,
-  onPromoteToNote,
-}: NotesTabProps) {
+export default function NotesTab({ notes, onAddNote, onDeleteNote, isPending }: NotesTabProps) {
   return (
     <div className="space-y-4">
       {/* Composer */}
@@ -37,7 +30,6 @@ export default function NotesTab({
                 content={note.content}
                 createdAt={note.created_at}
                 onDelete={() => onDeleteNote(originalIndex)}
-                onPromote={onPromoteToNote ? () => onPromoteToNote(note.content) : undefined}
               />
             );
           })}

@@ -1,4 +1,4 @@
-import { Trash2, ArrowUpRight } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import { timeAgo } from '../../lib/utils';
 import type { NoteType } from '../../types';
 
@@ -7,7 +7,6 @@ interface NoteCardProps {
   content: string;
   createdAt: string;
   onDelete: () => void;
-  onPromote?: () => void;
 }
 
 const NOTE_CONFIG: Record<NoteType, { emoji: string; label: string; color: string; bg: string }> = {
@@ -37,7 +36,7 @@ const NOTE_CONFIG: Record<NoteType, { emoji: string; label: string; color: strin
   },
 };
 
-export default function NoteCard({ type, content, createdAt, onDelete, onPromote }: NoteCardProps) {
+export default function NoteCard({ type, content, createdAt, onDelete }: NoteCardProps) {
   const config = NOTE_CONFIG[type];
 
   return (
@@ -49,15 +48,6 @@ export default function NoteCard({ type, content, createdAt, onDelete, onPromote
         <span className="text-xs text-surface-400 dark:text-surface-500 ml-auto">
           {timeAgo(createdAt)}
         </span>
-        {onPromote && (
-          <button
-            onClick={onPromote}
-            className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-primary-500/10 text-surface-400 hover:text-primary-600 transition-opacity min-w-[24px] min-h-[24px] flex items-center justify-center"
-            aria-label="Promote to standalone note"
-          >
-            <ArrowUpRight size={12} />
-          </button>
-        )}
         <button
           onClick={onDelete}
           className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-500/10 text-surface-400 hover:text-red-500 transition-opacity min-w-[24px] min-h-[24px] flex items-center justify-center"

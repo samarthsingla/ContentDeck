@@ -54,7 +54,7 @@ ls docs/plan/ docs/log/ docs/guides/ docs/reference/
 ls .claude/skills/
 
 # GitHub Issues (all states)
-gh issue list --repo samarthsingla/ContentDeck --state all --limit 50 --json number,title,state,labels
+gh issue list --repo aditya30103/ContentDeck --state all --limit 50 --json number,title,state,labels
 
 # Test files (for count verification)
 find src -name "*.test.ts" -o -name "*.test.tsx" | sort

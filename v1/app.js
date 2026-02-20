@@ -1,6 +1,6 @@
 // ═══════════════════════════════════════════
 // ContentDeck v4.0 — Personal Content Dashboard
-// https://github.com/samarthsingla/ContentDeck
+// https://github.com/aditya30103/ContentDeck
 // ═══════════════════════════════════════════
 
 const SOURCE = {
