@@ -1,6 +1,6 @@
 // ═══════════════════════════════════════════
 // ContentDeck v4.0 — Reading Stats
-// https://github.com/aditya30103/ContentDeck
+// https://github.com/samarthsingla/ContentDeck
 // ═══════════════════════════════════════════
 
 window.Stats = {

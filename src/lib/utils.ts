@@ -66,6 +66,38 @@ export function truncate(text: string, max: number): string {
   return text.slice(0, max).trimEnd() + '...';
 }
 
+/** Convert basic HTML (from TipTap) to Markdown */
+export function convertHtmlToMarkdown(html: string): string {
+  if (!html) return '';
+  return html
+    .replace(/<h1[^>]*>(.*?)<\/h1>/gi, (_, t) => `# ${t}\n\n`)
+    .replace(/<h2[^>]*>(.*?)<\/h2>/gi, (_, t) => `## ${t}\n\n`)
+    .replace(/<h3[^>]*>(.*?)<\/h3>/gi, (_, t) => `### ${t}\n\n`)
+    .replace(/<strong[^>]*>(.*?)<\/strong>/gi, (_, t) => `**${t}**`)
+    .replace(/<b[^>]*>(.*?)<\/b>/gi, (_, t) => `**${t}**`)
+    .replace(/<em[^>]*>(.*?)<\/em>/gi, (_, t) => `_${t}_`)
+    .replace(/<i[^>]*>(.*?)<\/i>/gi, (_, t) => `_${t}_`)
+    .replace(/<code[^>]*>(.*?)<\/code>/gi, (_, t) => `\`${t}\``)
+    .replace(
+      /<pre[^>]*><code[^>]*>([\s\S]*?)<\/code><\/pre>/gi,
+      (_, t) => `\`\`\`\n${t}\n\`\`\`\n\n`,
+    )
+    .replace(/<a[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/gi, (_, href, text) => `[${text}](${href})`)
+    .replace(/<li[^>]*>(.*?)<\/li>/gi, (_, t) => `- ${t}\n`)
+    .replace(/<ul[^>]*>([\s\S]*?)<\/ul>/gi, (_, t) => `${t}\n`)
+    .replace(/<ol[^>]*>([\s\S]*?)<\/ol>/gi, (_, t) => `${t}\n`)
+    .replace(/<p[^>]*>(.*?)<\/p>/gi, (_, t) => `${t}\n\n`)
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 /** Debounce a function */
 export function debounce<T extends (...args: never[]) => void>(fn: T, ms: number): T {
   let timer: ReturnType<typeof setTimeout>;

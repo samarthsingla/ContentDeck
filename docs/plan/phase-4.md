@@ -1,44 +1,68 @@
-# Phase 4: Social & Scale (v5.0)
+# Phase 4: Thinking Companion AI (v4.5)
 
-> Goal: From personal tool to community platform.
+> Goal: AI that asks questions instead of giving answers. A thinking partner, not a summarizer.
 
-## 4.1 Public Reading Lists
-- Toggle any tag area to "public" → generates a shareable URL
-- `/u/username/area-name` — beautiful public page
-- OG meta tags per list (dynamic via edge function)
-- Anyone can view, only owner can edit
-- "Copy to my library" button for viewers
+**Status:** Not started
+**Depends on:** Phase 2 (Notes System). Enhanced by Phase 3 (embeddings) but can start without it.
+**Unlocks:** Phase 5 (Life Management — people context)
 
-## 4.2 User Profiles
-- `/u/username` — public profile page
-- Reading stats (opt-in): books read this year, articles completed, streak
-- Pinned collections
-- "Follow" button → get notified when they publish a new list
+---
 
-## 4.3 Discover Feed
-- Curated feed of popular public bookmarks across all users
-- Trending: most-saved URLs in the last 7 days
-- Categories: filtered by source type or tag
-- "Save to my library" one-click action
-- Moderation: report button + admin flag system
+## Design Principle
 
-## 4.4 Collaborative Collections
-- Invite others to contribute to a shared tag area
-- Real-time sync via Supabase Realtime
-- Activity log: "Alice added 3 bookmarks to Design"
-- Use case: team reading lists, study groups, content curation
+Every AI output is a prompt for the user to think. The companion never writes summaries, never generates content for you. It:
 
-## 4.5 Weekly Digest Email
-- Automated weekly email with:
-  - Reading stats (completed, streak)
-  - Oldest unread bookmarks ("these have been waiting 30+ days")
-  - AI-generated topic summary ("This week you focused on...")
-- Sent via Supabase Edge Function + Resend (free tier: 100 emails/day)
-- Configurable: daily/weekly/off
+- **Asks reflection questions** after you finish reading something
+- **Detects potential biases** in your notes and reading patterns
+- **Suggests connections** between things you've saved
+- **Prompts Socratic dialogue** to deepen your understanding
 
-## 4.6 Achievements & Gamification
-- Reading milestones: "Read 100 articles", "7-day streak", "Completed a book"
-- Source diversity: "Explored all 6 source types"
-- Export badges: "Exported 50 bookmarks to Obsidian"
-- Displayed on profile, shareable as images
-- Motivates consistent reading habits
+This is the opposite of "AI summarize this for me." It's "AI, help me think harder about this."
+
+---
+
+## 4.1 Companion Engine
+
+**`src/lib/thinking-companion.ts`**
+
+Prompt types, each with a specialized system prompt:
+
+| Type | Trigger | Example Output |
+|------|---------|----------------|
+| **Reflection** | Mark bookmark as "done" | "What surprised you most? How does this connect to what you already knew?" |
+| **Bias Check** | Writing a note | "Your last 5 saves are all from the same perspective. Have you considered the opposing view?" |
+| **Connection** | Viewing a bookmark/note | "This article about X relates to your note about Y — what's the through-line?" |
+| **Socratic** | Explicit "help me think" action | "You wrote 'microservices are better.' Better than what? For whom? Under what constraints?" |
+| **Pattern** | Periodic (weekly) | "You've been saving a lot about system design but haven't written any notes. What's holding you back?" |
+
+- Uses existing `callOpenRouter` from `src/lib/ai.ts` — no new API integration needed
+- Each prompt type has a template that includes relevant context (bookmark title, note content, recent saves)
+- **Without embeddings** (pre-Phase 3): connection suggestions use tag overlap and shared areas
+- **With embeddings** (post-Phase 3): connection suggestions use cosine similarity for much better results
+
+## 4.2 UI Integration
+
+- **`CompanionPanel`**: collapsible sidebar panel (or bottom sheet on mobile) showing the latest prompt
+- **`ReflectionPrompt`**: appears after marking a bookmark "done" — dismissible card with 1-2 questions
+- **`BiasCheckResult`**: inline indicator in NoteEditorModal when bias patterns are detected
+- **"Find connections" button**: in DetailPanel and NoteEditorModal — triggers a connection analysis
+- **Periodic sidebar prompts**: subtle notification dot on companion icon when new insights are available
+- All prompts are dismissible and non-blocking — the companion suggests, never interrupts
+
+## 4.3 Companion Settings
+
+Stored in localStorage (same pattern as OpenRouter API key):
+
+- **Enable/disable** companion entirely
+- **Toggle individual prompt types**: reflection, bias check, connections, Socratic, patterns
+- **Frequency**: how often periodic prompts appear (daily, weekly, off)
+- **Model selection**: which OpenRouter model to use for companion prompts (default: same as AI tagging)
+
+---
+
+## Implementation Notes
+
+- Can start in parallel with Phase 3 — works without embeddings, just not as well
+- All companion features are progressive: they enhance the experience but nothing breaks without them
+- Token usage is minimal: each prompt is a single short API call, not a long conversation
+- No conversation history stored — each prompt is stateless (keeps it simple and privacy-friendly)

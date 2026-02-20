@@ -3,7 +3,7 @@ export type Status = 'unread' | 'reading' | 'done';
 export type NoteType = 'insight' | 'question' | 'highlight' | 'note';
 export type ContentStatus = 'pending' | 'extracting' | 'success' | 'failed' | 'skipped';
 export type SortOption = 'newest' | 'oldest' | 'title';
-export type ViewMode = 'list' | 'areas';
+export type ViewMode = 'list' | 'areas' | 'notes';
 
 export interface Note {
   type: NoteType;
@@ -88,6 +88,26 @@ export const STATUS_NEXT: Record<Status, Status> = {
   reading: 'done',
   done: 'unread',
 };
+
+export interface StandaloneNote {
+  id: string;
+  title: string;
+  content: string;
+  created_at: string;
+  updated_at: string;
+  linked_bookmarks?: Bookmark[];
+  areas?: TagArea[];
+}
+
+export interface NoteBookmark {
+  note_id: string;
+  bookmark_id: string;
+}
+
+export interface NoteTag {
+  note_id: string;
+  tag_area_id: string;
+}
 
 export const SOURCE_LABELS: Record<SourceType, string> = {
   youtube: 'YouTube',
