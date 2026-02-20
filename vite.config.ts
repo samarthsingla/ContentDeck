@@ -5,6 +5,15 @@ import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          tiptap: ['@tiptap/react', '@tiptap/starter-kit'],
+        },
+      },
+    },
+  },
   test: {
     globals: true,
     environment: 'jsdom',
