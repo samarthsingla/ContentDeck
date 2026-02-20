@@ -1,0 +1,74 @@
+import { useState, useMemo } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useSupabase } from '../context/SupabaseProvider';
+import { useToast } from '../components/ui/Toast';
+import type { Bookmark } from '../types';
+
+const QUERY_KEY = ['reviewQueue'] as const;
+
+export function useReview() {
+  const db = useSupabase();
+  const queryClient = useQueryClient();
+  const toast = useToast();
+
+  // Session-only skipped IDs — not persisted to DB
+  const [skippedIds, setSkippedIds] = useState<Set<string>>(new Set());
+  const [sessionReviewed, setSessionReviewed] = useState(0);
+
+  const query = useQuery({
+    queryKey: QUERY_KEY,
+    queryFn: async () => {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const { data, error } = await db.rpc('get_review_queue', { p_limit: 20 });
+      if (error) throw error;
+      return (data ?? []) as Bookmark[];
+    },
+  });
+
+  // Filter out skipped items for the visible queue
+  const visibleQueue = useMemo(
+    () => (query.data ?? []).filter((b) => !skippedIds.has(b.id)),
+    [query.data, skippedIds],
+  );
+
+  const recordReview = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await db
+        .from('bookmarks')
+        .update({
+          last_reviewed_at: new Date().toISOString(),
+          review_count: (query.data?.find((b) => b.id === id)?.review_count ?? 0) + 1,
+        })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: QUERY_KEY });
+      const prev = queryClient.getQueryData<Bookmark[]>(QUERY_KEY);
+      // Optimistically remove from queue
+      queryClient.setQueryData<Bookmark[]>(QUERY_KEY, (old) => old?.filter((b) => b.id !== id));
+      setSessionReviewed((n) => n + 1);
+      return { prev };
+    },
+    onError: (_err, _id, context) => {
+      if (context?.prev) queryClient.setQueryData(QUERY_KEY, context.prev);
+      setSessionReviewed((n) => Math.max(0, n - 1));
+      toast.error('Failed to record review');
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: QUERY_KEY }),
+  });
+
+  function skipReview(id: string) {
+    setSkippedIds((prev) => new Set([...prev, id]));
+  }
+
+  return {
+    visibleQueue,
+    isLoading: query.isLoading,
+    dueCount: visibleQueue.length,
+    sessionReviewed,
+    sessionTotal: (query.data?.length ?? 0) + sessionReviewed,
+    recordReview,
+    skipReview,
+  };
+}

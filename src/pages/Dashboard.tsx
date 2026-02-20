@@ -9,6 +9,7 @@ import AreaManager from '../components/areas/AreaManager';
 import DetailPanel from '../components/detail/DetailPanel';
 import NotesList from '../components/notes/NotesList';
 import NoteEditorModal from '../components/notes/NoteEditorModal';
+import ReviewPane from '../components/review/ReviewPane';
 import AddBookmarkModal from '../components/modals/AddBookmarkModal';
 import EditBookmarkModal from '../components/modals/EditBookmarkModal';
 import SettingsModal from '../components/modals/SettingsModal';
@@ -18,6 +19,7 @@ import { useBookmarks } from '../hooks/useBookmarks';
 import { useTagAreas } from '../hooks/useTagAreas';
 import { useStats } from '../hooks/useStats';
 import { useNotes } from '../hooks/useNotes';
+import { useReview } from '../hooks/useReview';
 import { useLinkedNoteIds } from '../hooks/useLinkedNoteIds';
 import { useUI } from '../context/UIProvider';
 import { useSupabase } from '../context/SupabaseProvider';
@@ -61,6 +63,15 @@ export default function Dashboard({ userEmail, onSignOut, isDemo, sharedUrl }: D
     updateNote,
     deleteNote: deleteStandaloneNote,
   } = useNotes();
+  const {
+    visibleQueue,
+    sessionReviewed,
+    sessionTotal,
+    isLoading: reviewLoading,
+    dueCount,
+    recordReview,
+    skipReview,
+  } = useReview();
   const { currentStatus, currentView, selectMode, selectedIds, clearSelection, setTag, setView } =
     useUI();
   const toast = useToast();
@@ -347,6 +358,7 @@ export default function Dashboard({ userEmail, onSignOut, isDemo, sharedUrl }: D
         <AppShell
           counts={counts}
           noteCount={notes.length}
+          dueCount={dueCount}
           onAdd={() => setShowAddModal(true)}
           onSignOut={onSignOut}
           onToggleSearch={() => setShowSearch((s) => !s)}
@@ -362,7 +374,17 @@ export default function Dashboard({ userEmail, onSignOut, isDemo, sharedUrl }: D
             />
           )}
           <div className="max-w-3xl mx-auto px-4 py-4 space-y-4">
-            {currentView === 'notes' ? (
+            {currentView === 'review' ? (
+              <ReviewPane
+                queue={visibleQueue}
+                sessionReviewed={sessionReviewed}
+                sessionTotal={sessionTotal}
+                isLoading={reviewLoading}
+                onReviewed={(id) => recordReview.mutate(id)}
+                onSkip={skipReview}
+                onOpenDetails={handleBookmarkClick}
+              />
+            ) : currentView === 'notes' ? (
               <NotesList
                 notes={notes}
                 isLoading={notesLoading}

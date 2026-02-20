@@ -3,7 +3,7 @@ export type Status = 'unread' | 'reading' | 'done';
 export type NoteType = 'insight' | 'question' | 'highlight' | 'note';
 export type ContentStatus = 'pending' | 'extracting' | 'success' | 'failed' | 'skipped';
 export type SortOption = 'newest' | 'oldest' | 'title';
-export type ViewMode = 'list' | 'areas' | 'notes';
+export type ViewMode = 'list' | 'areas' | 'notes' | 'review';
 
 export interface Note {
   type: NoteType;
@@ -52,6 +52,8 @@ export interface Bookmark {
   status_changed_at: string;
   started_reading_at: string | null;
   finished_at: string | null;
+  last_reviewed_at: string | null;
+  review_count: number;
 }
 
 export interface TagArea {

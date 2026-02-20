@@ -121,6 +121,8 @@ export const DEMO_BOOKMARKS: Bookmark[] = [
     status_changed_at: daysAgo(1),
     started_reading_at: null,
     finished_at: null,
+    last_reviewed_at: null,
+    review_count: 0,
   },
   {
     id: 'demo-2',
@@ -151,6 +153,8 @@ export const DEMO_BOOKMARKS: Bookmark[] = [
     status_changed_at: daysAgo(2),
     started_reading_at: daysAgo(2),
     finished_at: null,
+    last_reviewed_at: null,
+    review_count: 0,
   },
   {
     id: 'demo-3',
@@ -182,6 +186,8 @@ export const DEMO_BOOKMARKS: Bookmark[] = [
     status_changed_at: daysAgo(5),
     started_reading_at: daysAgo(6),
     finished_at: daysAgo(5),
+    last_reviewed_at: null,
+    review_count: 0,
   },
   {
     id: 'demo-4',
@@ -205,6 +211,8 @@ export const DEMO_BOOKMARKS: Bookmark[] = [
     status_changed_at: daysAgo(2),
     started_reading_at: null,
     finished_at: null,
+    last_reviewed_at: null,
+    review_count: 0,
   },
   {
     id: 'demo-5',
@@ -228,6 +236,8 @@ export const DEMO_BOOKMARKS: Bookmark[] = [
     status_changed_at: daysAgo(1),
     started_reading_at: null,
     finished_at: null,
+    last_reviewed_at: null,
+    review_count: 0,
   },
   {
     id: 'demo-6',
@@ -251,6 +261,8 @@ export const DEMO_BOOKMARKS: Bookmark[] = [
     status_changed_at: daysAgo(3),
     started_reading_at: daysAgo(3),
     finished_at: null,
+    last_reviewed_at: null,
+    review_count: 0,
   },
   {
     id: 'demo-7',
@@ -288,6 +300,8 @@ export const DEMO_BOOKMARKS: Bookmark[] = [
     status_changed_at: daysAgo(4),
     started_reading_at: daysAgo(6),
     finished_at: daysAgo(4),
+    last_reviewed_at: null,
+    review_count: 0,
   },
   {
     id: 'demo-8',
@@ -312,6 +326,8 @@ export const DEMO_BOOKMARKS: Bookmark[] = [
     status_changed_at: daysAgo(2),
     started_reading_at: null,
     finished_at: null,
+    last_reviewed_at: null,
+    review_count: 0,
   },
   {
     id: 'demo-9',
@@ -336,6 +352,8 @@ export const DEMO_BOOKMARKS: Bookmark[] = [
     status_changed_at: daysAgo(3),
     started_reading_at: null,
     finished_at: null,
+    last_reviewed_at: null,
+    review_count: 0,
   },
   {
     id: 'demo-10',
@@ -367,6 +385,8 @@ export const DEMO_BOOKMARKS: Bookmark[] = [
     status_changed_at: daysAgo(2),
     started_reading_at: daysAgo(2),
     finished_at: null,
+    last_reviewed_at: null,
+    review_count: 0,
   },
   {
     id: 'demo-11',
@@ -390,6 +410,8 @@ export const DEMO_BOOKMARKS: Bookmark[] = [
     status_changed_at: daysAgo(8),
     started_reading_at: daysAgo(12),
     finished_at: daysAgo(8),
+    last_reviewed_at: null,
+    review_count: 0,
   },
   {
     id: 'demo-12',
@@ -413,6 +435,8 @@ export const DEMO_BOOKMARKS: Bookmark[] = [
     status_changed_at: daysAgo(5),
     started_reading_at: daysAgo(5),
     finished_at: null,
+    last_reviewed_at: null,
+    review_count: 0,
   },
   {
     id: 'demo-13',
@@ -436,6 +460,8 @@ export const DEMO_BOOKMARKS: Bookmark[] = [
     status_changed_at: daysAgo(9),
     started_reading_at: daysAgo(11),
     finished_at: daysAgo(9),
+    last_reviewed_at: null,
+    review_count: 0,
   },
   {
     id: 'demo-14',
@@ -459,6 +485,8 @@ export const DEMO_BOOKMARKS: Bookmark[] = [
     status_changed_at: daysAgo(1),
     started_reading_at: null,
     finished_at: null,
+    last_reviewed_at: null,
+    review_count: 0,
   },
   {
     id: 'demo-15',
@@ -483,6 +511,8 @@ export const DEMO_BOOKMARKS: Bookmark[] = [
     status_changed_at: daysAgo(0),
     started_reading_at: null,
     finished_at: null,
+    last_reviewed_at: null,
+    review_count: 0,
   },
 ];
 

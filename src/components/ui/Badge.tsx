@@ -18,7 +18,7 @@ const statusStyles: Record<Status, string> = {
 const statusLabels: Record<Status, string> = {
   unread: 'Unread',
   reading: 'Reading',
-  done: 'Done',
+  done: 'Read',
 };
 
 export function SourceBadge({ source }: { source: SourceType }) {
