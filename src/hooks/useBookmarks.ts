@@ -6,7 +6,8 @@ import { suggestTags } from '../lib/ai';
 import { detectSourceType } from '../lib/utils';
 import type { Bookmark, TagArea, Status, BookmarkMetadata } from '../types';
 
-const QUERY_KEY = ['bookmarks'] as const;
+export const BOOKMARKS_QUERY_KEY = ['bookmarks'] as const;
+const QUERY_KEY = BOOKMARKS_QUERY_KEY;
 
 interface MetadataResult {
   title?: string;

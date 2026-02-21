@@ -48,7 +48,8 @@ docs/
 │   ├── v3.0-reader-mode.md         # 1.5 Reader mode
 │   ├── v3.0-testing-ci.md         # 1.6 Testing & CI (Vitest + GitHub Actions)
 │   ├── feat-notes-branch.md        # Branch log: feat/12-notes (phases 2.2–2.5)
-│   └── v3.5-notes-system.md        # Phase 2 completion record
+│   ├── v3.5-notes-system.md        # Phase 2 completion record
+│   └── v3.6-bugfixes-feb2026.md   # 5 bug fixes: copy button, review status, bookmarklet CSP, scratchpad, metadata batch
 ├── guides/                         # How-to references
 │   ├── workflow.md                 # Development practices, session workflow
 │   └── supabase-auth-setup.md      # Supabase Auth provider configuration
@@ -63,6 +64,7 @@ docs/
 
 | Version | Feature | Log |
 |---|---|---|
+| v3.6 | Bug fixes: copy button, review status advance, bookmarklet CSP fallback, scratchpad edit mode, metadata batch refresh | [log/v3.6-bugfixes-feb2026.md](log/v3.6-bugfixes-feb2026.md) |
 | v3.6 | Review system (review queue, ReviewPane/Card, skip, dueCount badge, Done→Read rename) | [log/v3.6-review-system.md](log/v3.6-review-system.md) |
 | v3.5 | Notes system (NotesList, TipTap editor, auto-save, bookmark linking, area tagging, Markdown export) | [log/v3.5-notes-system.md](log/v3.5-notes-system.md) |
 | v3.0 | Reader mode (full-screen, typography controls, progress, sepia theme) | [log/v3.0-reader-mode.md](log/v3.0-reader-mode.md) |

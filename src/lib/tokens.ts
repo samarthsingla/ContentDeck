@@ -42,7 +42,7 @@ export function generateBookmarklet(functionUrl: string, token: string): string 
     if(x.status===201){alert('Saved to ContentDeck!')}
     else{alert('Error: '+x.responseText)}
   };
-  x.onerror=function(){alert('Network error')};
+  x.onerror=function(){var f='${safeUrl}?token=${safeToken}&url='+encodeURIComponent(location.href)+'&title='+encodeURIComponent(document.title);var w=window.open(f);if(w){setTimeout(function(){try{w.close()}catch(e){}},2000)}else{alert('Blocked \u2014 allow popups for this site')}};
   x.send(JSON.stringify({token:'${safeToken}',url:location.href,title:document.title}));
 })()`.replace(/\n\s*/g, '');
   return `javascript:${encodeURIComponent(code)}`;

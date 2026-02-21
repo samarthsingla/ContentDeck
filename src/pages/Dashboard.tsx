@@ -140,7 +140,7 @@ export default function Dashboard({ userEmail, onSignOut, isDemo, sharedUrl }: D
 
     async function enrichAndTag() {
       // Phase 1: Fetch missing metadata
-      const missing = currentBookmarks.filter((b) => !b.title);
+      const missing = currentBookmarks.filter((b) => !b.title || (!b.image && !b.excerpt));
       if (missing.length > 0) {
         setMetaProgress({ current: 0, total: missing.length });
         const BATCH_SIZE = 3;

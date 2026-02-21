@@ -19,12 +19,20 @@ export default function BookmarkScratchpad({
   const [localValue, setLocalValue] = useState(scratchpad);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const isEditingRef = useRef(isEditing);
+  isEditingRef.current = isEditing;
 
   // Reset when switching bookmarks
   useEffect(() => {
     setLocalValue(scratchpad);
     setIsEditing(false);
-  }, [bookmarkId, scratchpad]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bookmarkId]);
+
+  // Sync external prop changes only when not editing
+  useEffect(() => {
+    if (!isEditingRef.current) setLocalValue(scratchpad);
+  }, [scratchpad]);
 
   // Flush debounce on unmount
   useEffect(() => {

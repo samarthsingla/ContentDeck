@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSupabase } from '../context/SupabaseProvider';
 import { useToast } from '../components/ui/Toast';
 import { activeScheduler } from '../lib/scheduler';
+import { BOOKMARKS_QUERY_KEY } from './useBookmarks';
 import type { Bookmark } from '../types';
 
 const QUERY_KEY = ['reviewQueue'] as const;
@@ -35,13 +36,15 @@ export function useReview() {
 
   const recordReview = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await db
-        .from('bookmarks')
-        .update({
-          last_reviewed_at: new Date().toISOString(),
-          review_count: (query.data?.find((b) => b.id === id)?.review_count ?? 0) + 1,
-        })
-        .eq('id', id);
+      const bookmark = query.data?.find((b) => b.id === id);
+      const updates: Record<string, unknown> = {
+        last_reviewed_at: new Date().toISOString(),
+        review_count: (bookmark?.review_count ?? 0) + 1,
+      };
+      if (bookmark?.status === 'unread') {
+        updates.status = 'reading';
+      }
+      const { error } = await db.from('bookmarks').update(updates).eq('id', id);
       if (error) throw error;
     },
     onMutate: async (id) => {
@@ -50,6 +53,13 @@ export function useReview() {
       // Optimistically remove from queue
       queryClient.setQueryData<Bookmark[]>(QUERY_KEY, (old) => old?.filter((b) => b.id !== id));
       setSessionReviewed((n) => n + 1);
+      // Optimistically update status in bookmarks cache
+      const bookmark = prev?.find((b) => b.id === id);
+      if (bookmark?.status === 'unread') {
+        queryClient.setQueryData<Bookmark[]>(BOOKMARKS_QUERY_KEY, (old) =>
+          old?.map((b) => (b.id === id ? { ...b, status: 'reading' } : b)),
+        );
+      }
       return { prev };
     },
     onError: (_err, _id, context) => {
@@ -57,7 +67,10 @@ export function useReview() {
       setSessionReviewed((n) => Math.max(0, n - 1));
       toast.error('Failed to record review');
     },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: QUERY_KEY }),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+      void queryClient.invalidateQueries({ queryKey: BOOKMARKS_QUERY_KEY });
+    },
   });
 
   function skipReview(id: string) {

@@ -1,4 +1,5 @@
-import { Heart, Trash2, ExternalLink, Clock, FileText } from 'lucide-react';
+import { useState } from 'react';
+import { Heart, Trash2, ExternalLink, Clock, FileText, Copy, Check } from 'lucide-react';
 import { SourceBadge, StatusBadge } from '../ui/Badge';
 import { timeAgo, getDomain, getFaviconUrl, truncate } from '../../lib/utils';
 import { useUI } from '../../context/UIProvider';
@@ -29,6 +30,15 @@ export default function BookmarkCard({
   const { setTag } = useUI();
   const domain = getDomain(b.url);
   const readingTime = b.metadata?.reading_time;
+  const [copied, setCopied] = useState(false);
+
+  function handleCopy(e: React.MouseEvent) {
+    e.stopPropagation();
+    void navigator.clipboard.writeText(b.url).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  }
 
   function handleClick() {
     if (selectMode && onSelect) {
@@ -175,6 +185,13 @@ export default function BookmarkCard({
         >
           <ExternalLink size={16} />
         </a>
+        <button
+          onClick={handleCopy}
+          className="p-2 rounded-lg hover:bg-surface-100 dark:hover:bg-surface-800 text-surface-400 min-w-[36px] min-h-[36px] flex items-center justify-center"
+          aria-label="Copy URL"
+        >
+          {copied ? <Check size={16} className="text-green-500" /> : <Copy size={16} />}
+        </button>
         <button
           onClick={handleDelete}
           className="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-surface-400 hover:text-red-500 min-w-[36px] min-h-[36px] flex items-center justify-center"
