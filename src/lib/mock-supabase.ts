@@ -293,11 +293,11 @@ export function createMockSupabaseClient(): SupabaseClient {
     },
     rpc(fnName: string, _args?: Record<string, unknown>) {
       if (fnName === 'get_review_queue') {
-        const limit = (_args?.p_limit as number) ?? 20;
-        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        const limit = (_args?.p_limit as number) ?? 200;
         const queue = store.bookmarks
-          .filter((b) => b.last_reviewed_at === null || new Date(b.last_reviewed_at) < sevenDaysAgo)
+          .slice()
           .sort((a, b) => {
+            if (!a.last_reviewed_at && !b.last_reviewed_at) return 0;
             if (!a.last_reviewed_at) return -1;
             if (!b.last_reviewed_at) return 1;
             return a.last_reviewed_at.localeCompare(b.last_reviewed_at);

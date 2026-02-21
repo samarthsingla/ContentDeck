@@ -68,6 +68,14 @@ function createWrapper() {
 
 const SAMPLE_QUEUE = [makeBookmark({ id: 'bm-1' }), makeBookmark({ id: 'bm-2' })];
 
+// A bookmark reviewed 1 day ago — not due under FixedIntervalScheduler (7-day window)
+function makeNotDue(id: string): Bookmark {
+  return makeBookmark({
+    id,
+    last_reviewed_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+  });
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
   // Default: update succeeds silently
@@ -106,6 +114,19 @@ describe('useReview', () => {
     expect(result.current.visibleQueue[0]!.id).toBe('bm-2');
     // No DB call should have been made
     expect(mockFrom).not.toHaveBeenCalled();
+  });
+
+  it('isDue filter is applied to candidates from DB', async () => {
+    const dueItem = makeBookmark({ id: 'bm-due', last_reviewed_at: null });
+    const notDueItem = makeNotDue('bm-not-due');
+    mockRpc.mockResolvedValue({ data: [dueItem, notDueItem], error: null });
+
+    const wrapper = createWrapper();
+    const { result } = renderHook(() => useReview(), { wrapper });
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.visibleQueue).toHaveLength(1);
+    expect(result.current.visibleQueue[0]!.id).toBe('bm-due');
   });
 
   it('recordReview optimistically removes item from cache', async () => {

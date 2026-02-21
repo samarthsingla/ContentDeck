@@ -1,7 +1,7 @@
 # ContentDeck — Vision & Architecture
 
 > Augment your thinking, don't replace it.
-> Bridge between consuming content and building knowledge — all on free-tier infrastructure.
+> Bridge between consuming content and building knowledge - on a low cost infrastructure
 
 ---
 
@@ -12,11 +12,11 @@ ContentDeck today: a personal bookmark manager with status tracking, full-text s
 ContentDeck tomorrow: **a personal knowledge and thinking augmentation system** — where you capture content, write notes to develop your understanding, discover hidden connections across everything you've saved, and use AI as a thinking partner that asks the right questions instead of giving you summaries.
 
 ```
-v3.0 (current)    v3.5               v4.0                    v4.5                  v5.0
-Foundation    →   Notes System    →  Knowledge Graph      →  Thinking Companion →  Life Management
-Auth, search      Standalone notes   Embeddings, pgvector     AI reflection         Telegram capture
-Reader mode       TipTap editor      Topic clusters           Bias detection        Reminders
-Testing & CI      Bookmark linking   Semantic search          Socratic prompts      People & context
+v3.0 (current)    v3.5               v3.6                v4.0                    v4.5                  v5.0
+Foundation    →   Notes System    →  Review System    →  Knowledge Graph      →  Thinking Companion →  Life Management
+Auth, search      Standalone notes   Review pane         Embeddings, pgvector     AI reflection         Telegram capture
+Reader mode       TipTap editor      7-day intervals     Topic clusters           Bias detection        Reminders
+Testing & CI      Bookmark linking   last_reviewed_at    Semantic search          Socratic prompts      People & context
 ```
 
 ---
@@ -50,14 +50,14 @@ Telegram Bot ──────┘     ├→ PostgreSQL (tsvector + pgvector + 
 ## Dependency Graph
 
 ```
-Phase 2 (Notes) ──────┬──→ Phase 3 (Embeddings + Topics)──┐
-                       │                                     ├──→ Phase 5 (Life Mgmt)
-                       └──→ Phase 4 (Thinking Companion) ──┘
+Phase 2 (Notes) ──┬──→ Phase 2b (Review) ──┬──→ Phase 4 (Thinking Companion) ──→ Phase 5
+                  └──→ Phase 3 (Embeddings) ─┘
 ```
 
 - **Phase 2** is the foundation — notes are required for everything that follows.
-- **Phase 3** and **Phase 4** can start in parallel once Phase 2 ships.
-  - Phase 4 works without embeddings (uses tag overlap) but is better with them.
+- **Phase 2b** ships next — mechanical review cadence, no AI yet.
+- **Phase 3** (Embeddings) and **Phase 2b** (Review) can progress in parallel.
+- **Phase 4** (Thinking Companion) builds on both — `review_count`/`last_reviewed_at` from Phase 2b, embeddings from Phase 3.
 - **Phase 5** requires both Phase 3 (embeddings for contextual recall) and Phase 4 (companion for people context).
 
 ---
@@ -73,8 +73,8 @@ Notes aren't just annotations on bookmarks — they're standalone thinking artif
 ### 3. Connections emerge
 Embeddings and topic modeling surface what you'd miss on your own. "You saved 3 articles about distributed systems last month and wrote a note about CAP theorem — have you connected these?"
 
-### 4. Free tier forever
-Supabase (500MB DB) + OpenRouter (free models) + Vercel (100GB bandwidth) + Hugging Face (free inference) = $0/month. Every architectural decision respects this constraint.
+### 4. Free tier for now. Paid later
+Supabase (500MB DB) + OpenRouter (free models) + Vercel (100GB bandwidth) + Hugging Face (free inference) = $0/month. 
 
 ### 5. Progressive enhancement
 Each phase is independently useful. Notes are valuable without embeddings. Embeddings are valuable without AI companion. You never need to "finish" the roadmap to get value.

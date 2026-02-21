@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSupabase } from '../context/SupabaseProvider';
 import { useToast } from '../components/ui/Toast';
+import { activeScheduler } from '../lib/scheduler';
 import type { Bookmark } from '../types';
 
 const QUERY_KEY = ['reviewQueue'] as const;
@@ -19,9 +20,10 @@ export function useReview() {
     queryKey: QUERY_KEY,
     queryFn: async () => {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      const { data, error } = await db.rpc('get_review_queue', { p_limit: 20 });
+      const { data, error } = await db.rpc('get_review_queue', { p_limit: 200 });
       if (error) throw error;
-      return (data ?? []) as Bookmark[];
+      const candidates = (data ?? []) as Bookmark[];
+      return candidates.filter((b) => activeScheduler.isDue(b));
     },
   });
 

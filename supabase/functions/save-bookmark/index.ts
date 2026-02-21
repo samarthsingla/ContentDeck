@@ -1,3 +1,11 @@
+// DEPLOYMENT NOTE: This function must be deployed with --no-verify-jwt:
+//   npx supabase functions deploy save-bookmark --no-verify-jwt
+//
+// Reason: The bookmarklet and iOS Shortcut have no Supabase session (no JWT).
+// Supabase's gateway would reject their requests with 401 before this code runs.
+// Instead, this function implements its own auth: the caller passes a raw token
+// in the request body/query params, which is SHA-256 hashed and looked up in
+// the user_tokens table.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {

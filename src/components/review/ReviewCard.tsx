@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { SourceBadge } from '../ui/Badge';
 import type { Bookmark } from '../../types';
 
@@ -26,6 +27,17 @@ export default function ReviewCard({
   onOpenDetails,
   sessionProgress,
 }: ReviewCardProps) {
+  useEffect(() => {
+    function handler(e: KeyboardEvent) {
+      if (e.target instanceof HTMLElement && ['INPUT', 'TEXTAREA'].includes(e.target.tagName))
+        return;
+      if (e.key === 'r' || e.key === 'R') onReviewed();
+      if (e.key === 's' || e.key === 'S') onSkip();
+      if (e.key === 'd' || e.key === 'D') onOpenDetails(bookmark.id);
+    }
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [bookmark.id, onReviewed, onSkip, onOpenDetails]);
   const excerpt = bookmark.excerpt
     ? bookmark.excerpt.length > 150
       ? bookmark.excerpt.slice(0, 150) + '…'
@@ -83,9 +95,9 @@ export default function ReviewCard({
         )}
 
         {/* Areas/tags */}
-        {bookmark.areas.length > 0 && (
+        {(bookmark.areas ?? []).length > 0 && (
           <div className="flex flex-wrap gap-1.5">
-            {bookmark.areas.map((area) => (
+            {(bookmark.areas ?? []).map((area) => (
               <span
                 key={area.id}
                 className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-surface-100 dark:bg-surface-800 text-surface-600 dark:text-surface-400"
@@ -105,12 +117,18 @@ export default function ReviewCard({
           className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-green-600 hover:bg-green-700 text-white font-medium text-sm transition-colors min-h-[44px]"
         >
           Reviewed ✓
+          <kbd className="ml-1 text-xs opacity-60 font-mono border border-white/30 rounded px-1">
+            R
+          </kbd>
         </button>
         <button
           onClick={onSkip}
           className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border border-surface-200 dark:border-surface-700 text-surface-600 dark:text-surface-400 hover:bg-surface-100 dark:hover:bg-surface-800 font-medium text-sm transition-colors min-h-[44px]"
         >
           Skip →
+          <kbd className="ml-1 text-xs opacity-60 font-mono border border-current rounded px-1">
+            S
+          </kbd>
         </button>
       </div>
 
@@ -119,6 +137,9 @@ export default function ReviewCard({
         className="w-full text-xs text-primary-600 dark:text-primary-400 hover:underline text-center py-1"
       >
         Open Details
+        <kbd className="ml-1 text-xs opacity-60 font-mono border border-current rounded px-1">
+          D
+        </kbd>
       </button>
     </div>
   );

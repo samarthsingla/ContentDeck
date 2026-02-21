@@ -91,8 +91,10 @@ The `save-bookmark` edge function enables the bookmarklet and iOS Shortcut to sa
 ```bash
 npx supabase login
 npx supabase link --project-ref <your-project-ref>
-npx supabase functions deploy save-bookmark
+npx supabase functions deploy save-bookmark --no-verify-jwt
 ```
+
+> **Important:** `--no-verify-jwt` is required. The function uses its own token-based auth (hashed `user_tokens` lookup) rather than Supabase JWTs. Without this flag, Supabase's gateway rejects requests from the bookmarklet and iOS Shortcut with `401: Missing authorization header` before the function code even runs.
 
 The function uses `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`, which are automatically available in the edge function environment.
 
