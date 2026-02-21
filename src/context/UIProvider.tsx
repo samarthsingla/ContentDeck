@@ -34,7 +34,7 @@ export function UIProvider({ children }: { children: React.ReactNode }) {
     () => (localStorage.getItem('view') as ViewMode) ?? 'list',
   );
   const [currentSource, setCurrentSource] = useState<SourceType | 'all'>('all');
-  const [currentStatus, setCurrentStatus] = useState<Status | 'all'>('unread');
+  const [currentStatus, setCurrentStatus] = useState<Status | 'all'>('all');
   const [currentTag, setCurrentTag] = useState<string | null>(null);
   const [showFavorites, setShowFavorites] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');

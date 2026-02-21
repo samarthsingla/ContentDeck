@@ -18,7 +18,7 @@ const statusStyles: Record<Status, string> = {
 const statusLabels: Record<Status, string> = {
   unread: 'Unread',
   reading: 'Reading',
-  done: 'Done',
+  done: 'Read',
 };
 
 export function SourceBadge({ source }: { source: SourceType }) {
@@ -42,7 +42,14 @@ export function StatusBadge({ status, onClick }: { status: Status; onClick?: () 
         ${statusStyles[status]}
         ${onClick ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''}
       `}
-      onClick={onClick}
+      onClick={
+        onClick
+          ? (e) => {
+              e.stopPropagation();
+              onClick();
+            }
+          : undefined
+      }
       {...(onClick ? { 'aria-label': `Status: ${statusLabels[status]}. Click to advance.` } : {})}
     >
       {statusLabels[status]}

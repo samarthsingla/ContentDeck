@@ -53,6 +53,8 @@ function normalizeBookmark(b: RawBookmarkRow): Bookmark {
     content_fetched_at: b.content_fetched_at ?? null,
     is_favorited: b.is_favorited ?? false,
     synced: b.synced ?? false,
+    last_reviewed_at: b.last_reviewed_at ?? null,
+    review_count: b.review_count ?? 0,
   };
 }
 

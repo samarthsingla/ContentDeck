@@ -2,9 +2,9 @@
 
 > Start here. This file orients each session.
 
-**Version:** v3.5 | **Status:** Phase 2 complete — full notes system shipped
-**Next up:** Phase 3 (Knowledge Graph + Topics)
-**Active phase:** [Phase 3 — Knowledge Graph](plan/phase-3.md)
+**Version:** v3.6 | **Status:** Phase 2b.1–2b.4 shipped — Review System foundation
+**Next up:** Phase 2b.5+ (Adaptive SRS, review analytics)
+**Active phase:** [Phase 2b — Review System](plan/phase-2b.md)
 
 ---
 
@@ -13,7 +13,7 @@
 | If you're... | Read these |
 |---|---|
 | Understanding the vision | [plan/vision.md](plan/vision.md) |
-| Starting Phase 3 work | [plan/phase-3.md](plan/phase-3.md) + [guides/workflow.md](guides/workflow.md) |
+| Starting Phase 2b work | [plan/phase-2b.md](plan/phase-2b.md) + [guides/workflow.md](guides/workflow.md) |
 | Planning future phases | [plan/phase-3.md](plan/phase-3.md), [plan/phase-4.md](plan/phase-4.md), [plan/phase-5.md](plan/phase-5.md) |
 | Debugging something that used to work | [log/](log/) — find the relevant implementation log |
 | Setting up Supabase Auth | [guides/supabase-auth-setup.md](guides/supabase-auth-setup.md) |
@@ -30,7 +30,8 @@ docs/
 ├── plan/                           # Future work — gets shorter as features ship
 │   ├── vision.md                   # Vision, architecture evolution, principles
 │   ├── phase-1.md                  # Phase 1: Foundation (v3.0) — COMPLETE
-│   ├── phase-2.md                  # Phase 2: Notes System (v3.5) — ACTIVE
+│   ├── phase-2.md                  # Phase 2: Notes System (v3.5) — COMPLETE
+│   ├── phase-2b.md                 # Phase 2b: Review System (v3.6)
 │   ├── phase-3.md                  # Phase 3: Knowledge Graph + Topics (v4.0)
 │   ├── phase-4.md                  # Phase 4: Thinking Companion AI (v4.5)
 │   ├── phase-5.md                  # Phase 5: Life Management + Messaging (v5.0)
@@ -62,6 +63,7 @@ docs/
 
 | Version | Feature | Log |
 |---|---|---|
+| v3.6 | Review system (review queue, ReviewPane/Card, skip, dueCount badge, Done→Read rename) | [log/v3.6-review-system.md](log/v3.6-review-system.md) |
 | v3.5 | Notes system (NotesList, TipTap editor, auto-save, bookmark linking, area tagging, Markdown export) | [log/v3.5-notes-system.md](log/v3.5-notes-system.md) |
 | v3.0 | Reader mode (full-screen, typography controls, progress, sepia theme) | [log/v3.0-reader-mode.md](log/v3.0-reader-mode.md) |
 | v3.0 | Full-text search (excerpt + content.text, debounce, result count, tsvector) | [log/v3.0-full-text-search.md](log/v3.0-full-text-search.md) |

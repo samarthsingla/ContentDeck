@@ -35,6 +35,8 @@ function makeBookmarks(): Bookmark[] {
     status_changed_at: new Date().toISOString(),
     started_reading_at: null,
     finished_at: null,
+    last_reviewed_at: null,
+    review_count: 0,
     scratchpad: '',
   };
   return [
@@ -52,7 +54,7 @@ describe('StatusFilters', () => {
     // Unread tab should show count 2
     expect(screen.getByRole('tab', { name: /Unread/i })).toHaveTextContent('2');
     expect(screen.getByRole('tab', { name: /Reading/i })).toHaveTextContent('1');
-    expect(screen.getByRole('tab', { name: /Done/i })).toHaveTextContent('1');
+    expect(screen.getByRole('tab', { name: /^Read\s/i })).toHaveTextContent('1');
   });
 
   it('calls setStatus with status when inactive tab is clicked', async () => {

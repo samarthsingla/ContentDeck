@@ -8,11 +8,39 @@ import {
   DEMO_TAG_AREAS,
   DEMO_STATUS_HISTORY,
   DEMO_BOOKMARK_TAGS,
+  DEMO_STANDALONE_NOTES,
+  DEMO_NOTE_BOOKMARKS,
+  DEMO_NOTE_TAGS,
 } from './demo-data';
-import type { Bookmark, TagArea, StatusHistoryEntry, BookmarkTag, UserToken } from '../types';
+import type {
+  Bookmark,
+  TagArea,
+  StatusHistoryEntry,
+  BookmarkTag,
+  UserToken,
+  StandaloneNote,
+  NoteBookmark,
+  NoteTag,
+} from '../types';
 
-type TableName = 'bookmarks' | 'tag_areas' | 'status_history' | 'bookmark_tags' | 'user_tokens';
-type Row = Bookmark | TagArea | StatusHistoryEntry | BookmarkTag | UserToken;
+type TableName =
+  | 'bookmarks'
+  | 'tag_areas'
+  | 'status_history'
+  | 'bookmark_tags'
+  | 'user_tokens'
+  | 'notes'
+  | 'note_bookmarks'
+  | 'note_tags';
+type Row =
+  | Bookmark
+  | TagArea
+  | StatusHistoryEntry
+  | BookmarkTag
+  | UserToken
+  | StandaloneNote
+  | NoteBookmark
+  | NoteTag;
 
 interface TableStore {
   bookmarks: Bookmark[];
@@ -20,6 +48,9 @@ interface TableStore {
   status_history: StatusHistoryEntry[];
   bookmark_tags: BookmarkTag[];
   user_tokens: UserToken[];
+  notes: StandaloneNote[];
+  note_bookmarks: NoteBookmark[];
+  note_tags: NoteTag[];
 }
 
 let nextId = 1;
@@ -251,11 +282,30 @@ export function createMockSupabaseClient(): SupabaseClient {
     status_history: deepClone(DEMO_STATUS_HISTORY),
     bookmark_tags: deepClone(DEMO_BOOKMARK_TAGS),
     user_tokens: [],
+    notes: deepClone(DEMO_STANDALONE_NOTES),
+    note_bookmarks: deepClone(DEMO_NOTE_BOOKMARKS),
+    note_tags: deepClone(DEMO_NOTE_TAGS),
   };
 
   const mock = {
     from(table: string) {
       return new MockQueryBuilder(store, table as TableName);
+    },
+    rpc(fnName: string, _args?: Record<string, unknown>) {
+      if (fnName === 'get_review_queue') {
+        const limit = (_args?.p_limit as number) ?? 20;
+        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        const queue = store.bookmarks
+          .filter((b) => b.last_reviewed_at === null || new Date(b.last_reviewed_at) < sevenDaysAgo)
+          .sort((a, b) => {
+            if (!a.last_reviewed_at) return -1;
+            if (!b.last_reviewed_at) return 1;
+            return a.last_reviewed_at.localeCompare(b.last_reviewed_at);
+          })
+          .slice(0, limit);
+        return Promise.resolve({ data: deepClone(queue), error: null });
+      }
+      return Promise.resolve({ data: null, error: null });
     },
     functions: {
       invoke: () => Promise.resolve({ data: null, error: null }),

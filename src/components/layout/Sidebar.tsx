@@ -1,7 +1,5 @@
 import {
   Inbox,
-  BookOpen,
-  CheckCircle,
   Star,
   Plus,
   Sun,
@@ -12,30 +10,26 @@ import {
   LayoutGrid,
   List,
   FileText,
+  Brain,
 } from 'lucide-react';
 import { useUI } from '../../context/UIProvider';
 import { useTheme } from '../../hooks/useTheme';
-import type { Status, ViewMode } from '../../types';
+import type { ViewMode } from '../../types';
 
 interface SidebarProps {
   counts: { unread: number; reading: number; done: number; favorited: number };
   noteCount: number;
+  dueCount: number;
   onAdd: () => void;
   onSignOut: () => void;
   onSettings: () => void;
   onStats: () => void;
 }
 
-const statusNav: { status: Status | 'all'; label: string; icon: React.ElementType }[] = [
-  { status: 'all', label: 'All Bookmarks', icon: Inbox },
-  { status: 'unread', label: 'Unread', icon: Inbox },
-  { status: 'reading', label: 'Reading', icon: BookOpen },
-  { status: 'done', label: 'Done', icon: CheckCircle },
-];
-
 export default function Sidebar({
   counts,
   noteCount,
+  dueCount,
   onAdd,
   onSignOut,
   onSettings,
@@ -72,19 +66,22 @@ export default function Sidebar({
       {/* Navigation */}
       <nav className="flex-1 p-2 overflow-y-auto" aria-label="Main navigation">
         <div className="space-y-0.5">
-          {statusNav.map(({ status, label, icon: Icon }) => {
-            const count = status === 'all' ? totalCount : (counts[status] ?? 0);
+          {/* All Bookmarks */}
+          {(() => {
             const active =
-              currentStatus === status && !currentTag && !showFavorites && currentView !== 'notes';
+              currentStatus === 'all' &&
+              !currentTag &&
+              !showFavorites &&
+              currentView !== 'notes' &&
+              currentView !== 'review';
             return (
               <button
-                key={status}
                 aria-current={active ? 'page' : undefined}
                 onClick={() => {
-                  setStatus(status);
+                  setStatus('all');
                   setTag(null);
                   setFavorites(false);
-                  if (currentView === 'notes') setView('list');
+                  if (currentView === 'notes' || currentView === 'review') setView('list');
                 }}
                 className={`
                   w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors min-h-[44px]
@@ -95,12 +92,12 @@ export default function Sidebar({
                   }
                 `}
               >
-                <Icon size={18} />
-                <span className="flex-1 text-left">{label}</span>
-                <span className="text-xs text-surface-400 dark:text-surface-500">{count}</span>
+                <Inbox size={18} />
+                <span className="flex-1 text-left">All Bookmarks</span>
+                <span className="text-xs text-surface-400 dark:text-surface-500">{totalCount}</span>
               </button>
             );
-          })}
+          })()}
 
           {/* Notes */}
           <button
@@ -124,19 +121,47 @@ export default function Sidebar({
             <span className="text-xs text-surface-400 dark:text-surface-500">{noteCount}</span>
           </button>
 
-          {/* Favorites */}
+          {/* Review */}
           <button
-            aria-current={showFavorites && currentView !== 'notes' ? 'page' : undefined}
+            aria-current={currentView === 'review' ? 'page' : undefined}
             onClick={() => {
-              setFavorites(true);
-              setStatus('all');
+              setView('review');
               setTag(null);
-              if (currentView === 'notes') setView('list');
+              setFavorites(false);
             }}
             className={`
               w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors min-h-[44px]
               ${
-                showFavorites && currentView !== 'notes'
+                currentView === 'review'
+                  ? 'bg-primary-600/10 text-primary-600 dark:text-primary-400'
+                  : 'text-surface-600 dark:text-surface-400 hover:bg-surface-100 dark:hover:bg-surface-800'
+              }
+            `}
+          >
+            <Brain size={18} />
+            <span className="flex-1 text-left">Review</span>
+            {dueCount > 0 && (
+              <span className="text-xs text-orange-500 font-medium">{dueCount}</span>
+            )}
+          </button>
+
+          {/* Favorites */}
+          <button
+            aria-current={
+              showFavorites && currentView !== 'notes' && currentView !== 'review'
+                ? 'page'
+                : undefined
+            }
+            onClick={() => {
+              setFavorites(true);
+              setStatus('all');
+              setTag(null);
+              if (currentView === 'notes' || currentView === 'review') setView('list');
+            }}
+            className={`
+              w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors min-h-[44px]
+              ${
+                showFavorites && currentView !== 'notes' && currentView !== 'review'
                   ? 'bg-primary-600/10 text-primary-600 dark:text-primary-400'
                   : 'text-surface-600 dark:text-surface-400 hover:bg-surface-100 dark:hover:bg-surface-800'
               }

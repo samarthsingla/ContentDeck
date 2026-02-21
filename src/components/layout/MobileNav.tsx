@@ -1,21 +1,14 @@
-import { Inbox, BookOpen, CheckCircle, Star, List, LayoutGrid, FileText } from 'lucide-react';
+import { Star, List, LayoutGrid, FileText, Brain } from 'lucide-react';
 import { useUI } from '../../context/UIProvider';
-import type { Status } from '../../types';
 
 interface MobileNavProps {
   counts: { unread: number; reading: number; done: number; favorited: number };
   noteCount: number;
+  dueCount: number;
 }
 
-const tabs: { status: Status; label: string; icon: React.ElementType }[] = [
-  { status: 'unread', label: 'Unread', icon: Inbox },
-  { status: 'reading', label: 'Reading', icon: BookOpen },
-  { status: 'done', label: 'Done', icon: CheckCircle },
-];
-
-export default function MobileNav({ counts, noteCount }: MobileNavProps) {
-  const { currentStatus, setStatus, currentView, setView, showFavorites, setFavorites, setTag } =
-    useUI();
+export default function MobileNav({ counts, noteCount, dueCount }: MobileNavProps) {
+  const { currentView, setView, showFavorites, setFavorites, setTag, setStatus } = useUI();
 
   return (
     <nav
@@ -24,28 +17,6 @@ export default function MobileNav({ counts, noteCount }: MobileNavProps) {
       aria-label="Bottom navigation"
     >
       <div className="flex items-center">
-        {tabs.map(({ status, label, icon: Icon }) => {
-          const active = currentStatus === status && !showFavorites;
-          return (
-            <button
-              key={status}
-              onClick={() => {
-                setStatus(status);
-                setFavorites(false);
-              }}
-              className={`flex-1 flex flex-col items-center gap-0.5 py-2 min-h-[56px] transition-colors
-                ${active ? 'text-primary-600 dark:text-primary-400' : 'text-surface-400 dark:text-surface-500'}
-              `}
-              aria-label={`${label} (${counts[status]})`}
-              aria-current={active ? 'page' : undefined}
-            >
-              <Icon size={20} />
-              <span className="text-[10px] font-medium">{label}</span>
-              {counts[status] > 0 && <span className="text-[10px]">{counts[status]}</span>}
-            </button>
-          );
-        })}
-
         {/* Favorites */}
         <button
           onClick={() => {
@@ -81,19 +52,41 @@ export default function MobileNav({ counts, noteCount }: MobileNavProps) {
           {noteCount > 0 && <span className="text-[10px]">{noteCount}</span>}
         </button>
 
+        {/* Review */}
+        <button
+          onClick={() => {
+            setView('review');
+            setTag(null);
+            setFavorites(false);
+          }}
+          className={`flex-1 flex flex-col items-center gap-0.5 py-2 min-h-[56px] transition-colors
+            ${currentView === 'review' ? 'text-primary-600 dark:text-primary-400' : 'text-surface-400 dark:text-surface-500'}
+          `}
+          aria-label={`Review${dueCount > 0 ? ` (${dueCount} due)` : ''}`}
+          aria-current={currentView === 'review' ? 'page' : undefined}
+        >
+          <Brain size={20} />
+          <span className="text-[10px] font-medium">Review</span>
+          {dueCount > 0 && (
+            <span className="text-[10px] text-orange-500 font-medium">{dueCount}</span>
+          )}
+        </button>
+
         {/* View toggle */}
         <button
           onClick={() => setView(currentView === 'list' ? 'areas' : 'list')}
           className="flex-1 flex flex-col items-center gap-0.5 py-2 min-h-[56px] text-surface-400 dark:text-surface-500"
           aria-label={`Switch to ${currentView === 'list' ? 'areas' : 'list'} view`}
         >
-          {currentView === 'list' || currentView === 'notes' ? (
+          {currentView === 'list' || currentView === 'notes' || currentView === 'review' ? (
             <LayoutGrid size={20} />
           ) : (
             <List size={20} />
           )}
           <span className="text-[10px] font-medium">
-            {currentView === 'list' || currentView === 'notes' ? 'Areas' : 'List'}
+            {currentView === 'list' || currentView === 'notes' || currentView === 'review'
+              ? 'Areas'
+              : 'List'}
           </span>
         </button>
       </div>

@@ -5,7 +5,7 @@ import type { Bookmark, Status } from '../../types';
 const labels: Record<Status, string> = {
   unread: 'Unread',
   reading: 'Reading',
-  done: 'Done',
+  done: 'Read',
 };
 
 export default function StatusFilters({ bookmarks }: { bookmarks: Bookmark[] }) {
