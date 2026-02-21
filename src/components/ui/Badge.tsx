@@ -42,7 +42,14 @@ export function StatusBadge({ status, onClick }: { status: Status; onClick?: () 
         ${statusStyles[status]}
         ${onClick ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''}
       `}
-      onClick={onClick}
+      onClick={
+        onClick
+          ? (e) => {
+              e.stopPropagation();
+              onClick();
+            }
+          : undefined
+      }
       {...(onClick ? { 'aria-label': `Status: ${statusLabels[status]}. Click to advance.` } : {})}
     >
       {statusLabels[status]}

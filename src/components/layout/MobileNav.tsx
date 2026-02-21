@@ -1,6 +1,5 @@
-import { Inbox, BookOpen, Star, List, LayoutGrid, FileText, Brain } from 'lucide-react';
+import { Star, List, LayoutGrid, FileText, Brain } from 'lucide-react';
 import { useUI } from '../../context/UIProvider';
-import type { Status } from '../../types';
 
 interface MobileNavProps {
   counts: { unread: number; reading: number; done: number; favorited: number };
@@ -8,15 +7,8 @@ interface MobileNavProps {
   dueCount: number;
 }
 
-// Done tab removed: accessible via status filter in list view. Review replaces it on mobile per 2b.4 spec.
-const tabs: { status: Status; label: string; icon: React.ElementType }[] = [
-  { status: 'unread', label: 'Unread', icon: Inbox },
-  { status: 'reading', label: 'Reading', icon: BookOpen },
-];
-
 export default function MobileNav({ counts, noteCount, dueCount }: MobileNavProps) {
-  const { currentStatus, setStatus, currentView, setView, showFavorites, setFavorites, setTag } =
-    useUI();
+  const { currentView, setView, showFavorites, setFavorites, setTag, setStatus } = useUI();
 
   return (
     <nav
@@ -25,28 +17,6 @@ export default function MobileNav({ counts, noteCount, dueCount }: MobileNavProp
       aria-label="Bottom navigation"
     >
       <div className="flex items-center">
-        {tabs.map(({ status, label, icon: Icon }) => {
-          const active = currentStatus === status && !showFavorites;
-          return (
-            <button
-              key={status}
-              onClick={() => {
-                setStatus(status);
-                setFavorites(false);
-              }}
-              className={`flex-1 flex flex-col items-center gap-0.5 py-2 min-h-[56px] transition-colors
-                ${active ? 'text-primary-600 dark:text-primary-400' : 'text-surface-400 dark:text-surface-500'}
-              `}
-              aria-label={`${label} (${counts[status]})`}
-              aria-current={active ? 'page' : undefined}
-            >
-              <Icon size={20} />
-              <span className="text-[10px] font-medium">{label}</span>
-              {counts[status] > 0 && <span className="text-[10px]">{counts[status]}</span>}
-            </button>
-          );
-        })}
-
         {/* Favorites */}
         <button
           onClick={() => {
