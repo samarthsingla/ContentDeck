@@ -2,9 +2,9 @@
 
 > Start here. This file orients each session.
 
-**Version:** v3.6 | **Status:** Phase 2b.1–2b.4 shipped — Review System foundation
-**Next up:** Phase 2b.5+ (Adaptive SRS, review analytics)
-**Active phase:** [Phase 2b — Review System](plan/phase-2b.md)
+**Version:** v3.6 | **Status:** Phase 2b complete — Review System + Scheduler Module
+**Next up:** Phase 3 (Knowledge Graph + Topics)
+**Active phase:** [Phase 3 — Knowledge Graph](plan/phase-3.md)
 
 ---
 

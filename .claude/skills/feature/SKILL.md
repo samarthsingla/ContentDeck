@@ -19,8 +19,8 @@ Complete workflow for developing features professionally: branch → plan → im
 1. **Find or create a GitHub Issue** for this work:
    - Check existing issues: `gh issue list --repo samarthsingla/ContentDeck`
    - If the issue exists, note its number (e.g. `#4`)
-   - If not, create one: `gh issue create --title "..." --label "type: feature,phase: 1,priority: high"`
-   - Use labels: `type: feature/bug/chore/perf/docs`, `phase: 1/2`, `priority: high/medium/low`, `area: mobile/ui/backend/testing`
+   - If not, create one: `gh issue create --title "..." --label "type: feature,phase: 1/2/3/4/5,priority: high"`
+   - Use labels: `type: feature/bug/chore/perf/docs`, `phase: 1/2/3/4/5`, `priority: high/medium/low`, `area: mobile/ui/backend/testing`
 
 2. **Create feature branch** from `main`, including the issue number:
    - `feat/4-full-text-search` for new features
@@ -29,7 +29,7 @@ Complete workflow for developing features professionally: branch → plan → im
    - `chore/<issue>-<name>` for tooling, deps, config
 
 3. **Explore codebase** to understand affected areas:
-   - Read `docs/INDEX.md` and `docs/plan/phase-1.md` for current roadmap state
+   - Read `docs/INDEX.md` and `docs/plan/` for current roadmap state
    - Read relevant source files
    - Identify all files that need changes
    - Check for existing patterns to follow

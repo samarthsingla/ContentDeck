@@ -6,6 +6,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ContentDeck — a personal content bookmarking PWA dashboard for the Capture → Consume → Reflect → Export workflow. Bridges web browsing and Obsidian knowledge management.
 
+## Guiding Vision
+
+The prupose of this app is to boost the users memory, recall, critical thinking, rather than weaken it. Our app focuses on the user's long term benefit and design decisions must be made in the interest of preserving and strengthening the user's knowledge base, thinking and recall abilities.
+
 **Status: v3.0 — React + Vite + Tailwind + TypeScript. Supabase Auth, demo mode, PWA share target.**
 
 See `docs/reference/audit.md` for the full audit trail (39/47 v1 issues resolved, 14 v2.0 bugs fixed, 8 v2.2 shipping fixes).
@@ -135,11 +139,20 @@ RLS policies:
 
 ## Development Workflow
 
+### Git Remotes
+
+This repo has two remotes:
+- **`origin`** — `samarthsingla/ContentDeck` — the user's own fork. **All work happens here.**
+- **`upstream`** — `aditya30103/ContentDeck` — the upstream source. **Never push, branch, or open PRs against upstream unless explicitly instructed.**
+
+All branches, commits, and pull requests must target `origin` only.
+
 ### Branching Strategy
 
 - **`main`** = production (auto-deploys to Vercel)
 - **Feature branches** include the GitHub Issue number: `feat/4-full-text-search`, `fix/7-mobile-stats`
 - **Pull requests** to merge back to `main` — body must include `Closes #N` to auto-close the issue
+- Always pass `--repo samarthsingla/ContentDeck` to `gh pr` commands to ensure origin is targeted
 
 ### Conventional Commits
 

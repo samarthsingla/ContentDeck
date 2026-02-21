@@ -1,5 +1,6 @@
 import { Brain } from 'lucide-react';
 import ReviewCard from './ReviewCard';
+import { activeScheduler } from '../../lib/scheduler';
 import type { Bookmark } from '../../types';
 
 interface ReviewPaneProps {
@@ -55,7 +56,7 @@ export default function ReviewPane({
             You're all caught up.
           </p>
           <p className="text-sm text-surface-500 dark:text-surface-400">
-            Check back in 7 days for your next review batch.
+            Check back in {activeScheduler.intervalLabel()} for your next review batch.
           </p>
           {sessionReviewed > 0 && (
             <p className="text-sm text-green-600 dark:text-green-400 font-medium">

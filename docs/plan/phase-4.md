@@ -3,8 +3,14 @@
 > Goal: AI that asks questions instead of giving answers. A thinking partner, not a summarizer.
 
 **Status:** Not started
-**Depends on:** Phase 2 (Notes System). Enhanced by Phase 3 (embeddings) but can start without it.
+**Depends on:** Phase 2b (Review System — `review_count` + `last_reviewed_at` columns + ReviewPane). Enhanced by Phase 3 (embeddings) but can start without it.
 **Unlocks:** Phase 5 (Life Management — people context)
+
+> **Phase 2b foundation:** Phase 2b lays the mechanical groundwork — the Review Pane and
+> `review_count` / `last_reviewed_at` columns with a hardcoded 7-day review interval.
+> Phase 4 replaces the hardcoded interval with adaptive per-item intervals based on
+> recall quality ratings, and injects AI reflection questions directly into the Review Pane
+> after the user marks an item as reviewed.
 
 ---
 
@@ -43,7 +49,7 @@ Prompt types, each with a specialized system prompt:
 ## 4.2 UI Integration
 
 - **`CompanionPanel`**: collapsible sidebar panel (or bottom sheet on mobile) showing the latest prompt
-- **`ReflectionPrompt`**: appears after marking a bookmark "done" — dismissible card with 1-2 questions
+- **`ReflectionPrompt`**: appears inside ReviewPane after marking an item reviewed (and also after marking status "done") — dismissible card with 1-2 questions
 - **`BiasCheckResult`**: inline indicator in NoteEditorModal when bias patterns are detected
 - **"Find connections" button**: in DetailPanel and NoteEditorModal — triggers a connection analysis
 - **Periodic sidebar prompts**: subtle notification dot on companion icon when new insights are available
